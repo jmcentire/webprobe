@@ -1,0 +1,24 @@
+auth:
+  method: none          # cookie, bearer, header, none
+  cookie_name: ""
+  cookie_value: ""
+  bearer_token: ""
+  login_url: "/login"
+  auth_indicator: ""    # CSS selector present only when logged in
+
+crawl:
+  max_depth: 10
+  max_nodes: 500
+  respect_robots: true
+  follow_external: false
+  url_exclude_patterns: []
+  request_delay_ms: 100
+
+capture:
+  concurrency: 4
+  timeout_ms: 30000
+  screenshot: true
+  viewport_width: 1280
+  viewport_height: 720
+
+output_dir: ./webprobe-runs
