@@ -1,0 +1,405 @@
+{
+  "component_id": "src_webprobe_auth",
+  "name": "WebProbe Authentication Manager",
+  "description": "Auth context management: cookie/bearer/header injection and auth detection. Manages authentication injection for both aiohttp sessions (Phase 1 crawling) and Playwright browser contexts (Phase 2 capture), with auth redirect detection and auth indicator validation.",
+  "version": 1,
+  "types": [
+    {
+      "name": "AuthManager",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "config",
+          "type_ref": "AuthConfig",
+          "required": true,
+          "default": "",
+          "description": "Authentication configuration object",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "Manages authentication injection for both aiohttp and Playwright. Supports cookie, bearer token, and custom header auth methods.",
+      "owner_component": ""
+    }
+  ],
+  "functions": [
+    {
+      "name": "__init__",
+      "description": "Initialize AuthManager with authentication configuration.",
+      "inputs": [
+        {
+          "name": "self",
+          "type_ref": "AuthManager",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "config",
+          "type_ref": "AuthConfig",
+          "required": true,
+          "default": "",
+          "description": "Authentication configuration containing method (none/cookie/bearer/header) and associated credentials",
+          "validators": []
+        }
+      ],
+      "output_type": "None",
+      "error_cases": [],
+      "preconditions": [],
+      "postconditions": [
+        "self.config is set to the provided config object"
+      ],
+      "idempotent": false,
+      "is_async": false,
+      "side_effects": [
+        "Stores config reference in instance state"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "mutates_state",
+          "target": "self.config",
+          "description": "Assigns config to instance attribute"
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "has_auth",
+      "description": "Property that returns whether authentication is configured. Returns True if method is not 'none'.",
+      "inputs": [
+        {
+          "name": "self",
+          "type_ref": "AuthManager",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        }
+      ],
+      "output_type": "bool",
+      "error_cases": [],
+      "preconditions": [
+        "self.config.method is set"
+      ],
+      "postconditions": [
+        "Returns True if config.method != 'none', False otherwise"
+      ],
+      "idempotent": false,
+      "is_async": false,
+      "side_effects": [],
+      "structured_side_effects": [
+        {
+          "kind": "none",
+          "target": "",
+          "description": ""
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "apply_to_session",
+      "description": "Inject auth into an aiohttp session for Phase 1 crawling. Mutates session by adding cookies or headers based on configured auth method.",
+      "inputs": [
+        {
+          "name": "self",
+          "type_ref": "AuthManager",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "session",
+          "type_ref": "aiohttp.ClientSession",
+          "required": true,
+          "default": "",
+          "description": "aiohttp session to inject authentication into",
+          "validators": []
+        }
+      ],
+      "output_type": "None",
+      "error_cases": [
+        {
+          "name": "AttributeError",
+          "condition": "If config attributes (cookie_name, bearer_token, etc.) are missing for the specified method",
+          "error_type": "AttributeError",
+          "error_data": {}
+        }
+      ],
+      "preconditions": [
+        "session is a valid aiohttp.ClientSession instance",
+        "If method='cookie': config.cookie_name and config.cookie_value are set",
+        "If method='bearer': config.bearer_token is set",
+        "If method='header': config.header_name and config.header_value are set"
+      ],
+      "postconditions": [
+        "If method='cookie': session.cookie_jar contains the specified cookie",
+        "If method='bearer': session.headers contains Authorization header with Bearer token",
+        "If method='header': session.headers contains custom header with specified value",
+        "If method='none': session is unmodified"
+      ],
+      "idempotent": false,
+      "is_async": false,
+      "side_effects": [
+        "Mutates session.cookie_jar if method is 'cookie'",
+        "Mutates session.headers if method is 'bearer' or 'header'"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "mutates_state",
+          "target": "session.cookie_jar or session.headers",
+          "description": "Injects authentication credentials into aiohttp session"
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "apply_to_context",
+      "description": "Inject auth into a Playwright browser context for Phase 2 capture. Adds cookies or sets extra HTTP headers based on configured auth method.",
+      "inputs": [
+        {
+          "name": "self",
+          "type_ref": "AuthManager",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "context",
+          "type_ref": "BrowserContext",
+          "required": true,
+          "default": "",
+          "description": "Playwright browser context to inject authentication into",
+          "validators": []
+        },
+        {
+          "name": "base_url",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Base URL for determining cookie domain",
+          "validators": []
+        }
+      ],
+      "output_type": "None",
+      "error_cases": [
+        {
+          "name": "AttributeError",
+          "condition": "If config attributes are missing for the specified method",
+          "error_type": "AttributeError",
+          "error_data": {}
+        },
+        {
+          "name": "ValueError",
+          "condition": "If base_url cannot be parsed by urlparse",
+          "error_type": "ValueError",
+          "error_data": {}
+        }
+      ],
+      "preconditions": [
+        "context is a valid Playwright BrowserContext instance",
+        "base_url is a valid URL string",
+        "If method='cookie': config.cookie_name and config.cookie_value are set",
+        "If method='bearer': config.bearer_token is set",
+        "If method='header': config.header_name and config.header_value are set"
+      ],
+      "postconditions": [
+        "If method='cookie': context has cookie added with parsed domain from base_url, path='/'",
+        "If method='bearer': context extra HTTP headers include Authorization with Bearer token",
+        "If method='header': context extra HTTP headers include custom header",
+        "If method='none': context is unmodified"
+      ],
+      "idempotent": false,
+      "is_async": true,
+      "side_effects": [
+        "Awaits context.add_cookies() if method is 'cookie'",
+        "Awaits context.set_extra_http_headers() if method is 'bearer' or 'header'"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "mutates_state",
+          "target": "context cookies or extra HTTP headers",
+          "description": "Injects authentication credentials into Playwright browser context"
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "is_auth_redirect",
+      "description": "Detect if a response redirected to the login page by comparing original and final URL paths against configured login_url.",
+      "inputs": [
+        {
+          "name": "self",
+          "type_ref": "AuthManager",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "original_url",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Original URL before redirect",
+          "validators": []
+        },
+        {
+          "name": "final_url",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Final URL after redirect",
+          "validators": []
+        }
+      ],
+      "output_type": "bool",
+      "error_cases": [
+        {
+          "name": "ValueError",
+          "condition": "If original_url or final_url cannot be parsed by urlparse",
+          "error_type": "ValueError",
+          "error_data": {}
+        }
+      ],
+      "preconditions": [
+        "original_url and final_url are valid URL strings"
+      ],
+      "postconditions": [
+        "Returns False if config.login_url is not set",
+        "Returns True if final_url path matches login_url path (trailing slashes stripped) AND final path differs from original path",
+        "Returns False otherwise"
+      ],
+      "idempotent": false,
+      "is_async": false,
+      "side_effects": [],
+      "structured_side_effects": [
+        {
+          "kind": "none",
+          "target": "",
+          "description": ""
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "check_auth_indicator",
+      "description": "Check if the auth_indicator selector is present on the page. Returns True if the selector is found, False otherwise or on any exception.",
+      "inputs": [
+        {
+          "name": "self",
+          "type_ref": "AuthManager",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "page",
+          "type_ref": "Page",
+          "required": true,
+          "default": "",
+          "description": "Playwright Page object to query",
+          "validators": []
+        }
+      ],
+      "output_type": "bool",
+      "error_cases": [
+        {
+          "name": "Exception",
+          "condition": "Any exception during page.query_selector() is caught and returns False",
+          "error_type": "Exception",
+          "error_data": {}
+        }
+      ],
+      "preconditions": [
+        "page is a valid Playwright Page instance"
+      ],
+      "postconditions": [
+        "Returns False if config.auth_indicator is not set",
+        "Returns True if element matching auth_indicator selector is found",
+        "Returns False if element is not found or any exception occurs"
+      ],
+      "idempotent": false,
+      "is_async": true,
+      "side_effects": [
+        "Awaits page.query_selector() which may perform DOM query"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "network_call",
+          "target": "page DOM",
+          "description": "Queries page for CSS selector"
+        }
+      ],
+      "performance_budget": null
+    }
+  ],
+  "dependencies": [
+    "urllib.parse",
+    "aiohttp",
+    "playwright.async_api",
+    "webprobe.config"
+  ],
+  "dependency_contracts": {
+    "webprobe.config": [
+      "AuthConfig"
+    ],
+    "aiohttp": [
+      "ClientSession"
+    ],
+    "playwright.async_api": [
+      "BrowserContext",
+      "Page"
+    ],
+    "urllib.parse": [
+      "urlparse"
+    ]
+  },
+  "invariants": [
+    "AuthManager always maintains a reference to its AuthConfig",
+    "Auth method must be one of: 'none', 'cookie', 'bearer', 'header'",
+    "Cookie injection sets path='/' for Playwright contexts",
+    "Bearer token is always prefixed with 'Bearer ' in Authorization header",
+    "All exceptions in check_auth_indicator are caught and return False",
+    "URL path comparison for auth redirect uses rstrip('/') for normalization"
+  ],
+  "requires": [],
+  "processing_register": "",
+  "data_access": {
+    "reads": [],
+    "writes": [],
+    "rationale": "Module manages authentication state and modifies session/context objects but does not directly read/write persistent data stores",
+    "side_effects": [
+      {
+        "type": "mutates_state",
+        "classification": "session_modification",
+        "fields": [
+          "session.cookie_jar",
+          "session.headers",
+          "context.cookies",
+          "context.extra_http_headers"
+        ],
+        "rationale": "Injects authentication credentials into aiohttp sessions and Playwright browser contexts for authenticated crawling"
+      },
+      {
+        "type": "network_call",
+        "classification": "dom_query",
+        "fields": [
+          "page.query_selector"
+        ],
+        "rationale": "Queries page DOM to check for authentication indicator element presence"
+      }
+    ]
+  },
+  "authority": {
+    "domains": [
+      "authentication_management"
+    ],
+    "rationale": "AuthManager is the authoritative component for managing authentication credentials and detecting auth redirects in webprobe. It owns the logic for injecting cookies, bearer tokens, and custom headers into both aiohttp and Playwright contexts."
+  }
+}

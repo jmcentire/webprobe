@@ -1,0 +1,642 @@
+{
+  "component_id": "src_webprobe_explorer",
+  "name": "Webprobe LLM-Driven Exploration",
+  "description": "Phase 5 of the webprobe security auditor: concurrent LLM agents autonomously explore UI features, interact with web pages, and discover security issues through visual analysis, accessibility checks, and intelligent navigation.",
+  "version": 1,
+  "types": [
+    {
+      "name": "ExploreConfig",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "provider",
+          "type_ref": "str",
+          "required": false,
+          "default": "anthropic",
+          "description": "LLM provider name (e.g., anthropic, openai, gemini)",
+          "validators": []
+        },
+        {
+          "name": "model",
+          "type_ref": "str | None",
+          "required": false,
+          "default": "None",
+          "description": "Specific model to use, or None for provider default",
+          "validators": []
+        },
+        {
+          "name": "concurrency",
+          "type_ref": "int",
+          "required": false,
+          "default": "5",
+          "description": "Number of concurrent exploration agents",
+          "validators": []
+        },
+        {
+          "name": "concurrency_warn_threshold",
+          "type_ref": "int",
+          "required": false,
+          "default": "20",
+          "description": "Threshold to warn about high concurrency",
+          "validators": []
+        },
+        {
+          "name": "max_actions_per_agent",
+          "type_ref": "int",
+          "required": false,
+          "default": "20",
+          "description": "Maximum actions each agent can perform",
+          "validators": []
+        },
+        {
+          "name": "visual_analysis",
+          "type_ref": "bool",
+          "required": false,
+          "default": "True",
+          "description": "Enable LLM-based visual screenshot analysis",
+          "validators": []
+        },
+        {
+          "name": "contrast_check",
+          "type_ref": "bool",
+          "required": false,
+          "default": "True",
+          "description": "Enable accessibility contrast checking",
+          "validators": []
+        },
+        {
+          "name": "hidden_elements",
+          "type_ref": "bool",
+          "required": false,
+          "default": "True",
+          "description": "Enable hidden elements detection",
+          "validators": []
+        },
+        {
+          "name": "mask_path",
+          "type_ref": "str | None",
+          "required": false,
+          "default": "None",
+          "description": "Path to mask file for filtering findings",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "Configuration for the LLM exploration phase controlling concurrency, analysis types, and agent behavior",
+      "owner_component": ""
+    }
+  ],
+  "functions": [
+    {
+      "name": "_extract_interactive_elements",
+      "description": "Extracts a formatted summary of interactive elements from a browser page using JavaScript evaluation. Finds up to 40 visible interactive elements (links, buttons, inputs, roles, etc.) and returns their attributes as formatted text.",
+      "inputs": [
+        {
+          "name": "page",
+          "type_ref": "object",
+          "required": true,
+          "default": "",
+          "description": "Playwright Page object with evaluate() method",
+          "validators": []
+        }
+      ],
+      "output_type": "str",
+      "error_cases": [
+        {
+          "name": "evaluation_error",
+          "condition": "Exception during page.evaluate()",
+          "error_type": "Exception",
+          "error_data": {
+            "return_value": "(error extracting elements)"
+          }
+        }
+      ],
+      "preconditions": [
+        "page must be a valid Playwright Page object",
+        "page must have an evaluate() method"
+      ],
+      "postconditions": [
+        "Returns newline-separated list of interactive element descriptions",
+        "Returns '(no interactive elements found)' if list is empty",
+        "Returns '(error extracting elements)' on exception",
+        "Maximum 40 elements returned",
+        "Only visible elements included (display != 'none', visibility != 'hidden')"
+      ],
+      "idempotent": false,
+      "is_async": true,
+      "side_effects": [
+        "Executes JavaScript in the browser page context"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "mutates_state",
+          "target": "browser page DOM",
+          "description": "Evaluates JavaScript to query DOM elements"
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "_run_agent",
+      "description": "Runs a single autonomous exploration agent on a node. Performs visual analysis, accessibility checks, and LLM-driven interactive exploration with up to max_actions_per_agent iterations. Returns all security findings discovered.",
+      "inputs": [
+        {
+          "name": "agent_id",
+          "type_ref": "int",
+          "required": true,
+          "default": "",
+          "description": "Unique identifier for this agent instance",
+          "validators": []
+        },
+        {
+          "name": "node",
+          "type_ref": "Node",
+          "required": true,
+          "default": "",
+          "description": "SiteGraph node to explore",
+          "validators": []
+        },
+        {
+          "name": "llm",
+          "type_ref": "LLMProvider",
+          "required": true,
+          "default": "",
+          "description": "LLM provider for agent decisions and visual analysis",
+          "validators": []
+        },
+        {
+          "name": "pool",
+          "type_ref": "BrowserPool",
+          "required": true,
+          "default": "",
+          "description": "Browser pool for creating contexts",
+          "validators": []
+        },
+        {
+          "name": "config",
+          "type_ref": "ExploreConfig",
+          "required": true,
+          "default": "",
+          "description": "Configuration controlling agent behavior",
+          "validators": []
+        },
+        {
+          "name": "base_url",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Root URL of the site being explored",
+          "validators": []
+        },
+        {
+          "name": "run_dir",
+          "type_ref": "Path",
+          "required": true,
+          "default": "",
+          "description": "Directory containing screenshots and artifacts",
+          "validators": []
+        },
+        {
+          "name": "semaphore",
+          "type_ref": "asyncio.Semaphore",
+          "required": true,
+          "default": "",
+          "description": "Concurrency control semaphore",
+          "validators": []
+        }
+      ],
+      "output_type": "list[SecurityFinding]",
+      "error_cases": [
+        {
+          "name": "navigation_failure",
+          "condition": "Initial page.goto() fails",
+          "error_type": "Exception",
+          "error_data": {
+            "return_value": "empty findings list"
+          }
+        },
+        {
+          "name": "page_state_error",
+          "condition": "Exception during page.url, page.title(), or page.evaluate()",
+          "error_type": "Exception",
+          "error_data": {
+            "behavior": "breaks exploration loop"
+          }
+        },
+        {
+          "name": "llm_error",
+          "condition": "Exception during llm.complete() or transmogrify_prompt()",
+          "error_type": "Exception",
+          "error_data": {
+            "behavior": "breaks exploration loop"
+          }
+        },
+        {
+          "name": "action_parse_error",
+          "condition": "JSON parsing fails or response doesn't contain valid JSON",
+          "error_type": "ValueError | json.JSONDecodeError",
+          "error_data": {
+            "behavior": "breaks exploration loop"
+          }
+        },
+        {
+          "name": "action_execution_error",
+          "condition": "Exception during click/fill/navigate/scroll",
+          "error_type": "Exception",
+          "error_data": {
+            "behavior": "creates low severity SecurityFinding, continues loop"
+          }
+        }
+      ],
+      "preconditions": [
+        "pool must be a valid BrowserPool",
+        "node.state.url must be a valid URL",
+        "run_dir must exist if visual_analysis is enabled",
+        "semaphore must be a valid asyncio.Semaphore"
+      ],
+      "postconditions": [
+        "Returns list of SecurityFinding objects (may be empty)",
+        "Browser context is closed before return",
+        "Semaphore is released (via async context manager)"
+      ],
+      "idempotent": false,
+      "is_async": true,
+      "side_effects": [
+        "Creates and closes browser context",
+        "Navigates browser pages",
+        "Performs clicks, fills, scrolls on web pages",
+        "Calls LLM APIs for decisions and visual analysis",
+        "Reads screenshot files from disk if visual_analysis enabled"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "network_call",
+          "target": "web pages and LLM APIs",
+          "description": "Navigates to URLs and makes LLM API calls"
+        },
+        {
+          "kind": "reads_file",
+          "target": "screenshot files",
+          "description": "Reads screenshots for visual analysis"
+        },
+        {
+          "kind": "mutates_state",
+          "target": "web pages via browser automation",
+          "description": "Clicks, fills forms, scrolls"
+        }
+      ],
+      "performance_budget": {
+        "p95_latency_ms": null,
+        "max_memory_mb": null,
+        "complexity": "O(n) where n = max_actions_per_agent"
+      }
+    },
+    {
+      "name": "on_console",
+      "description": "Event handler that captures console messages from the browser page and appends them to console_log list with type prefix.",
+      "inputs": [
+        {
+          "name": "msg",
+          "type_ref": "object",
+          "required": true,
+          "default": "",
+          "description": "Console message object with type and text attributes",
+          "validators": []
+        }
+      ],
+      "output_type": "None",
+      "error_cases": [],
+      "preconditions": [
+        "msg must have .type and .text attributes"
+      ],
+      "postconditions": [
+        "Appends formatted string to console_log list in enclosing scope"
+      ],
+      "idempotent": false,
+      "is_async": false,
+      "side_effects": [
+        "Mutates console_log list in parent scope"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "mutates_state",
+          "target": "console_log list",
+          "description": "Appends console message to list"
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "explore_site",
+      "description": "Phase 5 entry point: orchestrates concurrent LLM-driven exploration of all nodes in the site graph. Creates one agent per node, collects findings, applies masking, and tracks costs.",
+      "inputs": [
+        {
+          "name": "config",
+          "type_ref": "WebprobeConfig",
+          "required": true,
+          "default": "",
+          "description": "Global webprobe configuration",
+          "validators": []
+        },
+        {
+          "name": "explore_config",
+          "type_ref": "ExploreConfig",
+          "required": true,
+          "default": "",
+          "description": "Exploration-specific configuration",
+          "validators": []
+        },
+        {
+          "name": "graph",
+          "type_ref": "SiteGraph",
+          "required": true,
+          "default": "",
+          "description": "Site graph containing nodes to explore",
+          "validators": []
+        },
+        {
+          "name": "run_dir",
+          "type_ref": "Path",
+          "required": true,
+          "default": "",
+          "description": "Directory containing run artifacts",
+          "validators": []
+        }
+      ],
+      "output_type": "tuple[list[SecurityFinding], PhaseStatus, CostTracker]",
+      "error_cases": [
+        {
+          "name": "agent_exception",
+          "condition": "Individual agent task raises exception",
+          "error_type": "Exception",
+          "error_data": {
+            "behavior": "exception captured by asyncio.gather(return_exceptions=True), findings from failed agent skipped"
+          }
+        }
+      ],
+      "preconditions": [
+        "config.capture must be valid for BrowserPool",
+        "graph.nodes must be a dict of Node objects",
+        "run_dir must exist"
+      ],
+      "postconditions": [
+        "Returns tuple of (masked findings, phase status, cost tracker)",
+        "phase.status is 'completed'",
+        "phase.completed_at and phase.duration_ms are set",
+        "All browser contexts are closed",
+        "Findings have mask applied (suppressed findings filtered out)"
+      ],
+      "idempotent": false,
+      "is_async": true,
+      "side_effects": [
+        "Creates and manages browser pool",
+        "Spawns concurrent agent tasks",
+        "Creates LLM provider instance",
+        "Loads mask configuration from file if mask_path specified",
+        "Tracks LLM API costs"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "network_call",
+          "target": "web pages and LLM APIs",
+          "description": "All agents make web and API requests"
+        },
+        {
+          "kind": "reads_file",
+          "target": "mask file and screenshots",
+          "description": "Loads mask config and screenshot files"
+        }
+      ],
+      "performance_budget": {
+        "p95_latency_ms": null,
+        "max_memory_mb": null,
+        "complexity": "O(n * m) where n = number of nodes, m = max_actions_per_agent"
+      }
+    },
+    {
+      "name": "__init__",
+      "description": "Initializes ExploreConfig with exploration phase settings including LLM provider, concurrency, analysis toggles, and agent behavior limits.",
+      "inputs": [
+        {
+          "name": "self",
+          "type_ref": "ExploreConfig",
+          "required": true,
+          "default": "",
+          "description": "Instance being initialized",
+          "validators": []
+        },
+        {
+          "name": "provider",
+          "type_ref": "str",
+          "required": false,
+          "default": "anthropic",
+          "description": "LLM provider name",
+          "validators": []
+        },
+        {
+          "name": "model",
+          "type_ref": "str | None",
+          "required": false,
+          "default": "None",
+          "description": "Specific model name or None",
+          "validators": []
+        },
+        {
+          "name": "concurrency",
+          "type_ref": "int",
+          "required": false,
+          "default": "5",
+          "description": "Concurrent agent count",
+          "validators": []
+        },
+        {
+          "name": "concurrency_warn_threshold",
+          "type_ref": "int",
+          "required": false,
+          "default": "20",
+          "description": "Warn threshold for concurrency",
+          "validators": []
+        },
+        {
+          "name": "max_actions_per_agent",
+          "type_ref": "int",
+          "required": false,
+          "default": "20",
+          "description": "Max actions per agent",
+          "validators": []
+        },
+        {
+          "name": "visual_analysis",
+          "type_ref": "bool",
+          "required": false,
+          "default": "True",
+          "description": "Enable visual analysis",
+          "validators": []
+        },
+        {
+          "name": "contrast_check",
+          "type_ref": "bool",
+          "required": false,
+          "default": "True",
+          "description": "Enable contrast checking",
+          "validators": []
+        },
+        {
+          "name": "hidden_elements",
+          "type_ref": "bool",
+          "required": false,
+          "default": "True",
+          "description": "Enable hidden element detection",
+          "validators": []
+        },
+        {
+          "name": "mask_path",
+          "type_ref": "str | None",
+          "required": false,
+          "default": "None",
+          "description": "Path to mask file",
+          "validators": []
+        }
+      ],
+      "output_type": "None",
+      "error_cases": [],
+      "preconditions": [],
+      "postconditions": [
+        "All instance attributes are set to provided or default values"
+      ],
+      "idempotent": false,
+      "is_async": false,
+      "side_effects": [
+        "Initializes instance attributes"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "mutates_state",
+          "target": "self instance",
+          "description": "Sets all configuration attributes"
+        }
+      ],
+      "performance_budget": null
+    }
+  ],
+  "dependencies": [
+    "asyncio",
+    "json",
+    "time",
+    "datetime",
+    "pathlib",
+    "webprobe.browser",
+    "webprobe.config",
+    "webprobe.llm_provider",
+    "webprobe.mask",
+    "webprobe.models",
+    "webprobe.visual"
+  ],
+  "dependency_contracts": {
+    "webprobe.browser": [
+      "BrowserPool"
+    ],
+    "webprobe.config": [
+      "WebprobeConfig"
+    ],
+    "webprobe.llm_provider": [
+      "CostTracker",
+      "LLMProvider",
+      "create_provider",
+      "transmogrify_prompt"
+    ],
+    "webprobe.mask": [
+      "MaskConfig",
+      "apply_mask",
+      "load_mask"
+    ],
+    "webprobe.models": [
+      "AuthContext",
+      "Node",
+      "NodeCapture",
+      "PhaseStatus",
+      "SecurityCategory",
+      "SecurityFinding",
+      "SecuritySeverity",
+      "SiteGraph"
+    ],
+    "webprobe.visual": [
+      "analyze_screenshot",
+      "check_contrast_from_page",
+      "detect_hidden_elements"
+    ]
+  },
+  "invariants": [
+    "_AGENT_SYSTEM constant defines the agent's role and behavior rules",
+    "_AGENT_OBSERVE constant template for formatting agent observations",
+    "Agents use fake test data, never real personal information",
+    "Agents avoid destructive actions (delete/remove/cancel-account)",
+    "Maximum 40 interactive elements extracted per page",
+    "Text truncated to 2000 characters for LLM context",
+    "Href attributes truncated to 80 characters",
+    "Console log limited to last 10 messages per iteration",
+    "One screenshot analysis per node maximum",
+    "SecurityFinding severity for agent observations is medium",
+    "SecurityFinding severity for failed actions is low",
+    "SecurityFinding category defaults to information_disclosure",
+    "AuthContext defaults to anonymous for agent-generated findings",
+    "Navigation timeout is 30000ms for initial load, 15000ms for agent navigation",
+    "Click/fill timeout is 5000ms",
+    "Networkidle wait state used after clicks",
+    "Scroll delta is 500 pixels",
+    "Phase name is 'explore'"
+  ],
+  "requires": [],
+  "processing_register": "",
+  "data_access": {
+    "reads": [
+      "SiteGraph nodes",
+      "Screenshot files",
+      "Mask configuration files",
+      "Web page DOM and console"
+    ],
+    "writes": [
+      "SecurityFinding objects",
+      "PhaseStatus objects"
+    ],
+    "rationale": "Exploration phase reads site graph and artifacts, interacts with web pages via browser automation and LLM APIs, and produces security findings",
+    "side_effects": [
+      {
+        "type": "network_call",
+        "classification": "external",
+        "fields": [
+          "LLM API",
+          "web pages"
+        ],
+        "rationale": "Makes HTTP requests to LLM providers and navigates to web pages"
+      },
+      {
+        "type": "browser_automation",
+        "classification": "external",
+        "fields": [
+          "page interactions"
+        ],
+        "rationale": "Clicks, fills forms, scrolls, and navigates browser pages"
+      },
+      {
+        "type": "file_read",
+        "classification": "local",
+        "fields": [
+          "screenshots",
+          "mask files"
+        ],
+        "rationale": "Reads screenshots for visual analysis and mask files for filtering"
+      }
+    ]
+  },
+  "authority": {
+    "domains": [
+      "exploration",
+      "llm_agents",
+      "security_findings"
+    ],
+    "rationale": "This module owns the LLM-driven exploration phase logic, agent behavior, and findings generation from exploration"
+  }
+}

@@ -1,0 +1,1521 @@
+{
+  "component_id": "src_webprobe_models",
+  "name": "Webprobe Data Models",
+  "description": "Stable data models for webprobe site state-graph auditing. Defines Pydantic schemas for site graph nodes/edges, captures, security findings, analysis results, and run tracking. Schema version 1.1 pinned for cross-run aggregation and diffing.",
+  "version": 1,
+  "types": [
+    {
+      "name": "AuthContext",
+      "kind": "enum",
+      "fields": [],
+      "item_type": "",
+      "variants": [
+        "anonymous",
+        "authenticated"
+      ],
+      "inner_types": [],
+      "description": "Authentication context for page visits",
+      "owner_component": ""
+    },
+    {
+      "name": "DiscoveryMethod",
+      "kind": "enum",
+      "fields": [],
+      "item_type": "",
+      "variants": [
+        "sitemap",
+        "robots",
+        "crawl",
+        "framework",
+        "manual"
+      ],
+      "inner_types": [],
+      "description": "Method by which a node/edge was discovered",
+      "owner_component": ""
+    },
+    {
+      "name": "ResourceType",
+      "kind": "enum",
+      "fields": [],
+      "item_type": "",
+      "variants": [
+        "document",
+        "script",
+        "stylesheet",
+        "image",
+        "font",
+        "media",
+        "xhr",
+        "fetch",
+        "websocket",
+        "other"
+      ],
+      "inner_types": [],
+      "description": "Browser resource type classification",
+      "owner_component": ""
+    },
+    {
+      "name": "ConsoleMessageLevel",
+      "kind": "enum",
+      "fields": [],
+      "item_type": "",
+      "variants": [
+        "log",
+        "warning",
+        "error",
+        "info",
+        "debug"
+      ],
+      "inner_types": [],
+      "description": "Browser console message severity level",
+      "owner_component": ""
+    },
+    {
+      "name": "SecuritySeverity",
+      "kind": "enum",
+      "fields": [],
+      "item_type": "",
+      "variants": [
+        "critical",
+        "high",
+        "medium",
+        "low",
+        "info"
+      ],
+      "inner_types": [],
+      "description": "Severity rating for security findings",
+      "owner_component": ""
+    },
+    {
+      "name": "SecurityCategory",
+      "kind": "enum",
+      "fields": [],
+      "item_type": "",
+      "variants": [
+        "headers",
+        "cookies",
+        "xss",
+        "mixed_content",
+        "cors",
+        "information_disclosure",
+        "forms",
+        "tls"
+      ],
+      "inner_types": [],
+      "description": "Category of security finding",
+      "owner_component": ""
+    },
+    {
+      "name": "TimingData",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "started_at",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "ISO 8601 timestamp",
+          "validators": []
+        },
+        {
+          "name": "duration_ms",
+          "type_ref": "float",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "ttfb_ms",
+          "type_ref": "float | None",
+          "required": false,
+          "default": "None",
+          "description": "",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "Timing for a single operation. All values in milliseconds.",
+      "owner_component": ""
+    },
+    {
+      "name": "Resource",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "url",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "resource_type",
+          "type_ref": "ResourceType",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "status_code",
+          "type_ref": "int | None",
+          "required": false,
+          "default": "None",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "size_bytes",
+          "type_ref": "int | None",
+          "required": false,
+          "default": "None",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "timing",
+          "type_ref": "TimingData | None",
+          "required": false,
+          "default": "None",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "mime_type",
+          "type_ref": "str",
+          "required": false,
+          "default": "\"\"",
+          "description": "",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "A single subresource loaded during a page visit",
+      "owner_component": ""
+    },
+    {
+      "name": "ConsoleMessage",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "level",
+          "type_ref": "ConsoleMessageLevel",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "text",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "url",
+          "type_ref": "str",
+          "required": false,
+          "default": "\"\"",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "line",
+          "type_ref": "int | None",
+          "required": false,
+          "default": "None",
+          "description": "",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "A browser console message captured during page visit",
+      "owner_component": ""
+    },
+    {
+      "name": "NodeState",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "url",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "State identity for a node. URL-based, extensible for DOM fingerprinting.",
+      "owner_component": ""
+    },
+    {
+      "name": "CookieInfo",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "name",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "domain",
+          "type_ref": "str",
+          "required": false,
+          "default": "\"\"",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "path",
+          "type_ref": "str",
+          "required": false,
+          "default": "\"/\"",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "secure",
+          "type_ref": "bool",
+          "required": false,
+          "default": "False",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "http_only",
+          "type_ref": "bool",
+          "required": false,
+          "default": "False",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "same_site",
+          "type_ref": "str",
+          "required": false,
+          "default": "\"\"",
+          "description": "Strict, Lax, None, or empty string",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "Security-relevant cookie attributes captured during visit",
+      "owner_component": ""
+    },
+    {
+      "name": "ResponseHeaders",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "raw",
+          "type_ref": "dict[str, str]",
+          "required": false,
+          "default": "dict()",
+          "description": "",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "Security-relevant response headers from the document response",
+      "owner_component": ""
+    },
+    {
+      "name": "FormInfo",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "action",
+          "type_ref": "str",
+          "required": false,
+          "default": "\"\"",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "method",
+          "type_ref": "str",
+          "required": false,
+          "default": "\"GET\"",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "has_csrf_token",
+          "type_ref": "bool",
+          "required": false,
+          "default": "False",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "has_password_field",
+          "type_ref": "bool",
+          "required": false,
+          "default": "False",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "autocomplete_off",
+          "type_ref": "bool",
+          "required": false,
+          "default": "False",
+          "description": "",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "A form discovered on the page",
+      "owner_component": ""
+    },
+    {
+      "name": "SecurityFinding",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "category",
+          "type_ref": "SecurityCategory",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "severity",
+          "type_ref": "SecuritySeverity",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "title",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "detail",
+          "type_ref": "str",
+          "required": false,
+          "default": "\"\"",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "evidence",
+          "type_ref": "str",
+          "required": false,
+          "default": "\"\"",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "url",
+          "type_ref": "str",
+          "required": false,
+          "default": "\"\"",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "auth_context",
+          "type_ref": "AuthContext",
+          "required": false,
+          "default": "AuthContext.anonymous",
+          "description": "",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "A single security finding for a node",
+      "owner_component": ""
+    },
+    {
+      "name": "NodeCapture",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "auth_context",
+          "type_ref": "AuthContext",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "http_status",
+          "type_ref": "int | None",
+          "required": false,
+          "default": "None",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "timing",
+          "type_ref": "TimingData | None",
+          "required": false,
+          "default": "None",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "dom_content_loaded_ms",
+          "type_ref": "float | None",
+          "required": false,
+          "default": "None",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "load_event_ms",
+          "type_ref": "float | None",
+          "required": false,
+          "default": "None",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "page_title",
+          "type_ref": "str",
+          "required": false,
+          "default": "\"\"",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "page_text",
+          "type_ref": "str",
+          "required": false,
+          "default": "\"\"",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "resources",
+          "type_ref": "list[Resource]",
+          "required": false,
+          "default": "[]",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "console_messages",
+          "type_ref": "list[ConsoleMessage]",
+          "required": false,
+          "default": "[]",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "outgoing_links",
+          "type_ref": "list[str]",
+          "required": false,
+          "default": "[]",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "screenshot_path",
+          "type_ref": "str",
+          "required": false,
+          "default": "\"\"",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "response_headers",
+          "type_ref": "ResponseHeaders",
+          "required": false,
+          "default": "ResponseHeaders()",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "cookies",
+          "type_ref": "list[CookieInfo]",
+          "required": false,
+          "default": "[]",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "forms",
+          "type_ref": "list[FormInfo]",
+          "required": false,
+          "default": "[]",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "security_findings",
+          "type_ref": "list[SecurityFinding]",
+          "required": false,
+          "default": "[]",
+          "description": "",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "Capture data for a single node visit in a single auth context",
+      "owner_component": ""
+    },
+    {
+      "name": "Node",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "id",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "state",
+          "type_ref": "NodeState",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "discovered_via",
+          "type_ref": "DiscoveryMethod",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "requires_auth",
+          "type_ref": "bool | None",
+          "required": false,
+          "default": "None",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "auth_contexts_available",
+          "type_ref": "list[AuthContext]",
+          "required": false,
+          "default": "[]",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "captures",
+          "type_ref": "list[NodeCapture]",
+          "required": false,
+          "default": "[]",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "depth",
+          "type_ref": "int",
+          "required": false,
+          "default": "0",
+          "description": "",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "A node in the site state graph",
+      "owner_component": ""
+    },
+    {
+      "name": "Edge",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "source",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "target",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "link_text",
+          "type_ref": "str",
+          "required": false,
+          "default": "\"\"",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "discovered_via",
+          "type_ref": "DiscoveryMethod",
+          "required": false,
+          "default": "DiscoveryMethod.crawl",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "auth_context",
+          "type_ref": "AuthContext",
+          "required": false,
+          "default": "AuthContext.anonymous",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "verified",
+          "type_ref": "bool",
+          "required": false,
+          "default": "False",
+          "description": "",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "A directed edge (link/action) between two nodes",
+      "owner_component": ""
+    },
+    {
+      "name": "SiteGraph",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "nodes",
+          "type_ref": "dict[str, Node]",
+          "required": false,
+          "default": "dict()",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "edges",
+          "type_ref": "list[Edge]",
+          "required": false,
+          "default": "[]",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "root_url",
+          "type_ref": "str",
+          "required": false,
+          "default": "\"\"",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "seed_urls",
+          "type_ref": "list[str]",
+          "required": false,
+          "default": "[]",
+          "description": "",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "The complete site graph discovered during mapping",
+      "owner_component": ""
+    },
+    {
+      "name": "BrokenLink",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "source",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "target",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "status_code",
+          "type_ref": "int | None",
+          "required": false,
+          "default": "None",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "error",
+          "type_ref": "str",
+          "required": false,
+          "default": "\"\"",
+          "description": "",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "A broken link detected during analysis",
+      "owner_component": ""
+    },
+    {
+      "name": "AuthBoundaryViolation",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "url",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "expected_auth",
+          "type_ref": "bool",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "actual_accessible_anonymous",
+          "type_ref": "bool",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "evidence",
+          "type_ref": "str",
+          "required": false,
+          "default": "\"\"",
+          "description": "",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "A page that should require auth but is accessible without it",
+      "owner_component": ""
+    },
+    {
+      "name": "TimingOutlier",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "url",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "auth_context",
+          "type_ref": "AuthContext",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "metric",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "value_ms",
+          "type_ref": "float",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "mean_ms",
+          "type_ref": "float",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "stddev_ms",
+          "type_ref": "float",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "z_score",
+          "type_ref": "float",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "A timing metric that is a statistical outlier",
+      "owner_component": ""
+    },
+    {
+      "name": "GraphMetrics",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "total_nodes",
+          "type_ref": "int",
+          "required": false,
+          "default": "0",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "total_edges",
+          "type_ref": "int",
+          "required": false,
+          "default": "0",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "orphan_nodes",
+          "type_ref": "list[str]",
+          "required": false,
+          "default": "[]",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "dead_end_nodes",
+          "type_ref": "list[str]",
+          "required": false,
+          "default": "[]",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "unreachable_nodes",
+          "type_ref": "list[str]",
+          "required": false,
+          "default": "[]",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "strongly_connected_components",
+          "type_ref": "int",
+          "required": false,
+          "default": "0",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "cyclomatic_complexity",
+          "type_ref": "int",
+          "required": false,
+          "default": "0",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "max_depth",
+          "type_ref": "int",
+          "required": false,
+          "default": "0",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "edge_coverage",
+          "type_ref": "float",
+          "required": false,
+          "default": "0.0",
+          "description": "",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "Graph-level coverage and structure metrics",
+      "owner_component": ""
+    },
+    {
+      "name": "PrimePath",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "path",
+          "type_ref": "list[str]",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "length",
+          "type_ref": "int",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "contains_loop",
+          "type_ref": "bool",
+          "required": false,
+          "default": "False",
+          "description": "",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "A prime path through the graph (loop-bounded)",
+      "owner_component": ""
+    },
+    {
+      "name": "AnalysisResult",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "graph_metrics",
+          "type_ref": "GraphMetrics",
+          "required": false,
+          "default": "GraphMetrics()",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "broken_links",
+          "type_ref": "list[BrokenLink]",
+          "required": false,
+          "default": "[]",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "auth_violations",
+          "type_ref": "list[AuthBoundaryViolation]",
+          "required": false,
+          "default": "[]",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "timing_outliers",
+          "type_ref": "list[TimingOutlier]",
+          "required": false,
+          "default": "[]",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "prime_paths",
+          "type_ref": "list[PrimePath]",
+          "required": false,
+          "default": "[]",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "security_findings",
+          "type_ref": "list[SecurityFinding]",
+          "required": false,
+          "default": "[]",
+          "description": "",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "Results from Phase 3 graph analysis",
+      "owner_component": ""
+    },
+    {
+      "name": "PhaseStatus",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "phase",
+          "type_ref": "Literal['map', 'capture', 'analyze', 'report', 'explore']",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "status",
+          "type_ref": "Literal['pending', 'running', 'completed', 'failed']",
+          "required": false,
+          "default": "'pending'",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "started_at",
+          "type_ref": "str | None",
+          "required": false,
+          "default": "None",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "completed_at",
+          "type_ref": "str | None",
+          "required": false,
+          "default": "None",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "duration_ms",
+          "type_ref": "float | None",
+          "required": false,
+          "default": "None",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "error",
+          "type_ref": "str | None",
+          "required": false,
+          "default": "None",
+          "description": "",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "Status of a single phase execution",
+      "owner_component": ""
+    },
+    {
+      "name": "CostSummary",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "total_calls",
+          "type_ref": "int",
+          "required": false,
+          "default": "0",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "total_input_tokens",
+          "type_ref": "int",
+          "required": false,
+          "default": "0",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "total_output_tokens",
+          "type_ref": "int",
+          "required": false,
+          "default": "0",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "total_cost_usd",
+          "type_ref": "float",
+          "required": false,
+          "default": "0.0",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "by_provider",
+          "type_ref": "dict",
+          "required": false,
+          "default": "dict()",
+          "description": "",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "LLM cost tracking for the explore phase",
+      "owner_component": ""
+    },
+    {
+      "name": "Run",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "schema_version",
+          "type_ref": "str",
+          "required": false,
+          "default": "SCHEMA_VERSION",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "run_id",
+          "type_ref": "str",
+          "required": false,
+          "default": "_make_run_id()",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "url",
+          "type_ref": "str",
+          "required": false,
+          "default": "\"\"",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "started_at",
+          "type_ref": "str",
+          "required": false,
+          "default": "\"\"",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "completed_at",
+          "type_ref": "str | None",
+          "required": false,
+          "default": "None",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "config_snapshot",
+          "type_ref": "dict",
+          "required": false,
+          "default": "dict()",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "phases",
+          "type_ref": "list[PhaseStatus]",
+          "required": false,
+          "default": "[]",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "graph",
+          "type_ref": "SiteGraph",
+          "required": false,
+          "default": "SiteGraph()",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "analysis",
+          "type_ref": "AnalysisResult | None",
+          "required": false,
+          "default": "None",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "explore_cost",
+          "type_ref": "CostSummary | None",
+          "required": false,
+          "default": "None",
+          "description": "",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "A complete webprobe run. Top-level aggregation unit.",
+      "owner_component": ""
+    },
+    {
+      "name": "NodeDiff",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "url",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "change",
+          "type_ref": "Literal['added', 'removed', 'changed']",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "details",
+          "type_ref": "dict",
+          "required": false,
+          "default": "dict()",
+          "description": "",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "A change detected in a node between two runs",
+      "owner_component": ""
+    },
+    {
+      "name": "RunDiff",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "run_a_id",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "run_b_id",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "nodes_added",
+          "type_ref": "list[str]",
+          "required": false,
+          "default": "[]",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "nodes_removed",
+          "type_ref": "list[str]",
+          "required": false,
+          "default": "[]",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "edges_added",
+          "type_ref": "list[Edge]",
+          "required": false,
+          "default": "[]",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "edges_removed",
+          "type_ref": "list[Edge]",
+          "required": false,
+          "default": "[]",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "status_changes",
+          "type_ref": "list[NodeDiff]",
+          "required": false,
+          "default": "[]",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "timing_changes",
+          "type_ref": "list[NodeDiff]",
+          "required": false,
+          "default": "[]",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "new_broken_links",
+          "type_ref": "list[BrokenLink]",
+          "required": false,
+          "default": "[]",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "resolved_broken_links",
+          "type_ref": "list[BrokenLink]",
+          "required": false,
+          "default": "[]",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "new_auth_violations",
+          "type_ref": "list[AuthBoundaryViolation]",
+          "required": false,
+          "default": "[]",
+          "description": "",
+          "validators": []
+        },
+        {
+          "name": "resolved_auth_violations",
+          "type_ref": "list[AuthBoundaryViolation]",
+          "required": false,
+          "default": "[]",
+          "description": "",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "Comparison between two runs",
+      "owner_component": ""
+    }
+  ],
+  "functions": [
+    {
+      "name": "_make_run_id",
+      "description": "Generates a unique run identifier combining UTC timestamp and UUID hex suffix. Format: YYYYMMDDTHHmmss-<8-char-hex>",
+      "inputs": [],
+      "output_type": "str",
+      "error_cases": [],
+      "preconditions": [],
+      "postconditions": [
+        "Returns a string matching pattern 'YYYYMMDDTHHmmss-[a-f0-9]{8}'",
+        "Timestamp is in UTC timezone",
+        "UUID suffix is 8 characters from uuid4().hex"
+      ],
+      "idempotent": false,
+      "is_async": false,
+      "side_effects": [],
+      "structured_side_effects": [
+        {
+          "kind": "none",
+          "target": "",
+          "description": ""
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "identity_key",
+      "description": "Returns the identity key for a NodeState instance. Currently returns the URL directly, extensible for DOM fingerprinting.",
+      "inputs": [
+        {
+          "name": "self",
+          "type_ref": "NodeState",
+          "required": true,
+          "default": "",
+          "description": "The NodeState instance containing the URL",
+          "validators": []
+        }
+      ],
+      "output_type": "str",
+      "error_cases": [],
+      "preconditions": [
+        "self.url is set (required field in NodeState)"
+      ],
+      "postconditions": [
+        "Returns the exact value of self.url",
+        "Return value can be used to uniquely identify the node state"
+      ],
+      "idempotent": false,
+      "is_async": false,
+      "side_effects": [],
+      "structured_side_effects": [
+        {
+          "kind": "none",
+          "target": "",
+          "description": ""
+        }
+      ],
+      "performance_budget": null
+    }
+  ],
+  "dependencies": [
+    "datetime",
+    "enum",
+    "typing",
+    "uuid",
+    "pydantic"
+  ],
+  "dependency_contracts": {},
+  "invariants": [
+    "SCHEMA_VERSION = \"1.1\" - fixed schema version for cross-run compatibility",
+    "Run instances default to current SCHEMA_VERSION constant",
+    "NodeState.identity_key() always returns self.url (for now, extensible later)",
+    "_make_run_id() format is always 'YYYYMMDDTHHmmss-<8-hex-chars>'",
+    "All Pydantic models use default_factory for mutable defaults to avoid shared state"
+  ],
+  "requires": [],
+  "processing_register": "",
+  "data_access": {
+    "reads": [],
+    "writes": [],
+    "rationale": "",
+    "side_effects": []
+  },
+  "authority": {
+    "domains": [],
+    "rationale": null
+  }
+}

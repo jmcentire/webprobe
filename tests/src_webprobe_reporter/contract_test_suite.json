@@ -1,0 +1,377 @@
+{
+  "component_id": "src_webprobe_reporter",
+  "contract_version": 1,
+  "test_cases": [
+    {
+      "id": "test_generate_report_happy_path_both_formats",
+      "description": "Generate both JSON and HTML reports successfully with typical Run data",
+      "function": "generate_report",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "formats": "[\"json\", \"html\"]"
+      },
+      "input_description": "Valid Run instance, valid Path, formats=['json', 'html']",
+      "expected_output_description": "PhaseStatus with phase='report', status='completed', duration_ms>0, timestamps set",
+      "expected_error": "",
+      "assertions": [
+        "result.phase == 'report'",
+        "result.status == 'completed'",
+        "result.duration_ms > 0",
+        "result.started_at is not None",
+        "result.completed_at is not None",
+        "Both report.json and report.html written"
+      ]
+    },
+    {
+      "id": "test_generate_report_json_only",
+      "description": "Generate only JSON report when formats=['json']",
+      "function": "generate_report",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "formats": "[\"json\"]"
+      },
+      "input_description": "Valid Run instance, valid Path, formats=['json']",
+      "expected_output_description": "PhaseStatus with completed status, only report.json written",
+      "expected_error": "",
+      "assertions": [
+        "result.phase == 'report'",
+        "result.status == 'completed'",
+        "report.json exists",
+        "report.html does not exist"
+      ]
+    },
+    {
+      "id": "test_generate_report_html_only",
+      "description": "Generate only HTML report when formats=['html']",
+      "function": "generate_report",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "formats": "[\"html\"]"
+      },
+      "input_description": "Valid Run instance, valid Path, formats=['html']",
+      "expected_output_description": "PhaseStatus with completed status, only report.html written",
+      "expected_error": "",
+      "assertions": [
+        "result.phase == 'report'",
+        "result.status == 'completed'",
+        "report.html exists",
+        "report.json does not exist"
+      ]
+    },
+    {
+      "id": "test_generate_report_default_formats",
+      "description": "Generate both reports when formats=None (default behavior)",
+      "function": "generate_report",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "formats": "None"
+      },
+      "input_description": "Valid Run instance, valid Path, formats=None",
+      "expected_output_description": "PhaseStatus with completed status, both files written per default invariant",
+      "expected_error": "",
+      "assertions": [
+        "result.phase == 'report'",
+        "result.status == 'completed'",
+        "Both report.json and report.html written"
+      ]
+    },
+    {
+      "id": "test_generate_report_minimal_run",
+      "description": "Generate reports with minimal Run instance (edge case: empty graph)",
+      "function": "generate_report",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "formats": "[\"json\", \"html\"]"
+      },
+      "input_description": "Run instance with minimal/empty graph",
+      "expected_output_description": "PhaseStatus with completed status, both files written successfully",
+      "expected_error": "",
+      "assertions": [
+        "result.status == 'completed'",
+        "Files written without errors"
+      ]
+    },
+    {
+      "id": "test_generate_report_maximal_run",
+      "description": "Generate reports with maximal Run instance (many nodes, findings, metrics)",
+      "function": "generate_report",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "formats": "[\"json\", \"html\"]"
+      },
+      "input_description": "Run instance with large graph, many security findings, broken links, auth violations",
+      "expected_output_description": "PhaseStatus with completed status, both files written with all data",
+      "expected_error": "",
+      "assertions": [
+        "result.status == 'completed'",
+        "JSON contains all graph nodes",
+        "HTML renders all sections"
+      ]
+    },
+    {
+      "id": "test_generate_report_empty_formats_list",
+      "description": "Handle empty formats list (edge case: no files to write)",
+      "function": "generate_report",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "formats": "[]"
+      },
+      "input_description": "Valid Run instance, valid Path, formats=[]",
+      "expected_output_description": "PhaseStatus with completed status, no files written",
+      "expected_error": "",
+      "assertions": [
+        "result.status == 'completed'",
+        "No report files written"
+      ]
+    },
+    {
+      "id": "test_generate_report_file_write_error_nonexistent_dir",
+      "description": "Raise FileWriteError when run_dir does not exist",
+      "function": "generate_report",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "run_dir": "/nonexistent/path/to/nowhere"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "FileWriteError",
+      "assertions": [
+        "FileWriteError raised",
+        "Error message indicates directory issue"
+      ]
+    },
+    {
+      "id": "test_generate_report_file_write_error_readonly_dir",
+      "description": "Raise FileWriteError when run_dir is not writable",
+      "function": "generate_report",
+      "category": "error_case",
+      "setup_description": "Create read-only directory",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "FileWriteError",
+      "assertions": [
+        "FileWriteError raised when writing to read-only directory"
+      ]
+    },
+    {
+      "id": "test_generate_report_serialization_error",
+      "description": "Raise SerializationError when run.model_dump_json() fails",
+      "function": "generate_report",
+      "category": "error_case",
+      "setup_description": "Mock run.model_dump_json to raise exception",
+      "mock_dependencies": {},
+      "input_values": {
+        "formats": "[\"json\"]"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "SerializationError",
+      "assertions": [
+        "SerializationError raised",
+        "Error message indicates serialization failure"
+      ]
+    },
+    {
+      "id": "test_generate_report_template_render_error",
+      "description": "Raise TemplateRenderError when HTML_TEMPLATE.render() fails",
+      "function": "generate_report",
+      "category": "error_case",
+      "setup_description": "Mock template.render to raise exception",
+      "mock_dependencies": {},
+      "input_values": {
+        "formats": "[\"html\"]"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "TemplateRenderError",
+      "assertions": [
+        "TemplateRenderError raised",
+        "Error message indicates template rendering failure"
+      ]
+    },
+    {
+      "id": "test_generate_report_import_error",
+      "description": "Raise ImportError when webprobe.__version__ cannot be imported",
+      "function": "generate_report",
+      "category": "error_case",
+      "setup_description": "Mock import to fail for webprobe.__version__",
+      "mock_dependencies": {},
+      "input_values": {
+        "formats": "[\"html\"]"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "ImportError",
+      "assertions": [
+        "ImportError raised when __version__ unavailable"
+      ]
+    },
+    {
+      "id": "test_phase_status_invariants",
+      "description": "Verify all PhaseStatus invariants are satisfied",
+      "function": "generate_report",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "formats": "[\"json\"]"
+      },
+      "input_description": "",
+      "expected_output_description": "PhaseStatus with all required fields properly set",
+      "expected_error": "",
+      "assertions": [
+        "phase == 'report'",
+        "status == 'completed'",
+        "started_at in ISO format UTC",
+        "completed_at in ISO format UTC",
+        "duration_ms >= 0",
+        "completed_at >= started_at"
+      ]
+    },
+    {
+      "id": "test_html_nodes_sorted_by_id",
+      "description": "Verify HTML output contains nodes sorted by node.id",
+      "function": "generate_report",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "formats": "[\"html\"]"
+      },
+      "input_description": "Run with multiple nodes in unsorted order",
+      "expected_output_description": "HTML content shows nodes sorted by ID",
+      "expected_error": "",
+      "assertions": [
+        "Nodes appear in sorted order in HTML output"
+      ]
+    },
+    {
+      "id": "test_json_content_matches_model_dump",
+      "description": "Verify JSON file content matches run.model_dump_json(indent=2)",
+      "function": "generate_report",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "formats": "[\"json\"]"
+      },
+      "input_description": "",
+      "expected_output_description": "report.json contains exact output of model_dump_json with indent=2",
+      "expected_error": "",
+      "assertions": [
+        "JSON file content == run.model_dump_json(indent=2)"
+      ]
+    },
+    {
+      "id": "test_html_template_constant",
+      "description": "Verify HTML_TEMPLATE is a module-level Template instance",
+      "function": "generate_report",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "formats": "[\"html\"]"
+      },
+      "input_description": "",
+      "expected_output_description": "HTML_TEMPLATE exists as constant and is reused",
+      "expected_error": "",
+      "assertions": [
+        "HTML_TEMPLATE is jinja2.Template instance",
+        "Same instance used across calls"
+      ]
+    },
+    {
+      "id": "test_timing_uses_monotonic_and_utc",
+      "description": "Verify time measurements use monotonic for duration and UTC for timestamps",
+      "function": "generate_report",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "formats": "[\"json\"]"
+      },
+      "input_description": "",
+      "expected_output_description": "Timestamps are UTC ISO format, duration measured consistently",
+      "expected_error": "",
+      "assertions": [
+        "started_at and completed_at contain 'Z' or '+00:00'",
+        "duration_ms matches elapsed time"
+      ]
+    },
+    {
+      "id": "test_invalid_formats_parameter",
+      "description": "Handle formats parameter with invalid values (violates precondition)",
+      "function": "generate_report",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "formats": "[\"json\", \"pdf\", \"xml\"]"
+      },
+      "input_description": "formats contains values other than 'json' or 'html'",
+      "expected_output_description": "Either raises error or ignores unknown formats",
+      "expected_error": "",
+      "assertions": [
+        "Function handles invalid format gracefully"
+      ]
+    },
+    {
+      "id": "test_run_with_all_expected_attributes",
+      "description": "Verify HTML template renders with Run containing all expected attributes",
+      "function": "generate_report",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "formats": "[\"html\"]"
+      },
+      "input_description": "Run with graph.nodes, analysis, phases, explore_cost populated",
+      "expected_output_description": "HTML renders successfully with all sections",
+      "expected_error": "",
+      "assertions": [
+        "HTML contains metadata section",
+        "HTML contains analysis metrics",
+        "HTML contains phase timing",
+        "HTML contains page details"
+      ]
+    },
+    {
+      "id": "test_json_round_trip",
+      "description": "Verify JSON output can be parsed back as valid JSON",
+      "function": "generate_report",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "formats": "[\"json\"]"
+      },
+      "input_description": "",
+      "expected_output_description": "report.json is valid JSON parseable by json.loads",
+      "expected_error": "",
+      "assertions": [
+        "json.loads(report.json content) succeeds",
+        "Parsed structure matches original run data"
+      ]
+    }
+  ],
+  "test_language": "python",
+  "generated_code": "\"\"\"\nContract tests for src_webprobe_reporter component.\n\nThis test suite validates the generate_report function against its contract,\ncovering happy paths, edge cases, error cases, and invariants.\n\nTest structure:\n- Happy path tests: Verify basic functionality with typical inputs\n- Edge case tests: Test boundary conditions and unusual inputs\n- Error case tests: Verify proper error handling for all declared exceptions\n- Invariant tests: Verify contract invariants are maintained\n\"\"\"\n\nimport pytest\nimport json\nimport os\nimport stat\nimport sys\nfrom datetime import datetime, timezone\nfrom pathlib import Path\nfrom unittest.mock import Mock, MagicMock, patch, mock_open\nfrom jinja2 import Template\n\n# Import the component under test\nfrom src.webprobe.reporter import generate_report, HTML_TEMPLATE\n\n\n# ============================================================================\n# Fixtures\n# ============================================================================\n\n@pytest.fixture\ndef minimal_run():\n    \"\"\"Minimal Run instance with empty graph.\"\"\"\n    run = Mock()\n    run.model_dump_json = Mock(return_value='{\"run_id\": \"test-minimal\", \"graph\": {\"nodes\": []}}')\n    run.graph = Mock()\n    run.graph.nodes = []\n    run.analysis = Mock()\n    run.phases = []\n    run.explore_cost = Mock()\n    run.run_id = \"test-minimal\"\n    run.started_at = \"2024-01-01T00:00:00Z\"\n    return run\n\n\n@pytest.fixture\ndef typical_run():\n    \"\"\"Typical Run instance with populated graph and data.\"\"\"\n    run = Mock()\n    \n    # Create mock nodes\n    node1 = Mock()\n    node1.id = \"page-1\"\n    node1.url = \"https://example.com/page1\"\n    \n    node2 = Mock()\n    node2.id = \"page-2\"\n    node2.url = \"https://example.com/page2\"\n    \n    # Setup graph\n    run.graph = Mock()\n    run.graph.nodes = [node1, node2]\n    \n    # Setup analysis\n    run.analysis = Mock()\n    run.analysis.total_pages = 2\n    run.analysis.security_findings = []\n    run.analysis.broken_links = []\n    \n    # Setup phases\n    run.phases = [\n        Mock(phase=\"explore\", status=\"completed\", duration_ms=100),\n        Mock(phase=\"analyze\", status=\"completed\", duration_ms=50)\n    ]\n    \n    run.explore_cost = Mock()\n    run.explore_cost.total_requests = 10\n    \n    run.run_id = \"test-typical\"\n    run.started_at = \"2024-01-01T00:00:00Z\"\n    run.completed_at = \"2024-01-01T00:01:00Z\"\n    \n    # Mock serialization\n    run.model_dump_json = Mock(return_value=json.dumps({\n        \"run_id\": \"test-typical\",\n        \"graph\": {\"nodes\": [{\"id\": \"page-1\"}, {\"id\": \"page-2\"}]},\n        \"analysis\": {\"total_pages\": 2}\n    }, indent=2))\n    \n    return run\n\n\n@pytest.fixture\ndef maximal_run():\n    \"\"\"Maximal Run instance with many nodes, findings, and metrics.\"\"\"\n    run = Mock()\n    \n    # Create many mock nodes\n    nodes = []\n    for i in range(100):\n        node = Mock()\n        node.id = f\"page-{i:03d}\"\n        node.url = f\"https://example.com/page{i}\"\n        nodes.append(node)\n    \n    run.graph = Mock()\n    run.graph.nodes = nodes\n    \n    # Setup analysis with findings\n    run.analysis = Mock()\n    run.analysis.total_pages = 100\n    run.analysis.security_findings = [\n        Mock(severity=\"high\", description=\"XSS vulnerability\"),\n        Mock(severity=\"medium\", description=\"Missing CSP header\")\n    ]\n    run.analysis.broken_links = [\n        Mock(url=\"https://example.com/broken\", status_code=404)\n    ]\n    run.analysis.auth_violations = []\n    run.analysis.timing_outliers = [\n        Mock(url=\"https://example.com/slow\", duration_ms=5000)\n    ]\n    \n    run.phases = [\n        Mock(phase=\"explore\", status=\"completed\", duration_ms=1000),\n        Mock(phase=\"analyze\", status=\"completed\", duration_ms=500)\n    ]\n    \n    run.explore_cost = Mock()\n    run.explore_cost.total_requests = 200\n    \n    run.run_id = \"test-maximal\"\n    run.started_at = \"2024-01-01T00:00:00Z\"\n    run.completed_at = \"2024-01-01T00:10:00Z\"\n    \n    # Mock serialization\n    run.model_dump_json = Mock(return_value=json.dumps({\n        \"run_id\": \"test-maximal\",\n        \"graph\": {\"nodes\": [{\"id\": n.id} for n in nodes]},\n        \"analysis\": {\n            \"total_pages\": 100,\n            \"security_findings\": [{\"severity\": \"high\"}]\n        }\n    }, indent=2))\n    \n    return run\n\n\n@pytest.fixture\ndef temp_run_dir(tmp_path):\n    \"\"\"Temporary directory for test outputs.\"\"\"\n    run_dir = tmp_path / \"test_run\"\n    run_dir.mkdir()\n    return run_dir\n\n\n# ============================================================================\n# Happy Path Tests\n# ============================================================================\n\ndef test_generate_report_happy_path_both_formats(typical_run, temp_run_dir):\n    \"\"\"Generate both JSON and HTML reports successfully with typical Run data.\"\"\"\n    result = generate_report(typical_run, temp_run_dir, formats=['json', 'html'])\n    \n    # Verify PhaseStatus\n    assert result.phase == 'report'\n    assert result.status == 'completed'\n    assert result.duration_ms > 0\n    assert result.started_at is not None\n    assert result.completed_at is not None\n    \n    # Verify files written\n    assert (temp_run_dir / \"report.json\").exists()\n    assert (temp_run_dir / \"report.html\").exists()\n    \n    # Verify timestamps are ISO format\n    datetime.fromisoformat(result.started_at.replace('Z', '+00:00'))\n    datetime.fromisoformat(result.completed_at.replace('Z', '+00:00'))\n\n\ndef test_generate_report_json_only(typical_run, temp_run_dir):\n    \"\"\"Generate only JSON report when formats=['json'].\"\"\"\n    result = generate_report(typical_run, temp_run_dir, formats=['json'])\n    \n    assert result.phase == 'report'\n    assert result.status == 'completed'\n    assert (temp_run_dir / \"report.json\").exists()\n    assert not (temp_run_dir / \"report.html\").exists()\n\n\ndef test_generate_report_html_only(typical_run, temp_run_dir):\n    \"\"\"Generate only HTML report when formats=['html'].\"\"\"\n    result = generate_report(typical_run, temp_run_dir, formats=['html'])\n    \n    assert result.phase == 'report'\n    assert result.status == 'completed'\n    assert (temp_run_dir / \"report.html\").exists()\n    assert not (temp_run_dir / \"report.json\").exists()\n\n\ndef test_generate_report_default_formats(typical_run, temp_run_dir):\n    \"\"\"Generate both reports when formats=None (default behavior).\"\"\"\n    result = generate_report(typical_run, temp_run_dir, formats=None)\n    \n    assert result.phase == 'report'\n    assert result.status == 'completed'\n    assert (temp_run_dir / \"report.json\").exists()\n    assert (temp_run_dir / \"report.html\").exists()\n\n\ndef test_run_with_all_expected_attributes(typical_run, temp_run_dir):\n    \"\"\"Verify HTML template renders with Run containing all expected attributes.\"\"\"\n    result = generate_report(typical_run, temp_run_dir, formats=['html'])\n    \n    assert result.status == 'completed'\n    \n    # Read and verify HTML content\n    html_content = (temp_run_dir / \"report.html\").read_text()\n    assert len(html_content) > 0\n    assert \"example.com\" in html_content or \"test-typical\" in html_content\n\n\n# ============================================================================\n# Edge Case Tests\n# ============================================================================\n\ndef test_generate_report_minimal_run(minimal_run, temp_run_dir):\n    \"\"\"Generate reports with minimal Run instance (edge case: empty graph).\"\"\"\n    result = generate_report(minimal_run, temp_run_dir, formats=['json', 'html'])\n    \n    assert result.status == 'completed'\n    assert (temp_run_dir / \"report.json\").exists()\n    assert (temp_run_dir / \"report.html\").exists()\n\n\ndef test_generate_report_maximal_run(maximal_run, temp_run_dir):\n    \"\"\"Generate reports with maximal Run instance (many nodes, findings, metrics).\"\"\"\n    result = generate_report(maximal_run, temp_run_dir, formats=['json', 'html'])\n    \n    assert result.status == 'completed'\n    \n    # Verify JSON contains all data\n    json_content = json.loads((temp_run_dir / \"report.json\").read_text())\n    assert \"run_id\" in json_content\n    assert json_content[\"run_id\"] == \"test-maximal\"\n    \n    # Verify HTML was generated\n    html_content = (temp_run_dir / \"report.html\").read_text()\n    assert len(html_content) > 0\n\n\ndef test_generate_report_empty_formats_list(typical_run, temp_run_dir):\n    \"\"\"Handle empty formats list (edge case: no files to write).\"\"\"\n    result = generate_report(typical_run, temp_run_dir, formats=[])\n    \n    assert result.status == 'completed'\n    assert not (temp_run_dir / \"report.json\").exists()\n    assert not (temp_run_dir / \"report.html\").exists()\n\n\ndef test_invalid_formats_parameter(typical_run, temp_run_dir):\n    \"\"\"Handle formats parameter with invalid values (violates precondition).\"\"\"\n    # Test that function handles invalid formats gracefully\n    # Could either raise error or ignore unknown formats\n    try:\n        result = generate_report(typical_run, temp_run_dir, formats=['json', 'pdf', 'xml'])\n        # If it succeeds, check that at least json was written\n        assert result.status == 'completed'\n        # Should have written json, ignored pdf and xml\n        assert (temp_run_dir / \"report.json\").exists()\n    except (ValueError, TypeError):\n        # Or it might raise an error for invalid formats\n        pass\n\n\n# ============================================================================\n# Error Case Tests\n# ============================================================================\n\ndef test_generate_report_file_write_error_nonexistent_dir(typical_run):\n    \"\"\"Raise FileWriteError when run_dir does not exist.\"\"\"\n    from src.webprobe.reporter import FileWriteError\n    \n    nonexistent_dir = Path(\"/nonexistent/path/to/nowhere\")\n    \n    with pytest.raises(FileWriteError) as exc_info:\n        generate_report(typical_run, nonexistent_dir, formats=['json'])\n    \n    assert \"does not exist\" in str(exc_info.value).lower() or \"directory\" in str(exc_info.value).lower()\n\n\ndef test_generate_report_file_write_error_readonly_dir(typical_run, temp_run_dir):\n    \"\"\"Raise FileWriteError when run_dir is not writable.\"\"\"\n    from src.webprobe.reporter import FileWriteError\n    \n    # Make directory read-only\n    os.chmod(temp_run_dir, stat.S_IRUSR | stat.S_IXUSR)\n    \n    try:\n        with pytest.raises(FileWriteError):\n            generate_report(typical_run, temp_run_dir, formats=['json'])\n    finally:\n        # Restore permissions for cleanup\n        os.chmod(temp_run_dir, stat.S_IRWXU)\n\n\ndef test_generate_report_serialization_error(typical_run, temp_run_dir):\n    \"\"\"Raise SerializationError when run.model_dump_json() fails.\"\"\"\n    from src.webprobe.reporter import SerializationError\n    \n    # Mock model_dump_json to raise exception\n    typical_run.model_dump_json = Mock(side_effect=TypeError(\"Cannot serialize object\"))\n    \n    with pytest.raises(SerializationError) as exc_info:\n        generate_report(typical_run, temp_run_dir, formats=['json'])\n    \n    assert \"serializ\" in str(exc_info.value).lower()\n\n\ndef test_generate_report_template_render_error(typical_run, temp_run_dir):\n    \"\"\"Raise TemplateRenderError when HTML_TEMPLATE.render() fails.\"\"\"\n    from src.webprobe.reporter import TemplateRenderError\n    \n    # Mock the template to raise an exception\n    with patch('src.webprobe.reporter.HTML_TEMPLATE') as mock_template:\n        mock_template.render = Mock(side_effect=Exception(\"Template syntax error\"))\n        \n        with pytest.raises(TemplateRenderError) as exc_info:\n            generate_report(typical_run, temp_run_dir, formats=['html'])\n        \n        assert \"template\" in str(exc_info.value).lower() or \"render\" in str(exc_info.value).lower()\n\n\ndef test_generate_report_import_error(typical_run, temp_run_dir):\n    \"\"\"Raise ImportError when webprobe.__version__ cannot be imported.\"\"\"\n    # Mock the import to fail\n    original_webprobe = sys.modules.get('webprobe')\n    \n    # Create a mock module without __version__\n    mock_webprobe = Mock(spec=[])\n    del mock_webprobe.__version__  # Ensure __version__ doesn't exist\n    \n    with patch.dict('sys.modules', {'webprobe': mock_webprobe}):\n        with pytest.raises(ImportError):\n            generate_report(typical_run, temp_run_dir, formats=['html'])\n\n\n# ============================================================================\n# Invariant Tests\n# ============================================================================\n\ndef test_phase_status_invariants(typical_run, temp_run_dir):\n    \"\"\"Verify all PhaseStatus invariants are satisfied.\"\"\"\n    result = generate_report(typical_run, temp_run_dir, formats=['json'])\n    \n    # Verify phase is always 'report'\n    assert result.phase == 'report'\n    \n    # Verify status is 'completed'\n    assert result.status == 'completed'\n    \n    # Verify timestamps are in ISO format UTC\n    assert result.started_at is not None\n    assert result.completed_at is not None\n    \n    # Parse timestamps to verify format\n    started = datetime.fromisoformat(result.started_at.replace('Z', '+00:00'))\n    completed = datetime.fromisoformat(result.completed_at.replace('Z', '+00:00'))\n    \n    # Verify UTC timezone\n    assert started.tzinfo is not None\n    assert completed.tzinfo is not None\n    \n    # Verify duration is non-negative\n    assert result.duration_ms >= 0\n    \n    # Verify completed >= started\n    assert completed >= started\n\n\ndef test_html_nodes_sorted_by_id(temp_run_dir):\n    \"\"\"Verify HTML output contains nodes sorted by node.id.\"\"\"\n    run = Mock()\n    \n    # Create nodes in unsorted order\n    node_z = Mock()\n    node_z.id = \"page-z\"\n    node_z.url = \"https://example.com/z\"\n    \n    node_a = Mock()\n    node_a.id = \"page-a\"\n    node_a.url = \"https://example.com/a\"\n    \n    node_m = Mock()\n    node_m.id = \"page-m\"\n    node_m.url = \"https://example.com/m\"\n    \n    run.graph = Mock()\n    run.graph.nodes = [node_z, node_a, node_m]\n    \n    run.analysis = Mock()\n    run.phases = []\n    run.explore_cost = Mock()\n    run.run_id = \"test-sorted\"\n    run.started_at = \"2024-01-01T00:00:00Z\"\n    \n    run.model_dump_json = Mock(return_value='{}')\n    \n    result = generate_report(run, temp_run_dir, formats=['html'])\n    \n    assert result.status == 'completed'\n    \n    # Read HTML and check node ordering\n    html_content = (temp_run_dir / \"report.html\").read_text()\n    \n    # Find positions of node IDs in HTML\n    pos_a = html_content.find(\"page-a\")\n    pos_m = html_content.find(\"page-m\")\n    pos_z = html_content.find(\"page-z\")\n    \n    # If all nodes are present, verify sorted order\n    if pos_a != -1 and pos_m != -1 and pos_z != -1:\n        assert pos_a < pos_m < pos_z\n\n\ndef test_json_content_matches_model_dump(typical_run, temp_run_dir):\n    \"\"\"Verify JSON file content matches run.model_dump_json(indent=2).\"\"\"\n    expected_json = typical_run.model_dump_json(indent=2)\n    \n    result = generate_report(typical_run, temp_run_dir, formats=['json'])\n    \n    assert result.status == 'completed'\n    \n    actual_json = (temp_run_dir / \"report.json\").read_text()\n    \n    # Verify content matches\n    assert actual_json == expected_json\n\n\ndef test_html_template_constant():\n    \"\"\"Verify HTML_TEMPLATE is a module-level Template instance.\"\"\"\n    from src.webprobe.reporter import HTML_TEMPLATE\n    \n    # Verify it's a Jinja2 Template instance\n    assert isinstance(HTML_TEMPLATE, Template)\n    \n    # Verify it's the same instance across imports\n    from src.webprobe.reporter import HTML_TEMPLATE as template2\n    assert HTML_TEMPLATE is template2\n\n\ndef test_timing_uses_monotonic_and_utc(typical_run, temp_run_dir):\n    \"\"\"Verify time measurements use monotonic for duration and UTC for timestamps.\"\"\"\n    result = generate_report(typical_run, temp_run_dir, formats=['json'])\n    \n    # Verify timestamps contain UTC indicators\n    assert 'Z' in result.started_at or '+00:00' in result.started_at\n    assert 'Z' in result.completed_at or '+00:00' in result.completed_at\n    \n    # Verify duration is positive and reasonable\n    assert result.duration_ms >= 0\n    assert result.duration_ms < 10000  # Should complete in less than 10 seconds\n    \n    # Parse timestamps and verify they're UTC\n    started = datetime.fromisoformat(result.started_at.replace('Z', '+00:00'))\n    completed = datetime.fromisoformat(result.completed_at.replace('Z', '+00:00'))\n    \n    assert started.tzinfo == timezone.utc or started.tzinfo.utcoffset(None).total_seconds() == 0\n    assert completed.tzinfo == timezone.utc or completed.tzinfo.utcoffset(None).total_seconds() == 0\n\n\ndef test_json_round_trip(typical_run, temp_run_dir):\n    \"\"\"Verify JSON output can be parsed back as valid JSON.\"\"\"\n    result = generate_report(typical_run, temp_run_dir, formats=['json'])\n    \n    assert result.status == 'completed'\n    \n    # Read JSON file\n    json_content = (temp_run_dir / \"report.json\").read_text()\n    \n    # Parse it back\n    parsed = json.loads(json_content)\n    \n    # Verify structure matches\n    assert \"run_id\" in parsed\n    assert parsed[\"run_id\"] == \"test-typical\"\n    assert \"graph\" in parsed\n    assert \"analysis\" in parsed\n\n\n# ============================================================================\n# Additional Integration Tests\n# ============================================================================\n\ndef test_generate_both_formats_files_independent(typical_run, temp_run_dir):\n    \"\"\"Verify both formats can be generated and are independent.\"\"\"\n    result = generate_report(typical_run, temp_run_dir, formats=['json', 'html'])\n    \n    assert result.status == 'completed'\n    \n    # Read both files\n    json_content = (temp_run_dir / \"report.json\").read_text()\n    html_content = (temp_run_dir / \"report.html\").read_text()\n    \n    # Verify both have content\n    assert len(json_content) > 0\n    assert len(html_content) > 0\n    \n    # Verify they're different\n    assert json_content != html_content\n\n\ndef test_phase_status_timing_accuracy(typical_run, temp_run_dir):\n    \"\"\"Verify PhaseStatus timing is accurate.\"\"\"\n    import time\n    \n    start = time.monotonic()\n    result = generate_report(typical_run, temp_run_dir, formats=['json', 'html'])\n    end = time.monotonic()\n    \n    elapsed_ms = (end - start) * 1000\n    \n    # Duration should be within reasonable range of actual elapsed time\n    assert result.duration_ms > 0\n    assert result.duration_ms <= elapsed_ms * 1.5  # Allow 50% margin for timing variance\n\n\ndef test_multiple_runs_same_directory(typical_run, temp_run_dir):\n    \"\"\"Verify multiple calls to generate_report overwrite previous files.\"\"\"\n    # First run\n    result1 = generate_report(typical_run, temp_run_dir, formats=['json'])\n    assert result1.status == 'completed'\n    \n    first_content = (temp_run_dir / \"report.json\").read_text()\n    \n    # Modify run data\n    typical_run.run_id = \"test-modified\"\n    typical_run.model_dump_json = Mock(return_value='{\"run_id\": \"test-modified\"}')\n    \n    # Second run\n    result2 = generate_report(typical_run, temp_run_dir, formats=['json'])\n    assert result2.status == 'completed'\n    \n    second_content = (temp_run_dir / \"report.json\").read_text()\n    \n    # Verify file was overwritten\n    assert first_content != second_content\n    assert \"test-modified\" in second_content\n"
+}

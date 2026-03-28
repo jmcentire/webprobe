@@ -1,0 +1,1389 @@
+{
+  "component_id": "src_webprobe_models",
+  "contract_version": 1,
+  "test_cases": [
+    {
+      "id": "test_make_run_id_format",
+      "description": "Test that _make_run_id returns string matching pattern YYYYMMDDTHHmmss-[a-f0-9]{8}",
+      "function": "_make_run_id",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "run_id matches regex pattern",
+        "timestamp is 15 chars",
+        "separator is dash",
+        "uuid suffix is 8 hex chars"
+      ]
+    },
+    {
+      "id": "test_make_run_id_uniqueness",
+      "description": "Test that _make_run_id generates unique IDs over multiple invocations",
+      "function": "_make_run_id",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "all generated IDs are unique",
+        "no collisions in 1000 iterations"
+      ]
+    },
+    {
+      "id": "test_make_run_id_timestamp_utc",
+      "description": "Test that _make_run_id timestamp is in UTC timezone",
+      "function": "_make_run_id",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "timestamp portion is valid UTC",
+        "matches current UTC time"
+      ]
+    },
+    {
+      "id": "test_identity_key_returns_url",
+      "description": "Test that NodeState.identity_key returns the URL",
+      "function": "identity_key",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "url": "https://example.com"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "identity_key equals url field"
+      ]
+    },
+    {
+      "id": "test_identity_key_deterministic",
+      "description": "Test that NodeState.identity_key returns consistent value for same URL",
+      "function": "identity_key",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "url": "https://example.com/path"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "identity_key is consistent across calls",
+        "hashable for dict keys"
+      ]
+    },
+    {
+      "id": "test_auth_context_enum_values",
+      "description": "Test AuthContext enum has correct values",
+      "function": "AuthContext",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "has anonymous variant",
+        "has authenticated variant",
+        "exactly 2 variants"
+      ]
+    },
+    {
+      "id": "test_discovery_method_enum_values",
+      "description": "Test DiscoveryMethod enum has all expected values",
+      "function": "DiscoveryMethod",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "has sitemap",
+        "has robots",
+        "has crawl",
+        "has framework",
+        "has manual",
+        "exactly 5 variants"
+      ]
+    },
+    {
+      "id": "test_resource_type_enum_values",
+      "description": "Test ResourceType enum has all expected values",
+      "function": "ResourceType",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "has all 10 resource types",
+        "includes document, script, stylesheet, image, font, media, xhr, fetch, websocket, other"
+      ]
+    },
+    {
+      "id": "test_console_message_level_enum_values",
+      "description": "Test ConsoleMessageLevel enum has all expected values",
+      "function": "ConsoleMessageLevel",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "has log, warning, error, info, debug",
+        "exactly 5 variants"
+      ]
+    },
+    {
+      "id": "test_security_severity_enum_values",
+      "description": "Test SecuritySeverity enum has all expected values",
+      "function": "SecuritySeverity",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "has critical, high, medium, low, info",
+        "exactly 5 variants"
+      ]
+    },
+    {
+      "id": "test_security_category_enum_values",
+      "description": "Test SecurityCategory enum has all expected values",
+      "function": "SecurityCategory",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "has headers, cookies, xss, mixed_content, cors, information_disclosure, forms, tls",
+        "exactly 8 variants"
+      ]
+    },
+    {
+      "id": "test_timing_data_complete",
+      "description": "Test TimingData with all fields populated",
+      "function": "TimingData",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "started_at": "2024-01-15T10:30:00Z",
+        "duration_ms": "250.5",
+        "ttfb_ms": "120.3"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "all fields set correctly",
+        "duration and ttfb are floats"
+      ]
+    },
+    {
+      "id": "test_timing_data_optional_ttfb",
+      "description": "Test TimingData with ttfb_ms as None",
+      "function": "TimingData",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "started_at": "2024-01-15T10:30:00Z",
+        "duration_ms": "250.5",
+        "ttfb_ms": "None"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "ttfb_ms is None",
+        "started_at and duration_ms are set"
+      ]
+    },
+    {
+      "id": "test_timing_data_zero_duration",
+      "description": "Test TimingData with zero duration",
+      "function": "TimingData",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "started_at": "2024-01-15T10:30:00Z",
+        "duration_ms": "0.0",
+        "ttfb_ms": "0.0"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "zero duration is valid",
+        "zero ttfb is valid"
+      ]
+    },
+    {
+      "id": "test_resource_complete",
+      "description": "Test Resource with all fields populated",
+      "function": "Resource",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "url": "https://example.com/script.js",
+        "resource_type": "script",
+        "status_code": "200",
+        "size_bytes": "15000",
+        "mime_type": "application/javascript"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "all fields set correctly",
+        "resource_type is enum"
+      ]
+    },
+    {
+      "id": "test_resource_optional_fields_none",
+      "description": "Test Resource with optional fields as None",
+      "function": "Resource",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "url": "https://example.com/image.png",
+        "resource_type": "image",
+        "status_code": "None",
+        "size_bytes": "None",
+        "timing": "None",
+        "mime_type": "image/png"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "status_code is None",
+        "size_bytes is None",
+        "timing is None"
+      ]
+    },
+    {
+      "id": "test_console_message_complete",
+      "description": "Test ConsoleMessage with all fields",
+      "function": "ConsoleMessage",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "level": "error",
+        "text": "Uncaught TypeError",
+        "url": "https://example.com/app.js",
+        "line": "42"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "all fields set correctly",
+        "level is enum",
+        "line is int"
+      ]
+    },
+    {
+      "id": "test_console_message_no_line",
+      "description": "Test ConsoleMessage with line as None",
+      "function": "ConsoleMessage",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "level": "log",
+        "text": "Debug message",
+        "url": "https://example.com",
+        "line": "None"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "line is None",
+        "other fields set"
+      ]
+    },
+    {
+      "id": "test_node_state_simple",
+      "description": "Test NodeState creation with URL",
+      "function": "NodeState",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "url": "https://example.com/page"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "url is set correctly"
+      ]
+    },
+    {
+      "id": "test_cookie_info_secure",
+      "description": "Test CookieInfo with secure attributes",
+      "function": "CookieInfo",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "name": "session",
+        "domain": "example.com",
+        "path": "/",
+        "secure": "True",
+        "http_only": "True",
+        "same_site": "Strict"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "all security attributes set",
+        "secure is True",
+        "http_only is True"
+      ]
+    },
+    {
+      "id": "test_cookie_info_insecure",
+      "description": "Test CookieInfo with insecure attributes",
+      "function": "CookieInfo",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "name": "tracking",
+        "domain": "example.com",
+        "path": "/",
+        "secure": "False",
+        "http_only": "False",
+        "same_site": "None"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "secure is False",
+        "http_only is False",
+        "same_site is None"
+      ]
+    },
+    {
+      "id": "test_response_headers_empty",
+      "description": "Test ResponseHeaders with empty dict",
+      "function": "ResponseHeaders",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "raw": "{}"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "raw is empty dict"
+      ]
+    },
+    {
+      "id": "test_response_headers_populated",
+      "description": "Test ResponseHeaders with security headers",
+      "function": "ResponseHeaders",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "raw": "{\"Content-Security-Policy\": \"default-src 'self'\", \"X-Frame-Options\": \"DENY\"}"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "raw dict has expected headers"
+      ]
+    },
+    {
+      "id": "test_form_info_csrf_protected",
+      "description": "Test FormInfo with CSRF protection",
+      "function": "FormInfo",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "action": "/login",
+        "method": "POST",
+        "has_csrf_token": "True",
+        "has_password_field": "True",
+        "autocomplete_off": "False"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "has_csrf_token is True",
+        "has_password_field is True"
+      ]
+    },
+    {
+      "id": "test_form_info_no_csrf",
+      "description": "Test FormInfo without CSRF protection",
+      "function": "FormInfo",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "action": "/search",
+        "method": "GET",
+        "has_csrf_token": "False",
+        "has_password_field": "False",
+        "autocomplete_off": "True"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "has_csrf_token is False",
+        "method is GET"
+      ]
+    },
+    {
+      "id": "test_security_finding_critical",
+      "description": "Test SecurityFinding with critical severity",
+      "function": "SecurityFinding",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "category": "xss",
+        "severity": "critical",
+        "title": "Reflected XSS",
+        "detail": "User input not sanitized",
+        "evidence": "<script>alert(1)</script>",
+        "url": "https://example.com/search",
+        "auth_context": "anonymous"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "severity is critical",
+        "category is xss",
+        "all fields populated"
+      ]
+    },
+    {
+      "id": "test_security_finding_info",
+      "description": "Test SecurityFinding with info severity",
+      "function": "SecurityFinding",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "category": "headers",
+        "severity": "info",
+        "title": "Missing header",
+        "detail": "X-Content-Type-Options not set",
+        "evidence": "",
+        "url": "https://example.com",
+        "auth_context": "authenticated"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "severity is info",
+        "evidence can be empty string"
+      ]
+    },
+    {
+      "id": "test_node_capture_minimal",
+      "description": "Test NodeCapture with minimal fields",
+      "function": "NodeCapture",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "auth_context": "anonymous",
+        "http_status": "None",
+        "page_title": "",
+        "page_text": "",
+        "screenshot_path": ""
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "optional fields can be None or empty",
+        "lists default to empty"
+      ]
+    },
+    {
+      "id": "test_node_capture_complete",
+      "description": "Test NodeCapture with all fields populated",
+      "function": "NodeCapture",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "auth_context": "authenticated",
+        "http_status": "200",
+        "page_title": "Dashboard",
+        "page_text": "Welcome user"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "all fields set",
+        "collections are lists"
+      ]
+    },
+    {
+      "id": "test_node_minimal",
+      "description": "Test Node with minimal required fields",
+      "function": "Node",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "id": "node1",
+        "discovered_via": "manual",
+        "depth": "0"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "id is set",
+        "depth is 0",
+        "optional fields have defaults"
+      ]
+    },
+    {
+      "id": "test_node_with_captures",
+      "description": "Test Node with multiple captures",
+      "function": "Node",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "id": "node2",
+        "discovered_via": "crawl",
+        "depth": "2"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "captures is list",
+        "can have multiple auth contexts"
+      ]
+    },
+    {
+      "id": "test_edge_verified",
+      "description": "Test Edge with verified link",
+      "function": "Edge",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "source": "node1",
+        "target": "node2",
+        "link_text": "Click here",
+        "discovered_via": "crawl",
+        "auth_context": "anonymous",
+        "verified": "True"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "verified is True",
+        "all fields set"
+      ]
+    },
+    {
+      "id": "test_edge_unverified",
+      "description": "Test Edge with unverified link",
+      "function": "Edge",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "source": "node1",
+        "target": "node3",
+        "link_text": "",
+        "discovered_via": "sitemap",
+        "auth_context": "authenticated",
+        "verified": "False"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "verified is False",
+        "link_text can be empty"
+      ]
+    },
+    {
+      "id": "test_site_graph_empty",
+      "description": "Test SiteGraph with no nodes or edges",
+      "function": "SiteGraph",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "nodes": "{}",
+        "edges": "[]",
+        "root_url": "https://example.com",
+        "seed_urls": "[]"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "nodes is empty dict",
+        "edges is empty list"
+      ]
+    },
+    {
+      "id": "test_site_graph_with_data",
+      "description": "Test SiteGraph with nodes and edges",
+      "function": "SiteGraph",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "root_url": "https://example.com",
+        "seed_urls": "[\"https://example.com\"]"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "root_url is set",
+        "seed_urls is list"
+      ]
+    },
+    {
+      "id": "test_broken_link_with_status",
+      "description": "Test BrokenLink with status code",
+      "function": "BrokenLink",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "source": "https://example.com",
+        "target": "https://example.com/missing",
+        "status_code": "404",
+        "error": "Not Found"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "status_code is 404",
+        "error message set"
+      ]
+    },
+    {
+      "id": "test_broken_link_network_error",
+      "description": "Test BrokenLink with network error and no status",
+      "function": "BrokenLink",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "source": "https://example.com",
+        "target": "https://unreachable.invalid",
+        "status_code": "None",
+        "error": "DNS resolution failed"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "status_code is None",
+        "error describes network failure"
+      ]
+    },
+    {
+      "id": "test_auth_boundary_violation",
+      "description": "Test AuthBoundaryViolation for unprotected admin page",
+      "function": "AuthBoundaryViolation",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "url": "https://example.com/admin",
+        "expected_auth": "True",
+        "actual_accessible_anonymous": "True",
+        "evidence": "200 OK without credentials"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "expected_auth is True",
+        "actual_accessible_anonymous is True"
+      ]
+    },
+    {
+      "id": "test_timing_outlier",
+      "description": "Test TimingOutlier for slow page load",
+      "function": "TimingOutlier",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "url": "https://example.com/slow",
+        "auth_context": "anonymous",
+        "metric": "duration_ms",
+        "value_ms": "5000.0",
+        "mean_ms": "200.0",
+        "stddev_ms": "50.0",
+        "z_score": "96.0"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "z_score is high",
+        "value_ms exceeds mean significantly"
+      ]
+    },
+    {
+      "id": "test_graph_metrics_simple",
+      "description": "Test GraphMetrics for simple graph",
+      "function": "GraphMetrics",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "total_nodes": "10",
+        "total_edges": "15",
+        "orphan_nodes": "[]",
+        "dead_end_nodes": "[]",
+        "unreachable_nodes": "[]",
+        "strongly_connected_components": "1",
+        "cyclomatic_complexity": "6",
+        "max_depth": "5",
+        "edge_coverage": "1.0"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "total_nodes is 10",
+        "edge_coverage is 1.0"
+      ]
+    },
+    {
+      "id": "test_graph_metrics_with_issues",
+      "description": "Test GraphMetrics with orphan and dead-end nodes",
+      "function": "GraphMetrics",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "total_nodes": "20",
+        "total_edges": "18",
+        "orphan_nodes": "[\"node1\", \"node2\"]",
+        "dead_end_nodes": "[\"node3\"]",
+        "unreachable_nodes": "[\"node4\"]",
+        "strongly_connected_components": "3",
+        "cyclomatic_complexity": "0",
+        "max_depth": "8",
+        "edge_coverage": "0.75"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "orphan_nodes has 2 items",
+        "edge_coverage is less than 1.0"
+      ]
+    },
+    {
+      "id": "test_prime_path_no_loop",
+      "description": "Test PrimePath without loop",
+      "function": "PrimePath",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "path": "[\"node1\", \"node2\", \"node3\"]",
+        "length": "3",
+        "contains_loop": "False"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "contains_loop is False",
+        "length matches path length"
+      ]
+    },
+    {
+      "id": "test_prime_path_with_loop",
+      "description": "Test PrimePath with loop",
+      "function": "PrimePath",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "path": "[\"node1\", \"node2\", \"node1\"]",
+        "length": "3",
+        "contains_loop": "True"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "contains_loop is True",
+        "path has repeated node"
+      ]
+    },
+    {
+      "id": "test_analysis_result_complete",
+      "description": "Test AnalysisResult with all findings",
+      "function": "AnalysisResult",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "all collections are lists",
+        "graph_metrics is present"
+      ]
+    },
+    {
+      "id": "test_analysis_result_empty",
+      "description": "Test AnalysisResult with no findings",
+      "function": "AnalysisResult",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "empty lists for findings",
+        "graph_metrics still present"
+      ]
+    },
+    {
+      "id": "test_phase_status_pending",
+      "description": "Test PhaseStatus in pending state",
+      "function": "PhaseStatus",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "phase": "map",
+        "status": "pending",
+        "started_at": "None",
+        "completed_at": "None",
+        "duration_ms": "None",
+        "error": "None"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "status is pending",
+        "timestamps are None"
+      ]
+    },
+    {
+      "id": "test_phase_status_completed",
+      "description": "Test PhaseStatus in completed state",
+      "function": "PhaseStatus",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "phase": "capture",
+        "status": "completed",
+        "started_at": "2024-01-15T10:00:00Z",
+        "completed_at": "2024-01-15T10:05:00Z",
+        "duration_ms": "300000.0",
+        "error": "None"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "status is completed",
+        "both timestamps set",
+        "duration_ms is positive"
+      ]
+    },
+    {
+      "id": "test_phase_status_failed",
+      "description": "Test PhaseStatus in failed state",
+      "function": "PhaseStatus",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "phase": "analyze",
+        "status": "failed",
+        "started_at": "2024-01-15T10:00:00Z",
+        "completed_at": "2024-01-15T10:01:00Z",
+        "duration_ms": "60000.0",
+        "error": "Connection timeout"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "status is failed",
+        "error message is set"
+      ]
+    },
+    {
+      "id": "test_cost_summary_zero_cost",
+      "description": "Test CostSummary with zero cost",
+      "function": "CostSummary",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "total_calls": "0",
+        "total_input_tokens": "0",
+        "total_output_tokens": "0",
+        "total_cost_usd": "0.0",
+        "by_provider": "{}"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "total_cost_usd is 0.0",
+        "all counts are 0"
+      ]
+    },
+    {
+      "id": "test_cost_summary_with_usage",
+      "description": "Test CostSummary with actual usage",
+      "function": "CostSummary",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "total_calls": "150",
+        "total_input_tokens": "5000",
+        "total_output_tokens": "3000",
+        "total_cost_usd": "0.25",
+        "by_provider": "{\"openai\": {\"calls\": 150, \"cost_usd\": 0.25}}"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "total_calls is 150",
+        "by_provider has openai key"
+      ]
+    },
+    {
+      "id": "test_run_minimal",
+      "description": "Test Run with minimal required fields",
+      "function": "Run",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "schema_version": "1.1",
+        "run_id": "test-run-123",
+        "url": "https://example.com",
+        "started_at": "2024-01-15T10:00:00Z",
+        "config_snapshot": "{}"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "schema_version is 1.1",
+        "run_id is set",
+        "completed_at is None"
+      ]
+    },
+    {
+      "id": "test_run_complete",
+      "description": "Test Run with all phases completed",
+      "function": "Run",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "schema_version": "1.1",
+        "run_id": "test-run-456",
+        "url": "https://example.com",
+        "started_at": "2024-01-15T10:00:00Z",
+        "completed_at": "2024-01-15T11:00:00Z",
+        "config_snapshot": "{}"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "completed_at is set",
+        "phases is list",
+        "graph is present"
+      ]
+    },
+    {
+      "id": "test_run_schema_version_invariant",
+      "description": "Test that Run defaults to SCHEMA_VERSION 1.1",
+      "function": "Run",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "schema_version defaults to 1.1"
+      ]
+    },
+    {
+      "id": "test_node_diff_added",
+      "description": "Test NodeDiff for added node",
+      "function": "NodeDiff",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "url": "https://example.com/new",
+        "change": "added",
+        "details": "{}"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "change is added"
+      ]
+    },
+    {
+      "id": "test_node_diff_removed",
+      "description": "Test NodeDiff for removed node",
+      "function": "NodeDiff",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "url": "https://example.com/old",
+        "change": "removed",
+        "details": "{}"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "change is removed"
+      ]
+    },
+    {
+      "id": "test_node_diff_changed",
+      "description": "Test NodeDiff for changed node",
+      "function": "NodeDiff",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "url": "https://example.com/page",
+        "change": "changed",
+        "details": "{\"status_code\": {\"old\": 200, \"new\": 404}}"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "change is changed",
+        "details has old and new values"
+      ]
+    },
+    {
+      "id": "test_run_diff_empty",
+      "description": "Test RunDiff with no changes (identical runs)",
+      "function": "RunDiff",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "run_a_id": "run1",
+        "run_b_id": "run2",
+        "nodes_added": "[]",
+        "nodes_removed": "[]",
+        "edges_added": "[]",
+        "edges_removed": "[]",
+        "status_changes": "[]",
+        "timing_changes": "[]",
+        "new_broken_links": "[]",
+        "resolved_broken_links": "[]",
+        "new_auth_violations": "[]",
+        "resolved_auth_violations": "[]"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "all change lists are empty"
+      ]
+    },
+    {
+      "id": "test_run_diff_with_changes",
+      "description": "Test RunDiff with multiple types of changes",
+      "function": "RunDiff",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "run_a_id": "run1",
+        "run_b_id": "run2"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "can track node additions and removals",
+        "can track edge changes"
+      ]
+    },
+    {
+      "id": "test_serialization_timing_data",
+      "description": "Test TimingData serialization round-trip",
+      "function": "TimingData",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "dict round-trip preserves data",
+        "JSON serializable"
+      ]
+    },
+    {
+      "id": "test_serialization_node_capture",
+      "description": "Test NodeCapture serialization round-trip",
+      "function": "NodeCapture",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "complex nested structure serializes correctly",
+        "lists preserve order"
+      ]
+    },
+    {
+      "id": "test_serialization_site_graph",
+      "description": "Test SiteGraph serialization round-trip",
+      "function": "SiteGraph",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "entire graph serializes and deserializes",
+        "node dict keys preserved"
+      ]
+    },
+    {
+      "id": "test_serialization_run",
+      "description": "Test Run serialization round-trip",
+      "function": "Run",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "complete run object serializes",
+        "all nested structures preserved"
+      ]
+    },
+    {
+      "id": "test_edge_references_valid_nodes",
+      "description": "Test that edges reference nodes that exist in graph",
+      "function": "SiteGraph",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "all edge sources exist in nodes dict",
+        "all edge targets exist in nodes dict"
+      ]
+    },
+    {
+      "id": "test_node_depth_consistency",
+      "description": "Test that node depth values are consistent with graph structure",
+      "function": "Node",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "root node has depth 0",
+        "child depths are parent depth + 1"
+      ]
+    },
+    {
+      "id": "test_url_absolute_validation",
+      "description": "Test handling of absolute URLs",
+      "function": "NodeState",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "url": "https://example.com/path?query=value#fragment"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "URL with query and fragment accepted"
+      ]
+    },
+    {
+      "id": "test_url_very_long",
+      "description": "Test handling of very long URLs",
+      "function": "NodeState",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "very long URL (2000+ chars) is accepted"
+      ]
+    },
+    {
+      "id": "test_empty_collections_default",
+      "description": "Test that list fields default to empty lists not shared instances",
+      "function": "NodeCapture",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "two instances have separate list instances",
+        "no shared mutable defaults"
+      ]
+    },
+    {
+      "id": "test_timing_outlier_zero_stddev",
+      "description": "Test TimingOutlier edge case with zero standard deviation",
+      "function": "TimingOutlier",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "url": "https://example.com",
+        "auth_context": "anonymous",
+        "metric": "ttfb_ms",
+        "value_ms": "100.0",
+        "mean_ms": "100.0",
+        "stddev_ms": "0.0",
+        "z_score": "0.0"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "z_score is 0 when stddev is 0"
+      ]
+    },
+    {
+      "id": "test_graph_metrics_zero_nodes",
+      "description": "Test GraphMetrics for empty graph",
+      "function": "GraphMetrics",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "total_nodes": "0",
+        "total_edges": "0",
+        "orphan_nodes": "[]",
+        "dead_end_nodes": "[]",
+        "unreachable_nodes": "[]",
+        "strongly_connected_components": "0",
+        "cyclomatic_complexity": "0",
+        "max_depth": "0",
+        "edge_coverage": "0.0"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "all metrics are 0 or empty for empty graph"
+      ]
+    }
+  ],
+  "test_language": "python",
+  "generated_code": "\"\"\"\nContract tests for webprobe data models.\n\nThis test suite verifies:\n- Utility functions (_make_run_id, identity_key)\n- All 6 enum types with value validation\n- Simple structs (TimingData, Resource, ConsoleMessage, etc.)\n- Complex nested structs (NodeCapture, Node, Edge, SiteGraph, Run)\n- Analysis results and diff structures\n- Serialization round-trips\n- Graph invariants\n- Edge cases and error handling\n\"\"\"\n\nimport pytest\nimport re\nimport json\nfrom datetime import datetime, timezone\nfrom typing import Any\nfrom unittest.mock import Mock, patch\n\n# Import the module under test\nfrom src.webprobe.models import (\n    AuthContext,\n    DiscoveryMethod,\n    ResourceType,\n    ConsoleMessageLevel,\n    SecuritySeverity,\n    SecurityCategory,\n    TimingData,\n    Resource,\n    ConsoleMessage,\n    NodeState,\n    CookieInfo,\n    ResponseHeaders,\n    FormInfo,\n    SecurityFinding,\n    NodeCapture,\n    Node,\n    Edge,\n    SiteGraph,\n    BrokenLink,\n    AuthBoundaryViolation,\n    TimingOutlier,\n    GraphMetrics,\n    PrimePath,\n    AnalysisResult,\n    PhaseStatus,\n    CostSummary,\n    Run,\n    NodeDiff,\n    RunDiff,\n    _make_run_id,\n    SCHEMA_VERSION,\n)\n\n\n# ============================================================================\n# UTILITY FUNCTION TESTS\n# ============================================================================\n\nclass TestMakeRunId:\n    \"\"\"Tests for _make_run_id() function.\"\"\"\n\n    def test_make_run_id_format(self):\n        \"\"\"Test that _make_run_id returns string matching pattern YYYYMMDDTHHmmss-[a-f0-9]{8}\"\"\"\n        run_id = _make_run_id()\n        \n        # Check overall pattern\n        pattern = r'^\\d{8}T\\d{6}-[a-f0-9]{8}$'\n        assert re.match(pattern, run_id), f\"run_id '{run_id}' does not match pattern\"\n        \n        # Check timestamp is 15 chars (YYYYMMDDTHHmmss)\n        timestamp_part = run_id.split('-')[0]\n        assert len(timestamp_part) == 15, f\"Timestamp part should be 15 chars, got {len(timestamp_part)}\"\n        \n        # Check separator is dash\n        assert '-' in run_id, \"Should contain dash separator\"\n        \n        # Check UUID suffix is 8 hex chars\n        uuid_part = run_id.split('-')[1]\n        assert len(uuid_part) == 8, f\"UUID suffix should be 8 chars, got {len(uuid_part)}\"\n        assert all(c in '0123456789abcdef' for c in uuid_part), \"UUID suffix should be lowercase hex\"\n\n    def test_make_run_id_uniqueness(self):\n        \"\"\"Test that _make_run_id generates unique IDs over multiple invocations\"\"\"\n        run_ids = set()\n        iterations = 1000\n        \n        for _ in range(iterations):\n            run_id = _make_run_id()\n            run_ids.add(run_id)\n        \n        # All generated IDs should be unique (no collisions)\n        assert len(run_ids) == iterations, f\"Expected {iterations} unique IDs, got {len(run_ids)}\"\n\n    def test_make_run_id_timestamp_utc(self):\n        \"\"\"Test that _make_run_id timestamp is in UTC timezone\"\"\"\n        before = datetime.now(timezone.utc)\n        run_id = _make_run_id()\n        after = datetime.now(timezone.utc)\n        \n        # Extract timestamp portion\n        timestamp_str = run_id.split('-')[0]\n        \n        # Parse timestamp (YYYYMMDDTHHmmss)\n        parsed_time = datetime.strptime(timestamp_str, '%Y%m%dT%H%M%S').replace(tzinfo=timezone.utc)\n        \n        # Should be between before and after\n        assert before <= parsed_time <= after, \"Timestamp should be current UTC time\"\n\n\nclass TestIdentityKey:\n    \"\"\"Tests for NodeState.identity_key() method.\"\"\"\n\n    def test_identity_key_returns_url(self):\n        \"\"\"Test that NodeState.identity_key returns the URL\"\"\"\n        url = \"https://example.com\"\n        node_state = NodeState(url=url)\n        \n        assert node_state.identity_key() == url, \"identity_key should return URL\"\n\n    def test_identity_key_deterministic(self):\n        \"\"\"Test that NodeState.identity_key returns consistent value for same URL\"\"\"\n        url = \"https://example.com/path\"\n        node_state = NodeState(url=url)\n        \n        # Call multiple times\n        key1 = node_state.identity_key()\n        key2 = node_state.identity_key()\n        \n        assert key1 == key2, \"identity_key should be deterministic\"\n        \n        # Should be hashable for use as dict key\n        test_dict = {key1: \"value\"}\n        assert test_dict[key2] == \"value\", \"identity_key should be hashable\"\n\n\n# ============================================================================\n# ENUM TESTS\n# ============================================================================\n\nclass TestEnums:\n    \"\"\"Tests for all enum types.\"\"\"\n\n    def test_auth_context_enum_values(self):\n        \"\"\"Test AuthContext enum has correct values\"\"\"\n        assert hasattr(AuthContext, 'anonymous'), \"Should have 'anonymous' variant\"\n        assert hasattr(AuthContext, 'authenticated'), \"Should have 'authenticated' variant\"\n        \n        # Check exactly 2 variants\n        assert len(list(AuthContext)) == 2, \"Should have exactly 2 variants\"\n\n    def test_discovery_method_enum_values(self):\n        \"\"\"Test DiscoveryMethod enum has all expected values\"\"\"\n        expected = ['sitemap', 'robots', 'crawl', 'framework', 'manual']\n        \n        for variant in expected:\n            assert hasattr(DiscoveryMethod, variant), f\"Should have '{variant}' variant\"\n        \n        assert len(list(DiscoveryMethod)) == 5, \"Should have exactly 5 variants\"\n\n    def test_resource_type_enum_values(self):\n        \"\"\"Test ResourceType enum has all expected values\"\"\"\n        expected = ['document', 'script', 'stylesheet', 'image', 'font', \n                   'media', 'xhr', 'fetch', 'websocket', 'other']\n        \n        for variant in expected:\n            assert hasattr(ResourceType, variant), f\"Should have '{variant}' variant\"\n        \n        assert len(list(ResourceType)) == 10, \"Should have exactly 10 variants\"\n\n    def test_console_message_level_enum_values(self):\n        \"\"\"Test ConsoleMessageLevel enum has all expected values\"\"\"\n        expected = ['log', 'warning', 'error', 'info', 'debug']\n        \n        for variant in expected:\n            assert hasattr(ConsoleMessageLevel, variant), f\"Should have '{variant}' variant\"\n        \n        assert len(list(ConsoleMessageLevel)) == 5, \"Should have exactly 5 variants\"\n\n    def test_security_severity_enum_values(self):\n        \"\"\"Test SecuritySeverity enum has all expected values\"\"\"\n        expected = ['critical', 'high', 'medium', 'low', 'info']\n        \n        for variant in expected:\n            assert hasattr(SecuritySeverity, variant), f\"Should have '{variant}' variant\"\n        \n        assert len(list(SecuritySeverity)) == 5, \"Should have exactly 5 variants\"\n\n    def test_security_category_enum_values(self):\n        \"\"\"Test SecurityCategory enum has all expected values\"\"\"\n        expected = ['headers', 'cookies', 'xss', 'mixed_content', 'cors', \n                   'information_disclosure', 'forms', 'tls']\n        \n        for variant in expected:\n            assert hasattr(SecurityCategory, variant), f\"Should have '{variant}' variant\"\n        \n        assert len(list(SecurityCategory)) == 8, \"Should have exactly 8 variants\"\n\n\n# ============================================================================\n# SIMPLE STRUCT TESTS\n# ============================================================================\n\nclass TestTimingData:\n    \"\"\"Tests for TimingData struct.\"\"\"\n\n    def test_timing_data_complete(self):\n        \"\"\"Test TimingData with all fields populated\"\"\"\n        timing = TimingData(\n            started_at=\"2024-01-15T10:30:00Z\",\n            duration_ms=250.5,\n            ttfb_ms=120.3\n        )\n        \n        assert timing.started_at == \"2024-01-15T10:30:00Z\"\n        assert timing.duration_ms == 250.5\n        assert timing.ttfb_ms == 120.3\n        assert isinstance(timing.duration_ms, float)\n        assert isinstance(timing.ttfb_ms, float)\n\n    def test_timing_data_optional_ttfb(self):\n        \"\"\"Test TimingData with ttfb_ms as None\"\"\"\n        timing = TimingData(\n            started_at=\"2024-01-15T10:30:00Z\",\n            duration_ms=250.5,\n            ttfb_ms=None\n        )\n        \n        assert timing.ttfb_ms is None\n        assert timing.started_at == \"2024-01-15T10:30:00Z\"\n        assert timing.duration_ms == 250.5\n\n    def test_timing_data_zero_duration(self):\n        \"\"\"Test TimingData with zero duration\"\"\"\n        timing = TimingData(\n            started_at=\"2024-01-15T10:30:00Z\",\n            duration_ms=0.0,\n            ttfb_ms=0.0\n        )\n        \n        assert timing.duration_ms == 0.0\n        assert timing.ttfb_ms == 0.0\n\n\nclass TestResource:\n    \"\"\"Tests for Resource struct.\"\"\"\n\n    def test_resource_complete(self):\n        \"\"\"Test Resource with all fields populated\"\"\"\n        timing = TimingData(started_at=\"2024-01-15T10:30:00Z\", duration_ms=100.0, ttfb_ms=50.0)\n        resource = Resource(\n            url=\"https://example.com/script.js\",\n            resource_type=ResourceType.script,\n            status_code=200,\n            size_bytes=15000,\n            timing=timing,\n            mime_type=\"application/javascript\"\n        )\n        \n        assert resource.url == \"https://example.com/script.js\"\n        assert resource.resource_type == ResourceType.script\n        assert resource.status_code == 200\n        assert resource.size_bytes == 15000\n        assert resource.mime_type == \"application/javascript\"\n        assert resource.timing == timing\n\n    def test_resource_optional_fields_none(self):\n        \"\"\"Test Resource with optional fields as None\"\"\"\n        resource = Resource(\n            url=\"https://example.com/image.png\",\n            resource_type=ResourceType.image,\n            status_code=None,\n            size_bytes=None,\n            timing=None,\n            mime_type=\"image/png\"\n        )\n        \n        assert resource.status_code is None\n        assert resource.size_bytes is None\n        assert resource.timing is None\n\n\nclass TestConsoleMessage:\n    \"\"\"Tests for ConsoleMessage struct.\"\"\"\n\n    def test_console_message_complete(self):\n        \"\"\"Test ConsoleMessage with all fields\"\"\"\n        msg = ConsoleMessage(\n            level=ConsoleMessageLevel.error,\n            text=\"Uncaught TypeError\",\n            url=\"https://example.com/app.js\",\n            line=42\n        )\n        \n        assert msg.level == ConsoleMessageLevel.error\n        assert msg.text == \"Uncaught TypeError\"\n        assert msg.url == \"https://example.com/app.js\"\n        assert msg.line == 42\n        assert isinstance(msg.line, int)\n\n    def test_console_message_no_line(self):\n        \"\"\"Test ConsoleMessage with line as None\"\"\"\n        msg = ConsoleMessage(\n            level=ConsoleMessageLevel.log,\n            text=\"Debug message\",\n            url=\"https://example.com\",\n            line=None\n        )\n        \n        assert msg.line is None\n        assert msg.level == ConsoleMessageLevel.log\n        assert msg.text == \"Debug message\"\n\n\nclass TestNodeState:\n    \"\"\"Tests for NodeState struct.\"\"\"\n\n    def test_node_state_simple(self):\n        \"\"\"Test NodeState creation with URL\"\"\"\n        state = NodeState(url=\"https://example.com/page\")\n        \n        assert state.url == \"https://example.com/page\"\n\n    def test_url_absolute_validation(self):\n        \"\"\"Test handling of absolute URLs\"\"\"\n        url = \"https://example.com/path?query=value#fragment\"\n        state = NodeState(url=url)\n        \n        assert state.url == url\n\n    def test_url_very_long(self):\n        \"\"\"Test handling of very long URLs\"\"\"\n        # Create URL with 2000+ characters\n        long_path = \"a\" * 2000\n        url = f\"https://example.com/{long_path}\"\n        state = NodeState(url=url)\n        \n        assert len(state.url) > 2000\n        assert state.url == url\n\n\nclass TestCookieInfo:\n    \"\"\"Tests for CookieInfo struct.\"\"\"\n\n    def test_cookie_info_secure(self):\n        \"\"\"Test CookieInfo with secure attributes\"\"\"\n        cookie = CookieInfo(\n            name=\"session\",\n            domain=\"example.com\",\n            path=\"/\",\n            secure=True,\n            http_only=True,\n            same_site=\"Strict\"\n        )\n        \n        assert cookie.secure is True\n        assert cookie.http_only is True\n        assert cookie.same_site == \"Strict\"\n\n    def test_cookie_info_insecure(self):\n        \"\"\"Test CookieInfo with insecure attributes\"\"\"\n        cookie = CookieInfo(\n            name=\"tracking\",\n            domain=\"example.com\",\n            path=\"/\",\n            secure=False,\n            http_only=False,\n            same_site=\"None\"\n        )\n        \n        assert cookie.secure is False\n        assert cookie.http_only is False\n        assert cookie.same_site == \"None\"\n\n\nclass TestResponseHeaders:\n    \"\"\"Tests for ResponseHeaders struct.\"\"\"\n\n    def test_response_headers_empty(self):\n        \"\"\"Test ResponseHeaders with empty dict\"\"\"\n        headers = ResponseHeaders(raw={})\n        \n        assert headers.raw == {}\n        assert isinstance(headers.raw, dict)\n\n    def test_response_headers_populated(self):\n        \"\"\"Test ResponseHeaders with security headers\"\"\"\n        headers = ResponseHeaders(raw={\n            \"Content-Security-Policy\": \"default-src 'self'\",\n            \"X-Frame-Options\": \"DENY\"\n        })\n        \n        assert \"Content-Security-Policy\" in headers.raw\n        assert headers.raw[\"X-Frame-Options\"] == \"DENY\"\n\n\nclass TestFormInfo:\n    \"\"\"Tests for FormInfo struct.\"\"\"\n\n    def test_form_info_csrf_protected(self):\n        \"\"\"Test FormInfo with CSRF protection\"\"\"\n        form = FormInfo(\n            action=\"/login\",\n            method=\"POST\",\n            has_csrf_token=True,\n            has_password_field=True,\n            autocomplete_off=False\n        )\n        \n        assert form.has_csrf_token is True\n        assert form.has_password_field is True\n        assert form.method == \"POST\"\n\n    def test_form_info_no_csrf(self):\n        \"\"\"Test FormInfo without CSRF protection\"\"\"\n        form = FormInfo(\n            action=\"/search\",\n            method=\"GET\",\n            has_csrf_token=False,\n            has_password_field=False,\n            autocomplete_off=True\n        )\n        \n        assert form.has_csrf_token is False\n        assert form.method == \"GET\"\n        assert form.autocomplete_off is True\n\n\nclass TestSecurityFinding:\n    \"\"\"Tests for SecurityFinding struct.\"\"\"\n\n    def test_security_finding_critical(self):\n        \"\"\"Test SecurityFinding with critical severity\"\"\"\n        finding = SecurityFinding(\n            category=SecurityCategory.xss,\n            severity=SecuritySeverity.critical,\n            title=\"Reflected XSS\",\n            detail=\"User input not sanitized\",\n            evidence=\"<script>alert(1)</script>\",\n            url=\"https://example.com/search\",\n            auth_context=AuthContext.anonymous\n        )\n        \n        assert finding.severity == SecuritySeverity.critical\n        assert finding.category == SecurityCategory.xss\n        assert finding.title == \"Reflected XSS\"\n        assert finding.evidence == \"<script>alert(1)</script>\"\n\n    def test_security_finding_info(self):\n        \"\"\"Test SecurityFinding with info severity\"\"\"\n        finding = SecurityFinding(\n            category=SecurityCategory.headers,\n            severity=SecuritySeverity.info,\n            title=\"Missing header\",\n            detail=\"X-Content-Type-Options not set\",\n            evidence=\"\",\n            url=\"https://example.com\",\n            auth_context=AuthContext.authenticated\n        )\n        \n        assert finding.severity == SecuritySeverity.info\n        assert finding.evidence == \"\"\n\n\n# ============================================================================\n# COMPLEX STRUCT TESTS\n# ============================================================================\n\nclass TestNodeCapture:\n    \"\"\"Tests for NodeCapture struct.\"\"\"\n\n    def test_node_capture_minimal(self):\n        \"\"\"Test NodeCapture with minimal fields\"\"\"\n        capture = NodeCapture(\n            auth_context=AuthContext.anonymous,\n            http_status=None,\n            timing=None,\n            dom_content_loaded_ms=None,\n            load_event_ms=None,\n            page_title=\"\",\n            page_text=\"\",\n            resources=[],\n            console_messages=[],\n            outgoing_links=[],\n            screenshot_path=\"\",\n            response_headers=ResponseHeaders(raw={}),\n            cookies=[],\n            forms=[],\n            security_findings=[]\n        )\n        \n        assert capture.http_status is None\n        assert capture.resources == []\n        assert capture.console_messages == []\n\n    def test_node_capture_complete(self):\n        \"\"\"Test NodeCapture with all fields populated\"\"\"\n        timing = TimingData(started_at=\"2024-01-15T10:00:00Z\", duration_ms=500.0, ttfb_ms=100.0)\n        resource = Resource(\n            url=\"https://example.com/style.css\",\n            resource_type=ResourceType.stylesheet,\n            status_code=200,\n            size_bytes=5000,\n            timing=None,\n            mime_type=\"text/css\"\n        )\n        \n        capture = NodeCapture(\n            auth_context=AuthContext.authenticated,\n            http_status=200,\n            timing=timing,\n            dom_content_loaded_ms=300.0,\n            load_event_ms=450.0,\n            page_title=\"Dashboard\",\n            page_text=\"Welcome user\",\n            resources=[resource],\n            console_messages=[],\n            outgoing_links=[\"https://example.com/profile\"],\n            screenshot_path=\"/tmp/screenshot.png\",\n            response_headers=ResponseHeaders(raw={\"X-Frame-Options\": \"SAMEORIGIN\"}),\n            cookies=[],\n            forms=[],\n            security_findings=[]\n        )\n        \n        assert capture.http_status == 200\n        assert capture.page_title == \"Dashboard\"\n        assert len(capture.resources) == 1\n        assert isinstance(capture.resources, list)\n\n    def test_empty_collections_default(self):\n        \"\"\"Test that list fields default to empty lists not shared instances\"\"\"\n        capture1 = NodeCapture(\n            auth_context=AuthContext.anonymous,\n            http_status=200,\n            page_title=\"\",\n            page_text=\"\",\n            screenshot_path=\"\",\n            response_headers=ResponseHeaders(raw={})\n        )\n        \n        capture2 = NodeCapture(\n            auth_context=AuthContext.anonymous,\n            http_status=200,\n            page_title=\"\",\n            page_text=\"\",\n            screenshot_path=\"\",\n            response_headers=ResponseHeaders(raw={})\n        )\n        \n        # Modify one instance's list\n        capture1.resources.append(Resource(\n            url=\"https://example.com/test.js\",\n            resource_type=ResourceType.script,\n            status_code=200,\n            size_bytes=1000,\n            timing=None,\n            mime_type=\"application/javascript\"\n        ))\n        \n        # Other instance should not be affected\n        assert len(capture1.resources) == 1\n        assert len(capture2.resources) == 0\n\n\nclass TestNode:\n    \"\"\"Tests for Node struct.\"\"\"\n\n    def test_node_minimal(self):\n        \"\"\"Test Node with minimal required fields\"\"\"\n        state = NodeState(url=\"https://example.com\")\n        node = Node(\n            id=\"node1\",\n            state=state,\n            discovered_via=DiscoveryMethod.manual,\n            requires_auth=None,\n            auth_contexts_available=[],\n            captures=[],\n            depth=0\n        )\n        \n        assert node.id == \"node1\"\n        assert node.depth == 0\n        assert node.requires_auth is None\n\n    def test_node_with_captures(self):\n        \"\"\"Test Node with multiple captures\"\"\"\n        state = NodeState(url=\"https://example.com/page\")\n        capture1 = NodeCapture(\n            auth_context=AuthContext.anonymous,\n            http_status=200,\n            page_title=\"Public\",\n            page_text=\"\",\n            screenshot_path=\"\",\n            response_headers=ResponseHeaders(raw={})\n        )\n        capture2 = NodeCapture(\n            auth_context=AuthContext.authenticated,\n            http_status=200,\n            page_title=\"Private\",\n            page_text=\"\",\n            screenshot_path=\"\",\n            response_headers=ResponseHeaders(raw={})\n        )\n        \n        node = Node(\n            id=\"node2\",\n            state=state,\n            discovered_via=DiscoveryMethod.crawl,\n            requires_auth=False,\n            auth_contexts_available=[AuthContext.anonymous, AuthContext.authenticated],\n            captures=[capture1, capture2],\n            depth=2\n        )\n        \n        assert isinstance(node.captures, list)\n        assert len(node.captures) == 2\n        assert len(node.auth_contexts_available) == 2\n\n    def test_node_depth_consistency(self):\n        \"\"\"Test that node depth values are consistent with graph structure\"\"\"\n        # Root node should have depth 0\n        root_state = NodeState(url=\"https://example.com\")\n        root = Node(\n            id=\"root\",\n            state=root_state,\n            discovered_via=DiscoveryMethod.manual,\n            requires_auth=None,\n            auth_contexts_available=[],\n            captures=[],\n            depth=0\n        )\n        \n        assert root.depth == 0\n        \n        # Child node should have depth > 0\n        child_state = NodeState(url=\"https://example.com/page\")\n        child = Node(\n            id=\"child\",\n            state=child_state,\n            discovered_via=DiscoveryMethod.crawl,\n            requires_auth=None,\n            auth_contexts_available=[],\n            captures=[],\n            depth=1\n        )\n        \n        assert child.depth == root.depth + 1\n\n\nclass TestEdge:\n    \"\"\"Tests for Edge struct.\"\"\"\n\n    def test_edge_verified(self):\n        \"\"\"Test Edge with verified link\"\"\"\n        edge = Edge(\n            source=\"node1\",\n            target=\"node2\",\n            link_text=\"Click here\",\n            discovered_via=DiscoveryMethod.crawl,\n            auth_context=AuthContext.anonymous,\n            verified=True\n        )\n        \n        assert edge.verified is True\n        assert edge.source == \"node1\"\n        assert edge.target == \"node2\"\n\n    def test_edge_unverified(self):\n        \"\"\"Test Edge with unverified link\"\"\"\n        edge = Edge(\n            source=\"node1\",\n            target=\"node3\",\n            link_text=\"\",\n            discovered_via=DiscoveryMethod.sitemap,\n            auth_context=AuthContext.authenticated,\n            verified=False\n        )\n        \n        assert edge.verified is False\n        assert edge.link_text == \"\"\n\n\nclass TestSiteGraph:\n    \"\"\"Tests for SiteGraph struct.\"\"\"\n\n    def test_site_graph_empty(self):\n        \"\"\"Test SiteGraph with no nodes or edges\"\"\"\n        graph = SiteGraph(\n            nodes={},\n            edges=[],\n            root_url=\"https://example.com\",\n            seed_urls=[]\n        )\n        \n        assert graph.nodes == {}\n        assert graph.edges == []\n        assert isinstance(graph.nodes, dict)\n        assert isinstance(graph.edges, list)\n\n    def test_site_graph_with_data(self):\n        \"\"\"Test SiteGraph with nodes and edges\"\"\"\n        state = NodeState(url=\"https://example.com\")\n        node = Node(\n            id=\"node1\",\n            state=state,\n            discovered_via=DiscoveryMethod.manual,\n            requires_auth=None,\n            auth_contexts_available=[],\n            captures=[],\n            depth=0\n        )\n        \n        graph = SiteGraph(\n            nodes={\"node1\": node},\n            edges=[],\n            root_url=\"https://example.com\",\n            seed_urls=[\"https://example.com\"]\n        )\n        \n        assert graph.root_url == \"https://example.com\"\n        assert len(graph.seed_urls) == 1\n\n    def test_edge_references_valid_nodes(self):\n        \"\"\"Test that edges reference nodes that exist in graph\"\"\"\n        state1 = NodeState(url=\"https://example.com\")\n        node1 = Node(\n            id=\"node1\",\n            state=state1,\n            discovered_via=DiscoveryMethod.manual,\n            requires_auth=None,\n            auth_contexts_available=[],\n            captures=[],\n            depth=0\n        )\n        \n        state2 = NodeState(url=\"https://example.com/page\")\n        node2 = Node(\n            id=\"node2\",\n            state=state2,\n            discovered_via=DiscoveryMethod.crawl,\n            requires_auth=None,\n            auth_contexts_available=[],\n            captures=[],\n            depth=1\n        )\n        \n        edge = Edge(\n            source=\"node1\",\n            target=\"node2\",\n            link_text=\"Link\",\n            discovered_via=DiscoveryMethod.crawl,\n            auth_context=AuthContext.anonymous,\n            verified=True\n        )\n        \n        graph = SiteGraph(\n            nodes={\"node1\": node1, \"node2\": node2},\n            edges=[edge],\n            root_url=\"https://example.com\",\n            seed_urls=[\"https://example.com\"]\n        )\n        \n        # All edge sources should exist in nodes\n        for e in graph.edges:\n            assert e.source in graph.nodes, f\"Edge source {e.source} not in nodes\"\n            assert e.target in graph.nodes, f\"Edge target {e.target} not in nodes\"\n\n\n# ============================================================================\n# ANALYSIS RESULT TESTS\n# ============================================================================\n\nclass TestBrokenLink:\n    \"\"\"Tests for BrokenLink struct.\"\"\"\n\n    def test_broken_link_with_status(self):\n        \"\"\"Test BrokenLink with status code\"\"\"\n        broken = BrokenLink(\n            source=\"https://example.com\",\n            target=\"https://example.com/missing\",\n            status_code=404,\n            error=\"Not Found\"\n        )\n        \n        assert broken.status_code == 404\n        assert broken.error == \"Not Found\"\n\n    def test_broken_link_network_error(self):\n        \"\"\"Test BrokenLink with network error and no status\"\"\"\n        broken = BrokenLink(\n            source=\"https://example.com\",\n            target=\"https://unreachable.invalid\",\n            status_code=None,\n            error=\"DNS resolution failed\"\n        )\n        \n        assert broken.status_code is None\n        assert \"DNS\" in broken.error\n\n\nclass TestAuthBoundaryViolation:\n    \"\"\"Tests for AuthBoundaryViolation struct.\"\"\"\n\n    def test_auth_boundary_violation(self):\n        \"\"\"Test AuthBoundaryViolation for unprotected admin page\"\"\"\n        violation = AuthBoundaryViolation(\n            url=\"https://example.com/admin\",\n            expected_auth=True,\n            actual_accessible_anonymous=True,\n            evidence=\"200 OK without credentials\"\n        )\n        \n        assert violation.expected_auth is True\n        assert violation.actual_accessible_anonymous is True\n\n\nclass TestTimingOutlier:\n    \"\"\"Tests for TimingOutlier struct.\"\"\"\n\n    def test_timing_outlier(self):\n        \"\"\"Test TimingOutlier for slow page load\"\"\"\n        outlier = TimingOutlier(\n            url=\"https://example.com/slow\",\n            auth_context=AuthContext.anonymous,\n            metric=\"duration_ms\",\n            value_ms=5000.0,\n            mean_ms=200.0,\n            stddev_ms=50.0,\n            z_score=96.0\n        )\n        \n        assert outlier.z_score == 96.0\n        assert outlier.value_ms > outlier.mean_ms\n\n    def test_timing_outlier_zero_stddev(self):\n        \"\"\"Test TimingOutlier edge case with zero standard deviation\"\"\"\n        outlier = TimingOutlier(\n            url=\"https://example.com\",\n            auth_context=AuthContext.anonymous,\n            metric=\"ttfb_ms\",\n            value_ms=100.0,\n            mean_ms=100.0,\n            stddev_ms=0.0,\n            z_score=0.0\n        )\n        \n        assert outlier.z_score == 0.0\n        assert outlier.stddev_ms == 0.0\n\n\nclass TestGraphMetrics:\n    \"\"\"Tests for GraphMetrics struct.\"\"\"\n\n    def test_graph_metrics_simple(self):\n        \"\"\"Test GraphMetrics for simple graph\"\"\"\n        metrics = GraphMetrics(\n            total_nodes=10,\n            total_edges=15,\n            orphan_nodes=[],\n            dead_end_nodes=[],\n            unreachable_nodes=[],\n            strongly_connected_components=1,\n            cyclomatic_complexity=6,\n            max_depth=5,\n            edge_coverage=1.0\n        )\n        \n        assert metrics.total_nodes == 10\n        assert metrics.edge_coverage == 1.0\n\n    def test_graph_metrics_with_issues(self):\n        \"\"\"Test GraphMetrics with orphan and dead-end nodes\"\"\"\n        metrics = GraphMetrics(\n            total_nodes=20,\n            total_edges=18,\n            orphan_nodes=[\"node1\", \"node2\"],\n            dead_end_nodes=[\"node3\"],\n            unreachable_nodes=[\"node4\"],\n            strongly_connected_components=3,\n            cyclomatic_complexity=0,\n            max_depth=8,\n            edge_coverage=0.75\n        )\n        \n        assert len(metrics.orphan_nodes) == 2\n        assert metrics.edge_coverage < 1.0\n\n    def test_graph_metrics_zero_nodes(self):\n        \"\"\"Test GraphMetrics for empty graph\"\"\"\n        metrics = GraphMetrics(\n            total_nodes=0,\n            total_edges=0,\n            orphan_nodes=[],\n            dead_end_nodes=[],\n            unreachable_nodes=[],\n            strongly_connected_components=0,\n            cyclomatic_complexity=0,\n            max_depth=0,\n            edge_coverage=0.0\n        )\n        \n        assert metrics.total_nodes == 0\n        assert metrics.total_edges == 0\n        assert metrics.edge_coverage == 0.0\n\n\nclass TestPrimePath:\n    \"\"\"Tests for PrimePath struct.\"\"\"\n\n    def test_prime_path_no_loop(self):\n        \"\"\"Test PrimePath without loop\"\"\"\n        path = PrimePath(\n            path=[\"node1\", \"node2\", \"node3\"],\n            length=3,\n            contains_loop=False\n        )\n        \n        assert path.contains_loop is False\n        assert path.length == 3\n\n    def test_prime_path_with_loop(self):\n        \"\"\"Test PrimePath with loop\"\"\"\n        path = PrimePath(\n            path=[\"node1\", \"node2\", \"node1\"],\n            length=3,\n            contains_loop=True\n        )\n        \n        assert path.contains_loop is True\n        assert \"node1\" in path.path\n\n\nclass TestAnalysisResult:\n    \"\"\"Tests for AnalysisResult struct.\"\"\"\n\n    def test_analysis_result_complete(self):\n        \"\"\"Test AnalysisResult with all findings\"\"\"\n        metrics = GraphMetrics(\n            total_nodes=5,\n            total_edges=6,\n            orphan_nodes=[],\n            dead_end_nodes=[],\n            unreachable_nodes=[],\n            strongly_connected_components=1,\n            cyclomatic_complexity=2,\n            max_depth=3,\n            edge_coverage=1.0\n        )\n        \n        result = AnalysisResult(\n            graph_metrics=metrics,\n            broken_links=[],\n            auth_violations=[],\n            timing_outliers=[],\n            prime_paths=[],\n            security_findings=[]\n        )\n        \n        assert isinstance(result.broken_links, list)\n        assert isinstance(result.auth_violations, list)\n        assert result.graph_metrics is not None\n\n    def test_analysis_result_empty(self):\n        \"\"\"Test AnalysisResult with no findings\"\"\"\n        metrics = GraphMetrics(\n            total_nodes=0,\n            total_edges=0,\n            orphan_nodes=[],\n            dead_end_nodes=[],\n            unreachable_nodes=[],\n            strongly_connected_components=0,\n            cyclomatic_complexity=0,\n            max_depth=0,\n            edge_coverage=0.0\n        )\n        \n        result = AnalysisResult(\n            graph_metrics=metrics,\n            broken_links=[],\n            auth_violations=[],\n            timing_outliers=[],\n            prime_paths=[],\n            security_findings=[]\n        )\n        \n        assert len(result.broken_links) == 0\n        assert len(result.auth_violations) == 0\n\n\n# ============================================================================\n# PHASE STATUS AND COST TESTS\n# ============================================================================\n\nclass TestPhaseStatus:\n    \"\"\"Tests for PhaseStatus struct.\"\"\"\n\n    def test_phase_status_pending(self):\n        \"\"\"Test PhaseStatus in pending state\"\"\"\n        status = PhaseStatus(\n            phase=\"map\",\n            status=\"pending\",\n            started_at=None,\n            completed_at=None,\n            duration_ms=None,\n            error=None\n        )\n        \n        assert status.status == \"pending\"\n        assert status.started_at is None\n\n    def test_phase_status_completed(self):\n        \"\"\"Test PhaseStatus in completed state\"\"\"\n        status = PhaseStatus(\n            phase=\"capture\",\n            status=\"completed\",\n            started_at=\"2024-01-15T10:00:00Z\",\n            completed_at=\"2024-01-15T10:05:00Z\",\n            duration_ms=300000.0,\n            error=None\n        )\n        \n        assert status.status == \"completed\"\n        assert status.started_at is not None\n        assert status.completed_at is not None\n        assert status.duration_ms > 0\n\n    def test_phase_status_failed(self):\n        \"\"\"Test PhaseStatus in failed state\"\"\"\n        status = PhaseStatus(\n            phase=\"analyze\",\n            status=\"failed\",\n            started_at=\"2024-01-15T10:00:00Z\",\n            completed_at=\"2024-01-15T10:01:00Z\",\n            duration_ms=60000.0,\n            error=\"Connection timeout\"\n        )\n        \n        assert status.status == \"failed\"\n        assert status.error == \"Connection timeout\"\n\n\nclass TestCostSummary:\n    \"\"\"Tests for CostSummary struct.\"\"\"\n\n    def test_cost_summary_zero_cost(self):\n        \"\"\"Test CostSummary with zero cost\"\"\"\n        cost = CostSummary(\n            total_calls=0,\n            total_input_tokens=0,\n            total_output_tokens=0,\n            total_cost_usd=0.0,\n            by_provider={}\n        )\n        \n        assert cost.total_cost_usd == 0.0\n        assert cost.total_calls == 0\n\n    def test_cost_summary_with_usage(self):\n        \"\"\"Test CostSummary with actual usage\"\"\"\n        cost = CostSummary(\n            total_calls=150,\n            total_input_tokens=5000,\n            total_output_tokens=3000,\n            total_cost_usd=0.25,\n            by_provider={\"openai\": {\"calls\": 150, \"cost_usd\": 0.25}}\n        )\n        \n        assert cost.total_calls == 150\n        assert \"openai\" in cost.by_provider\n\n\n# ============================================================================\n# RUN AND DIFF TESTS\n# ============================================================================\n\nclass TestRun:\n    \"\"\"Tests for Run struct.\"\"\"\n\n    def test_run_minimal(self):\n        \"\"\"Test Run with minimal required fields\"\"\"\n        graph = SiteGraph(\n            nodes={},\n            edges=[],\n            root_url=\"https://example.com\",\n            seed_urls=[]\n        )\n        \n        run = Run(\n            schema_version=\"1.1\",\n            run_id=\"test-run-123\",\n            url=\"https://example.com\",\n            started_at=\"2024-01-15T10:00:00Z\",\n            completed_at=None,\n            config_snapshot={},\n            phases=[],\n            graph=graph,\n            analysis=None,\n            explore_cost=None\n        )\n        \n        assert run.schema_version == \"1.1\"\n        assert run.run_id == \"test-run-123\"\n        assert run.completed_at is None\n\n    def test_run_complete(self):\n        \"\"\"Test Run with all phases completed\"\"\"\n        graph = SiteGraph(\n            nodes={},\n            edges=[],\n            root_url=\"https://example.com\",\n            seed_urls=[\"https://example.com\"]\n        )\n        \n        run = Run(\n            schema_version=\"1.1\",\n            run_id=\"test-run-456\",\n            url=\"https://example.com\",\n            started_at=\"2024-01-15T10:00:00Z\",\n            completed_at=\"2024-01-15T11:00:00Z\",\n            config_snapshot={},\n            phases=[],\n            graph=graph,\n            analysis=None,\n            explore_cost=None\n        )\n        \n        assert run.completed_at == \"2024-01-15T11:00:00Z\"\n        assert isinstance(run.phases, list)\n\n    def test_run_schema_version_invariant(self):\n        \"\"\"Test that Run defaults to SCHEMA_VERSION 1.1\"\"\"\n        # Test constant\n        assert SCHEMA_VERSION == \"1.1\"\n        \n        graph = SiteGraph(\n            nodes={},\n            edges=[],\n            root_url=\"https://example.com\",\n            seed_urls=[]\n        )\n        \n        run = Run(\n            schema_version=SCHEMA_VERSION,\n            run_id=\"test\",\n            url=\"https://example.com\",\n            started_at=\"2024-01-15T10:00:00Z\",\n            config_snapshot={},\n            phases=[],\n            graph=graph\n        )\n        \n        assert run.schema_version == \"1.1\"\n\n\nclass TestNodeDiff:\n    \"\"\"Tests for NodeDiff struct.\"\"\"\n\n    def test_node_diff_added(self):\n        \"\"\"Test NodeDiff for added node\"\"\"\n        diff = NodeDiff(\n            url=\"https://example.com/new\",\n            change=\"added\",\n            details={}\n        )\n        \n        assert diff.change == \"added\"\n\n    def test_node_diff_removed(self):\n        \"\"\"Test NodeDiff for removed node\"\"\"\n        diff = NodeDiff(\n            url=\"https://example.com/old\",\n            change=\"removed\",\n            details={}\n        )\n        \n        assert diff.change == \"removed\"\n\n    def test_node_diff_changed(self):\n        \"\"\"Test NodeDiff for changed node\"\"\"\n        diff = NodeDiff(\n            url=\"https://example.com/page\",\n            change=\"changed\",\n            details={\"status_code\": {\"old\": 200, \"new\": 404}}\n        )\n        \n        assert diff.change == \"changed\"\n        assert \"status_code\" in diff.details\n\n\nclass TestRunDiff:\n    \"\"\"Tests for RunDiff struct.\"\"\"\n\n    def test_run_diff_empty(self):\n        \"\"\"Test RunDiff with no changes (identical runs)\"\"\"\n        diff = RunDiff(\n            run_a_id=\"run1\",\n            run_b_id=\"run2\",\n            nodes_added=[],\n            nodes_removed=[],\n            edges_added=[],\n            edges_removed=[],\n            status_changes=[],\n            timing_changes=[],\n            new_broken_links=[],\n            resolved_broken_links=[],\n            new_auth_violations=[],\n            resolved_auth_violations=[]\n        )\n        \n        assert len(diff.nodes_added) == 0\n        assert len(diff.nodes_removed) == 0\n\n    def test_run_diff_with_changes(self):\n        \"\"\"Test RunDiff with multiple types of changes\"\"\"\n        edge = Edge(\n            source=\"node1\",\n            target=\"node2\",\n            link_text=\"New link\",\n            discovered_via=DiscoveryMethod.crawl,\n            auth_context=AuthContext.anonymous,\n            verified=True\n        )\n        \n        diff = RunDiff(\n            run_a_id=\"run1\",\n            run_b_id=\"run2\",\n            nodes_added=[\"node3\"],\n            nodes_removed=[\"node4\"],\n            edges_added=[edge],\n            edges_removed=[],\n            status_changes=[],\n            timing_changes=[],\n            new_broken_links=[],\n            resolved_broken_links=[],\n            new_auth_violations=[],\n            resolved_auth_violations=[]\n        )\n        \n        assert len(diff.nodes_added) == 1\n        assert len(diff.edges_added) == 1\n\n\n# ============================================================================\n# SERIALIZATION TESTS\n# ============================================================================\n\nclass TestSerialization:\n    \"\"\"Tests for struct serialization/deserialization.\"\"\"\n\n    def test_serialization_timing_data(self):\n        \"\"\"Test TimingData serialization round-trip\"\"\"\n        original = TimingData(\n            started_at=\"2024-01-15T10:00:00Z\",\n            duration_ms=100.5,\n            ttfb_ms=50.2\n        )\n        \n        # Convert to dict\n        data_dict = original.dict()\n        \n        # Verify dict structure\n        assert isinstance(data_dict, dict)\n        assert data_dict[\"duration_ms\"] == 100.5\n        \n        # Recreate from dict\n        reconstructed = TimingData(**data_dict)\n        \n        assert reconstructed.started_at == original.started_at\n        assert reconstructed.duration_ms == original.duration_ms\n        assert reconstructed.ttfb_ms == original.ttfb_ms\n\n    def test_serialization_node_capture(self):\n        \"\"\"Test NodeCapture serialization round-trip\"\"\"\n        resource = Resource(\n            url=\"https://example.com/script.js\",\n            resource_type=ResourceType.script,\n            status_code=200,\n            size_bytes=1000,\n            timing=None,\n            mime_type=\"application/javascript\"\n        )\n        \n        original = NodeCapture(\n            auth_context=AuthContext.anonymous,\n            http_status=200,\n            page_title=\"Test\",\n            page_text=\"Content\",\n            screenshot_path=\"/tmp/test.png\",\n            response_headers=ResponseHeaders(raw={\"X-Test\": \"value\"}),\n            resources=[resource],\n            console_messages=[],\n            outgoing_links=[\"https://example.com/link\"],\n            cookies=[],\n            forms=[],\n            security_findings=[]\n        )\n        \n        # Convert to dict\n        data_dict = original.dict()\n        \n        # Verify nested structures\n        assert isinstance(data_dict[\"resources\"], list)\n        assert len(data_dict[\"resources\"]) == 1\n        \n        # Recreate from dict\n        reconstructed = NodeCapture(**data_dict)\n        \n        assert reconstructed.page_title == original.page_title\n        assert len(reconstructed.resources) == len(original.resources)\n\n    def test_serialization_site_graph(self):\n        \"\"\"Test SiteGraph serialization round-trip\"\"\"\n        state = NodeState(url=\"https://example.com\")\n        node = Node(\n            id=\"node1\",\n            state=state,\n            discovered_via=DiscoveryMethod.manual,\n            requires_auth=None,\n            auth_contexts_available=[],\n            captures=[],\n            depth=0\n        )\n        \n        original = SiteGraph(\n            nodes={\"node1\": node},\n            edges=[],\n            root_url=\"https://example.com\",\n            seed_urls=[\"https://example.com\"]\n        )\n        \n        # Convert to dict\n        data_dict = original.dict()\n        \n        # Verify structure\n        assert \"node1\" in data_dict[\"nodes\"]\n        assert isinstance(data_dict[\"edges\"], list)\n        \n        # Recreate from dict\n        reconstructed = SiteGraph(**data_dict)\n        \n        assert reconstructed.root_url == original.root_url\n        assert \"node1\" in reconstructed.nodes\n\n    def test_serialization_run(self):\n        \"\"\"Test Run serialization round-trip\"\"\"\n        graph = SiteGraph(\n            nodes={},\n            edges=[],\n            root_url=\"https://example.com\",\n            seed_urls=[]\n        )\n        \n        original = Run(\n            schema_version=\"1.1\",\n            run_id=\"test-123\",\n            url=\"https://example.com\",\n            started_at=\"2024-01-15T10:00:00Z\",\n            config_snapshot={\"key\": \"value\"},\n            phases=[],\n            graph=graph\n        )\n        \n        # Convert to dict\n        data_dict = original.dict()\n        \n        # Verify all fields present\n        assert data_dict[\"schema_version\"] == \"1.1\"\n        assert data_dict[\"run_id\"] == \"test-123\"\n        \n        # Recreate from dict\n        reconstructed = Run(**data_dict)\n        \n        assert reconstructed.schema_version == original.schema_version\n        assert reconstructed.run_id == original.run_id\n\n\n# ============================================================================\n# INVARIANT TESTS\n# ============================================================================\n\nclass TestInvariants:\n    \"\"\"Tests for cross-cutting invariants.\"\"\"\n\n    def test_schema_version_constant(self):\n        \"\"\"Test SCHEMA_VERSION constant is 1.1\"\"\"\n        assert SCHEMA_VERSION == \"1.1\"\n\n    def test_node_state_identity_key_invariant(self):\n        \"\"\"Test NodeState.identity_key() always returns self.url\"\"\"\n        url = \"https://example.com/test/path?query=123\"\n        state = NodeState(url=url)\n        \n        # Should always return URL\n        assert state.identity_key() == url\n        assert state.identity_key() == state.url\n\n    def test_make_run_id_format_invariant(self):\n        \"\"\"Test _make_run_id() format is always YYYYMMDDTHHmmss-<8-hex-chars>\"\"\"\n        for _ in range(100):\n            run_id = _make_run_id()\n            \n            # Check format\n            pattern = r'^\\d{8}T\\d{6}-[a-f0-9]{8}$'\n            assert re.match(pattern, run_id), f\"Invalid format: {run_id}\"\n            \n            # Check parts\n            parts = run_id.split('-')\n            assert len(parts) == 2\n            assert len(parts[0]) == 15  # Timestamp\n            assert len(parts[1]) == 8   # UUID suffix\n"
+}

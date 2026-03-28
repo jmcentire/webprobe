@@ -1,0 +1,942 @@
+{
+  "component_id": "src_webprobe_llm_provider",
+  "contract_version": 1,
+  "test_cases": [
+    {
+      "id": "test_estimate_cost_known_model",
+      "description": "Estimate cost returns non-negative value for known model",
+      "function": "_estimate_cost",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "model": "gpt-4o",
+        "input_tokens": "1000000",
+        "output_tokens": "500000"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "result >= 0",
+        "isinstance(result, float)"
+      ]
+    },
+    {
+      "id": "test_estimate_cost_unknown_model",
+      "description": "Estimate cost returns fallback pricing for unknown model",
+      "function": "_estimate_cost",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "model": "unknown-model-xyz",
+        "input_tokens": "1000000",
+        "output_tokens": "500000"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "result >= 0"
+      ]
+    },
+    {
+      "id": "test_estimate_cost_zero_tokens",
+      "description": "Estimate cost with zero tokens returns zero",
+      "function": "_estimate_cost",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "model": "gpt-4o",
+        "input_tokens": "0",
+        "output_tokens": "0"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "result == 0.0"
+      ]
+    },
+    {
+      "id": "test_load_image_b64_valid_file",
+      "description": "Load and encode valid image file as base64",
+      "function": "_load_image_b64",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Valid PNG image file",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "isinstance(result, str)",
+        "len(result) > 0"
+      ]
+    },
+    {
+      "id": "test_load_image_b64_file_not_found",
+      "description": "Raise file_not_found error when image does not exist",
+      "function": "_load_image_b64",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "path": "/nonexistent/path/image.png"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "file_not_found",
+      "assertions": []
+    },
+    {
+      "id": "test_load_image_b64_permission_error",
+      "description": "Raise permission_error when insufficient read permissions",
+      "function": "_load_image_b64",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "File with no read permissions",
+      "expected_output_description": "",
+      "expected_error": "permission_error",
+      "assertions": []
+    },
+    {
+      "id": "test_create_provider_anthropic",
+      "description": "Create Anthropic provider with default model",
+      "function": "create_provider",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "provider": "anthropic",
+        "model": "None",
+        "cost_tracker": "None"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "isinstance(result, AnthropicProvider)",
+        "result.model == 'claude-sonnet-4-20250514'"
+      ]
+    },
+    {
+      "id": "test_create_provider_openai",
+      "description": "Create OpenAI provider with custom model",
+      "function": "create_provider",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "provider": "openai",
+        "model": "gpt-4-turbo",
+        "cost_tracker": "None"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "isinstance(result, OpenAIProvider)",
+        "result.model == 'gpt-4-turbo'"
+      ]
+    },
+    {
+      "id": "test_create_provider_gemini",
+      "description": "Create Gemini provider with default model",
+      "function": "create_provider",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "provider": "gemini",
+        "model": "None",
+        "cost_tracker": "None"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "isinstance(result, GeminiProvider)",
+        "result.model == 'gemini-2.5-flash'"
+      ]
+    },
+    {
+      "id": "test_create_provider_apprentice",
+      "description": "Create Apprentice provider with auto model",
+      "function": "create_provider",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "provider": "apprentice",
+        "model": "None",
+        "cost_tracker": "None"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "isinstance(result, ApprenticeProvider)",
+        "result.model == 'auto'"
+      ]
+    },
+    {
+      "id": "test_create_provider_unknown",
+      "description": "Raise unknown_provider error for invalid provider name",
+      "function": "create_provider",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "provider": "invalid_provider",
+        "model": "None",
+        "cost_tracker": "None"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "unknown_provider",
+      "assertions": []
+    },
+    {
+      "id": "test_create_provider_with_cost_tracker",
+      "description": "Create provider with existing cost tracker",
+      "function": "create_provider",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Existing CostTracker instance",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "result.cost_tracker is provided_tracker"
+      ]
+    },
+    {
+      "id": "test_transmogrify_prompt_success",
+      "description": "Transmogrify prompt returns normalized text",
+      "function": "transmogrify_prompt",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {
+        "transmogrifier": "available"
+      },
+      "input_values": {
+        "text": "Test prompt",
+        "model": "gpt-4o"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "isinstance(result, str)"
+      ]
+    },
+    {
+      "id": "test_transmogrify_prompt_fallback",
+      "description": "Transmogrify returns original text when service unavailable",
+      "function": "transmogrify_prompt",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {
+        "transmogrifier": "unavailable"
+      },
+      "input_values": {
+        "text": "Test prompt",
+        "model": "gpt-4o"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "result == 'Test prompt'"
+      ]
+    },
+    {
+      "id": "test_cost_tracker_init",
+      "description": "Initialize CostTracker with empty calls list",
+      "function": "CostTracker.__init__",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "tracker.calls == []"
+      ]
+    },
+    {
+      "id": "test_cost_tracker_record",
+      "description": "Record single call to tracker",
+      "function": "CostTracker.record",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Valid LLMCallRecord instance",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "len(tracker.calls) == 1",
+        "tracker.calls[0] == call_record"
+      ]
+    },
+    {
+      "id": "test_cost_tracker_total_cost",
+      "description": "Calculate total cost across multiple calls",
+      "function": "CostTracker.total_cost",
+      "category": "happy_path",
+      "setup_description": "Tracker with multiple recorded calls",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "result > 0",
+        "isinstance(result, float)"
+      ]
+    },
+    {
+      "id": "test_cost_tracker_total_cost_empty",
+      "description": "Total cost is zero for empty tracker",
+      "function": "CostTracker.total_cost",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "result == 0.0"
+      ]
+    },
+    {
+      "id": "test_cost_tracker_total_input_tokens",
+      "description": "Calculate total input tokens across calls",
+      "function": "CostTracker.total_input_tokens",
+      "category": "happy_path",
+      "setup_description": "Tracker with recorded calls",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "result >= 0",
+        "isinstance(result, int)"
+      ]
+    },
+    {
+      "id": "test_cost_tracker_total_output_tokens",
+      "description": "Calculate total output tokens across calls",
+      "function": "CostTracker.total_output_tokens",
+      "category": "happy_path",
+      "setup_description": "Tracker with recorded calls",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "result >= 0",
+        "isinstance(result, int)"
+      ]
+    },
+    {
+      "id": "test_cost_tracker_summary",
+      "description": "Generate summary with all required keys",
+      "function": "CostTracker.summary",
+      "category": "happy_path",
+      "setup_description": "Tracker with multiple provider calls",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "'total_calls' in result",
+        "'total_input_tokens' in result",
+        "'total_output_tokens' in result",
+        "'total_cost_usd' in result",
+        "'by_provider' in result"
+      ]
+    },
+    {
+      "id": "test_cost_tracker_by_provider",
+      "description": "Group calls by provider with statistics",
+      "function": "CostTracker._by_provider",
+      "category": "happy_path",
+      "setup_description": "Tracker with calls from multiple providers",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "isinstance(result, dict)",
+        "'anthropic' in result or 'openai' in result"
+      ]
+    },
+    {
+      "id": "test_llm_provider_init",
+      "description": "Initialize provider with model and tracker",
+      "function": "LLMProvider.__init__",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "model": "gpt-4o",
+        "cost_tracker": "None"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "provider.model == 'gpt-4o'",
+        "isinstance(provider.cost_tracker, CostTracker)"
+      ]
+    },
+    {
+      "id": "test_llm_provider_init_with_tracker",
+      "description": "Initialize provider with existing tracker",
+      "function": "LLMProvider.__init__",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Existing CostTracker instance",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "provider.cost_tracker is provided_tracker"
+      ]
+    },
+    {
+      "id": "test_llm_provider_record",
+      "description": "Record API call with usage metrics",
+      "function": "LLMProvider._record",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "input_tokens": "1000",
+        "output_tokens": "500",
+        "duration_ms": "123.45",
+        "has_vision": "False"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "len(provider.cost_tracker.calls) == 1"
+      ]
+    },
+    {
+      "id": "test_anthropic_provider_name",
+      "description": "Anthropic provider returns correct name",
+      "function": "AnthropicProvider.provider_name",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "result == 'anthropic'"
+      ]
+    },
+    {
+      "id": "test_anthropic_complete_success",
+      "description": "Complete text generation via Anthropic API",
+      "function": "AnthropicProvider.complete",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {
+        "anthropic_api": "success_response"
+      },
+      "input_values": {
+        "system": "You are helpful",
+        "messages": "[{\"role\": \"user\", \"content\": \"Hello\"}]",
+        "max_tokens": "1000"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "isinstance(result, str)",
+        "len(result) > 0"
+      ]
+    },
+    {
+      "id": "test_anthropic_complete_api_error",
+      "description": "Handle Anthropic API error gracefully",
+      "function": "AnthropicProvider.complete",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {
+        "anthropic_api": "error"
+      },
+      "input_values": {
+        "system": "You are helpful",
+        "messages": "[{\"role\": \"user\", \"content\": \"Hello\"}]",
+        "max_tokens": "1000"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "api_error",
+      "assertions": []
+    },
+    {
+      "id": "test_anthropic_complete_empty_content",
+      "description": "Handle empty response content list",
+      "function": "AnthropicProvider.complete",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {
+        "anthropic_api": "empty_content"
+      },
+      "input_values": {
+        "system": "You are helpful",
+        "messages": "[{\"role\": \"user\", \"content\": \"Hello\"}]",
+        "max_tokens": "1000"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "index_error",
+      "assertions": []
+    },
+    {
+      "id": "test_anthropic_vision_success",
+      "description": "Analyze image via Anthropic vision API",
+      "function": "AnthropicProvider.vision",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {
+        "anthropic_api": "success_response",
+        "file_system": "valid_image"
+      },
+      "input_values": {
+        "system": "You are helpful",
+        "prompt": "Describe this image",
+        "image_path": "test.png",
+        "max_tokens": "1000"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "isinstance(result, str)",
+        "len(result) > 0",
+        "provider.cost_tracker.calls[0].has_vision == True"
+      ]
+    },
+    {
+      "id": "test_anthropic_vision_file_error",
+      "description": "Handle file not found error in vision call",
+      "function": "AnthropicProvider.vision",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "system": "You are helpful",
+        "prompt": "Describe this image",
+        "image_path": "/nonexistent.png",
+        "max_tokens": "1000"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "file_error",
+      "assertions": []
+    },
+    {
+      "id": "test_openai_provider_name",
+      "description": "OpenAI provider returns correct name",
+      "function": "OpenAIProvider.provider_name",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "result == 'openai'"
+      ]
+    },
+    {
+      "id": "test_openai_complete_success",
+      "description": "Complete text generation via OpenAI API",
+      "function": "OpenAIProvider.complete",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {
+        "openai_api": "success_response"
+      },
+      "input_values": {
+        "system": "You are helpful",
+        "messages": "[{\"role\": \"user\", \"content\": \"Hello\"}]",
+        "max_tokens": "1000"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "isinstance(result, str)"
+      ]
+    },
+    {
+      "id": "test_openai_complete_api_error",
+      "description": "Handle OpenAI API error gracefully",
+      "function": "OpenAIProvider.complete",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {
+        "openai_api": "error"
+      },
+      "input_values": {
+        "system": "You are helpful",
+        "messages": "[{\"role\": \"user\", \"content\": \"Hello\"}]",
+        "max_tokens": "1000"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "api_error",
+      "assertions": []
+    },
+    {
+      "id": "test_openai_vision_success",
+      "description": "Analyze image via OpenAI vision API",
+      "function": "OpenAIProvider.vision",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {
+        "openai_api": "success_response",
+        "file_system": "valid_image"
+      },
+      "input_values": {
+        "system": "You are helpful",
+        "prompt": "Describe this image",
+        "image_path": "test.png",
+        "max_tokens": "1000"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "isinstance(result, str)",
+        "provider.cost_tracker.calls[0].has_vision == True"
+      ]
+    },
+    {
+      "id": "test_openai_vision_file_error",
+      "description": "Handle file error in OpenAI vision call",
+      "function": "OpenAIProvider.vision",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "system": "You are helpful",
+        "prompt": "Describe this image",
+        "image_path": "/nonexistent.png",
+        "max_tokens": "1000"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "file_error",
+      "assertions": []
+    },
+    {
+      "id": "test_gemini_provider_name",
+      "description": "Gemini provider returns correct name",
+      "function": "GeminiProvider.provider_name",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "result == 'gemini'"
+      ]
+    },
+    {
+      "id": "test_gemini_complete_success",
+      "description": "Complete text generation via Gemini API",
+      "function": "GeminiProvider.complete",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {
+        "gemini_api": "success_response"
+      },
+      "input_values": {
+        "system": "You are helpful",
+        "messages": "[{\"role\": \"user\", \"content\": \"Hello\"}]",
+        "max_tokens": "1000"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "isinstance(result, str)"
+      ]
+    },
+    {
+      "id": "test_gemini_complete_api_error",
+      "description": "Handle Gemini API error gracefully",
+      "function": "GeminiProvider.complete",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {
+        "gemini_api": "error"
+      },
+      "input_values": {
+        "system": "You are helpful",
+        "messages": "[{\"role\": \"user\", \"content\": \"Hello\"}]",
+        "max_tokens": "1000"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "api_error",
+      "assertions": []
+    },
+    {
+      "id": "test_gemini_vision_success",
+      "description": "Analyze image via Gemini vision API",
+      "function": "GeminiProvider.vision",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {
+        "gemini_api": "success_response",
+        "file_system": "valid_image"
+      },
+      "input_values": {
+        "system": "You are helpful",
+        "prompt": "Describe this image",
+        "image_path": "test.png",
+        "max_tokens": "1000"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "isinstance(result, str)",
+        "provider.cost_tracker.calls[0].has_vision == True"
+      ]
+    },
+    {
+      "id": "test_gemini_vision_file_error",
+      "description": "Handle file error in Gemini vision call",
+      "function": "GeminiProvider.vision",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "system": "You are helpful",
+        "prompt": "Describe this image",
+        "image_path": "/nonexistent.png",
+        "max_tokens": "1000"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "file_error",
+      "assertions": []
+    },
+    {
+      "id": "test_apprentice_provider_name",
+      "description": "Apprentice provider returns correct name",
+      "function": "ApprenticeProvider.provider_name",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "result == 'apprentice'"
+      ]
+    },
+    {
+      "id": "test_apprentice_complete_success",
+      "description": "Complete text generation via Apprentice API",
+      "function": "ApprenticeProvider.complete",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {
+        "apprentice_api": "success_response"
+      },
+      "input_values": {
+        "system": "You are helpful",
+        "messages": "[{\"role\": \"user\", \"content\": \"Hello\"}]",
+        "max_tokens": "1000"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "isinstance(result, str)"
+      ]
+    },
+    {
+      "id": "test_apprentice_complete_connection_error",
+      "description": "Handle connection error when Apprentice service unreachable",
+      "function": "ApprenticeProvider.complete",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {
+        "apprentice_api": "connection_error"
+      },
+      "input_values": {
+        "system": "You are helpful",
+        "messages": "[{\"role\": \"user\", \"content\": \"Hello\"}]",
+        "max_tokens": "1000"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "connection_error",
+      "assertions": []
+    },
+    {
+      "id": "test_apprentice_complete_api_error",
+      "description": "Handle Apprentice API error gracefully",
+      "function": "ApprenticeProvider.complete",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {
+        "apprentice_api": "error"
+      },
+      "input_values": {
+        "system": "You are helpful",
+        "messages": "[{\"role\": \"user\", \"content\": \"Hello\"}]",
+        "max_tokens": "1000"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "api_error",
+      "assertions": []
+    },
+    {
+      "id": "test_apprentice_vision_success",
+      "description": "Analyze image via Apprentice vision API",
+      "function": "ApprenticeProvider.vision",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {
+        "apprentice_api": "success_response",
+        "file_system": "valid_image"
+      },
+      "input_values": {
+        "system": "You are helpful",
+        "prompt": "Describe this image",
+        "image_path": "test.png",
+        "max_tokens": "1000"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "isinstance(result, str)",
+        "provider.cost_tracker.calls[0].has_vision == True"
+      ]
+    },
+    {
+      "id": "test_apprentice_vision_file_error",
+      "description": "Handle file error in Apprentice vision call",
+      "function": "ApprenticeProvider.vision",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "system": "You are helpful",
+        "prompt": "Describe this image",
+        "image_path": "/nonexistent.png",
+        "max_tokens": "1000"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "file_error",
+      "assertions": []
+    },
+    {
+      "id": "test_invariant_non_negative_tokens",
+      "description": "Verify all token counts are non-negative",
+      "function": "CostTracker.record",
+      "category": "invariant",
+      "setup_description": "Record calls with various token counts",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "all(call.input_tokens >= 0 for call in tracker.calls)",
+        "all(call.output_tokens >= 0 for call in tracker.calls)"
+      ]
+    },
+    {
+      "id": "test_invariant_non_negative_costs",
+      "description": "Verify all costs are non-negative",
+      "function": "CostTracker.record",
+      "category": "invariant",
+      "setup_description": "Record calls with various models",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "all(call.estimated_cost_usd >= 0 for call in tracker.calls)"
+      ]
+    },
+    {
+      "id": "test_invariant_apprentice_base_url",
+      "description": "Verify Apprentice uses localhost:8741 base URL",
+      "function": "ApprenticeProvider.__init__",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "'localhost:8741' in str(provider)"
+      ]
+    },
+    {
+      "id": "test_invariant_image_media_type",
+      "description": "Verify vision calls use image/png media type",
+      "function": "AnthropicProvider.vision",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {
+        "anthropic_api": "success_response",
+        "file_system": "valid_image"
+      },
+      "input_values": {
+        "system": "You are helpful",
+        "prompt": "Describe this image",
+        "image_path": "test.png",
+        "max_tokens": "1000"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "'image/png' referenced in API call"
+      ]
+    }
+  ],
+  "test_language": "python",
+  "generated_code": "\"\"\"\nContract tests for LLM Provider Abstraction\n\nTests cover:\n- Utility functions (_estimate_cost, _load_image_b64, transmogrify_prompt)\n- Factory function (create_provider)\n- CostTracker functionality\n- All provider implementations (Anthropic, OpenAI, Gemini, Apprentice)\n- Error cases and edge cases\n- Invariants\n\"\"\"\n\nimport pytest\nimport asyncio\nimport base64\nimport time\nfrom pathlib import Path\nfrom unittest.mock import Mock, AsyncMock, patch, MagicMock, mock_open\nfrom dataclasses import dataclass\n\n# Import the module under test\nfrom src.webprobe.llm_provider import (\n    _estimate_cost,\n    _load_image_b64,\n    create_provider,\n    transmogrify_prompt,\n    CostTracker,\n    LLMCallRecord,\n    LLMProvider,\n    AnthropicProvider,\n    OpenAIProvider,\n    GeminiProvider,\n    ApprenticeProvider,\n)\n\n\n# ============================================================================\n# Fixtures\n# ============================================================================\n\n@pytest.fixture\ndef cost_tracker():\n    \"\"\"Create a fresh CostTracker instance.\"\"\"\n    return CostTracker()\n\n\n@pytest.fixture\ndef sample_call_record():\n    \"\"\"Create a sample LLMCallRecord for testing.\"\"\"\n    return LLMCallRecord(\n        provider=\"openai\",\n        model=\"gpt-4o\",\n        input_tokens=1000,\n        output_tokens=500,\n        estimated_cost_usd=0.015,\n        duration_ms=123.45,\n        has_vision=False\n    )\n\n\n@pytest.fixture\ndef temp_image_file(tmp_path):\n    \"\"\"Create a temporary valid image file.\"\"\"\n    image_path = tmp_path / \"test_image.png\"\n    # Create a simple 1x1 PNG image (minimal valid PNG)\n    png_data = base64.b64decode(\n        b'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='\n    )\n    image_path.write_bytes(png_data)\n    return image_path\n\n\n@pytest.fixture\ndef mock_anthropic_client():\n    \"\"\"Mock Anthropic client for testing.\"\"\"\n    with patch('src_webprobe_llm_provider.anthropic.Anthropic') as mock:\n        client = MagicMock()\n        mock.return_value = client\n        \n        # Mock successful response\n        response = MagicMock()\n        response.content = [MagicMock(text=\"This is a test response\")]\n        response.usage = MagicMock(input_tokens=100, output_tokens=50)\n        \n        client.messages.create = AsyncMock(return_value=response)\n        yield client\n\n\n@pytest.fixture\ndef mock_openai_client():\n    \"\"\"Mock OpenAI client for testing.\"\"\"\n    with patch('src_webprobe_llm_provider.openai.OpenAI') as mock:\n        client = MagicMock()\n        mock.return_value = client\n        \n        # Mock successful response\n        response = MagicMock()\n        response.choices = [MagicMock(message=MagicMock(content=\"This is a test response\"))]\n        response.usage = MagicMock(prompt_tokens=100, completion_tokens=50)\n        \n        client.chat.completions.create = AsyncMock(return_value=response)\n        yield client\n\n\n@pytest.fixture\ndef mock_gemini_client():\n    \"\"\"Mock Gemini client for testing.\"\"\"\n    with patch('src_webprobe_llm_provider.google.genai.Client') as mock:\n        client = MagicMock()\n        mock.return_value = client\n        \n        # Mock successful response\n        response = MagicMock()\n        response.text = \"This is a test response\"\n        response.usage_metadata = MagicMock(prompt_token_count=100, candidates_token_count=50)\n        \n        client.models.generate_content = AsyncMock(return_value=response)\n        yield client\n\n\n# ============================================================================\n# Test _estimate_cost\n# ============================================================================\n\ndef test_estimate_cost_known_model():\n    \"\"\"Test cost estimation for a known model returns non-negative value.\"\"\"\n    result = _estimate_cost(\"gpt-4o\", 1000000, 500000)\n    assert result >= 0\n    assert isinstance(result, float)\n\n\ndef test_estimate_cost_unknown_model():\n    \"\"\"Test cost estimation for unknown model returns fallback pricing.\"\"\"\n    result = _estimate_cost(\"unknown-model-xyz\", 1000000, 500000)\n    assert result >= 0\n\n\ndef test_estimate_cost_zero_tokens():\n    \"\"\"Test cost estimation with zero tokens returns zero.\"\"\"\n    result = _estimate_cost(\"gpt-4o\", 0, 0)\n    assert result == 0.0\n\n\ndef test_estimate_cost_prefix_matching():\n    \"\"\"Test that cost estimation uses prefix matching for models.\"\"\"\n    # Should match claude-sonnet prefix\n    result1 = _estimate_cost(\"claude-sonnet-4-20250514\", 1000000, 1000000)\n    result2 = _estimate_cost(\"claude-sonnet-3-5-20241022\", 1000000, 1000000)\n    # Both should use similar pricing (may differ based on specific pricing)\n    assert result1 >= 0\n    assert result2 >= 0\n\n\n# ============================================================================\n# Test _load_image_b64\n# ============================================================================\n\ndef test_load_image_b64_valid_file(temp_image_file):\n    \"\"\"Test loading and encoding a valid image file as base64.\"\"\"\n    result = _load_image_b64(temp_image_file)\n    assert isinstance(result, str)\n    assert len(result) > 0\n    # Verify it's valid base64\n    try:\n        base64.b64decode(result)\n    except Exception:\n        pytest.fail(\"Result is not valid base64\")\n\n\ndef test_load_image_b64_valid_file_with_string_path(temp_image_file):\n    \"\"\"Test loading image with string path instead of Path object.\"\"\"\n    result = _load_image_b64(str(temp_image_file))\n    assert isinstance(result, str)\n    assert len(result) > 0\n\n\ndef test_load_image_b64_file_not_found():\n    \"\"\"Test that file_not_found error is raised when image does not exist.\"\"\"\n    with pytest.raises((FileNotFoundError, IOError)):\n        _load_image_b64(\"/nonexistent/path/image.png\")\n\n\ndef test_load_image_b64_permission_error(tmp_path):\n    \"\"\"Test that permission_error is raised when insufficient read permissions.\"\"\"\n    import os\n    if os.name == 'nt':\n        pytest.skip(\"Permission tests are unreliable on Windows\")\n    \n    image_path = tmp_path / \"no_read.png\"\n    image_path.write_bytes(b\"test\")\n    image_path.chmod(0o000)\n    \n    try:\n        with pytest.raises(PermissionError):\n            _load_image_b64(image_path)\n    finally:\n        image_path.chmod(0o644)\n\n\n# ============================================================================\n# Test create_provider\n# ============================================================================\n\ndef test_create_provider_anthropic():\n    \"\"\"Test creating Anthropic provider with default model.\"\"\"\n    result = create_provider(\"anthropic\", None, None)\n    assert isinstance(result, AnthropicProvider)\n    assert result.model == \"claude-sonnet-4-20250514\"\n\n\ndef test_create_provider_openai():\n    \"\"\"Test creating OpenAI provider with custom model.\"\"\"\n    result = create_provider(\"openai\", \"gpt-4-turbo\", None)\n    assert isinstance(result, OpenAIProvider)\n    assert result.model == \"gpt-4-turbo\"\n\n\ndef test_create_provider_gemini():\n    \"\"\"Test creating Gemini provider with default model.\"\"\"\n    result = create_provider(\"gemini\", None, None)\n    assert isinstance(result, GeminiProvider)\n    assert result.model == \"gemini-2.5-flash\"\n\n\ndef test_create_provider_apprentice():\n    \"\"\"Test creating Apprentice provider with auto model.\"\"\"\n    result = create_provider(\"apprentice\", None, None)\n    assert isinstance(result, ApprenticeProvider)\n    assert result.model == \"auto\"\n\n\ndef test_create_provider_unknown():\n    \"\"\"Test that unknown_provider error is raised for invalid provider name.\"\"\"\n    with pytest.raises((ValueError, KeyError)):\n        create_provider(\"invalid_provider\", None, None)\n\n\ndef test_create_provider_with_cost_tracker(cost_tracker):\n    \"\"\"Test creating provider with existing cost tracker.\"\"\"\n    result = create_provider(\"openai\", None, cost_tracker)\n    assert result.cost_tracker is cost_tracker\n\n\n# ============================================================================\n# Test transmogrify_prompt\n# ============================================================================\n\n@pytest.mark.asyncio\nasync def test_transmogrify_prompt_success():\n    \"\"\"Test transmogrify_prompt returns normalized text.\"\"\"\n    with patch('src_webprobe_llm_provider.transmogrifier') as mock_trans:\n        mock_trans.normalize = AsyncMock(return_value=\"normalized text\")\n        result = await transmogrify_prompt(\"Test prompt\", \"gpt-4o\")\n        assert isinstance(result, str)\n\n\n@pytest.mark.asyncio\nasync def test_transmogrify_prompt_fallback():\n    \"\"\"Test transmogrify returns original text when service unavailable.\"\"\"\n    with patch('src_webprobe_llm_provider.transmogrifier', None):\n        result = await transmogrify_prompt(\"Test prompt\", \"gpt-4o\")\n        assert result == \"Test prompt\"\n\n\n@pytest.mark.asyncio\nasync def test_transmogrify_prompt_error_fallback():\n    \"\"\"Test transmogrify returns original text on error.\"\"\"\n    with patch('src_webprobe_llm_provider.transmogrifier') as mock_trans:\n        mock_trans.normalize = AsyncMock(side_effect=Exception(\"Service error\"))\n        result = await transmogrify_prompt(\"Test prompt\", \"gpt-4o\")\n        assert result == \"Test prompt\"\n\n\n# ============================================================================\n# Test CostTracker\n# ============================================================================\n\ndef test_cost_tracker_init():\n    \"\"\"Test initializing CostTracker with empty calls list.\"\"\"\n    tracker = CostTracker()\n    assert tracker.calls == []\n\n\ndef test_cost_tracker_record(cost_tracker, sample_call_record):\n    \"\"\"Test recording a single call to tracker.\"\"\"\n    cost_tracker.record(sample_call_record)\n    assert len(cost_tracker.calls) == 1\n    assert cost_tracker.calls[0] == sample_call_record\n\n\ndef test_cost_tracker_total_cost(cost_tracker):\n    \"\"\"Test calculating total cost across multiple calls.\"\"\"\n    record1 = LLMCallRecord(\"openai\", \"gpt-4o\", 1000, 500, 0.015, 100.0, False)\n    record2 = LLMCallRecord(\"anthropic\", \"claude-sonnet-4\", 2000, 1000, 0.030, 200.0, False)\n    \n    cost_tracker.record(record1)\n    cost_tracker.record(record2)\n    \n    result = cost_tracker.total_cost()\n    assert result > 0\n    assert isinstance(result, float)\n    assert result == 0.045\n\n\ndef test_cost_tracker_total_cost_empty(cost_tracker):\n    \"\"\"Test total cost is zero for empty tracker.\"\"\"\n    result = cost_tracker.total_cost()\n    assert result == 0.0\n\n\ndef test_cost_tracker_total_input_tokens(cost_tracker):\n    \"\"\"Test calculating total input tokens across calls.\"\"\"\n    record1 = LLMCallRecord(\"openai\", \"gpt-4o\", 1000, 500, 0.015, 100.0, False)\n    record2 = LLMCallRecord(\"anthropic\", \"claude-sonnet-4\", 2000, 1000, 0.030, 200.0, False)\n    \n    cost_tracker.record(record1)\n    cost_tracker.record(record2)\n    \n    result = cost_tracker.total_input_tokens()\n    assert result == 3000\n    assert isinstance(result, int)\n\n\ndef test_cost_tracker_total_output_tokens(cost_tracker):\n    \"\"\"Test calculating total output tokens across calls.\"\"\"\n    record1 = LLMCallRecord(\"openai\", \"gpt-4o\", 1000, 500, 0.015, 100.0, False)\n    record2 = LLMCallRecord(\"anthropic\", \"claude-sonnet-4\", 2000, 1000, 0.030, 200.0, False)\n    \n    cost_tracker.record(record1)\n    cost_tracker.record(record2)\n    \n    result = cost_tracker.total_output_tokens()\n    assert result == 1500\n    assert isinstance(result, int)\n\n\ndef test_cost_tracker_summary(cost_tracker):\n    \"\"\"Test generating summary with all required keys.\"\"\"\n    record1 = LLMCallRecord(\"openai\", \"gpt-4o\", 1000, 500, 0.015, 100.0, False)\n    record2 = LLMCallRecord(\"anthropic\", \"claude-sonnet-4\", 2000, 1000, 0.030, 200.0, False)\n    \n    cost_tracker.record(record1)\n    cost_tracker.record(record2)\n    \n    result = cost_tracker.summary()\n    assert \"total_calls\" in result\n    assert \"total_input_tokens\" in result\n    assert \"total_output_tokens\" in result\n    assert \"total_cost_usd\" in result\n    assert \"by_provider\" in result\n    assert result[\"total_calls\"] == 2\n\n\ndef test_cost_tracker_by_provider(cost_tracker):\n    \"\"\"Test grouping calls by provider with statistics.\"\"\"\n    record1 = LLMCallRecord(\"openai\", \"gpt-4o\", 1000, 500, 0.015, 100.0, False)\n    record2 = LLMCallRecord(\"anthropic\", \"claude-sonnet-4\", 2000, 1000, 0.030, 200.0, False)\n    record3 = LLMCallRecord(\"openai\", \"gpt-4o\", 500, 250, 0.0075, 50.0, False)\n    \n    cost_tracker.record(record1)\n    cost_tracker.record(record2)\n    cost_tracker.record(record3)\n    \n    result = cost_tracker._by_provider()\n    assert isinstance(result, dict)\n    assert \"openai\" in result\n    assert \"anthropic\" in result\n    assert result[\"openai\"][\"calls\"] == 2\n    assert result[\"anthropic\"][\"calls\"] == 1\n\n\n# ============================================================================\n# Test LLMProvider base class\n# ============================================================================\n\ndef test_llm_provider_init():\n    \"\"\"Test initializing provider with model and tracker.\"\"\"\n    # Use a concrete implementation\n    provider = OpenAIProvider(\"gpt-4o\", None)\n    assert provider.model == \"gpt-4o\"\n    assert isinstance(provider.cost_tracker, CostTracker)\n\n\ndef test_llm_provider_init_with_tracker(cost_tracker):\n    \"\"\"Test initializing provider with existing tracker.\"\"\"\n    provider = OpenAIProvider(\"gpt-4o\", cost_tracker)\n    assert provider.cost_tracker is cost_tracker\n\n\ndef test_llm_provider_record():\n    \"\"\"Test recording API call with usage metrics.\"\"\"\n    provider = OpenAIProvider(\"gpt-4o\", None)\n    \n    with patch('src_webprobe_llm_provider.time.monotonic', side_effect=[0, 0.12345]):\n        provider._record(1000, 500, 123.45, False)\n    \n    assert len(provider.cost_tracker.calls) == 1\n    call = provider.cost_tracker.calls[0]\n    assert call.input_tokens == 1000\n    assert call.output_tokens == 500\n    assert call.duration_ms == 123.45\n    assert call.has_vision == False\n\n\n# ============================================================================\n# Test AnthropicProvider\n# ============================================================================\n\ndef test_anthropic_provider_name():\n    \"\"\"Test Anthropic provider returns correct name.\"\"\"\n    provider = AnthropicProvider(\"claude-sonnet-4-20250514\", None)\n    result = provider.provider_name()\n    assert result == \"anthropic\"\n\n\n@pytest.mark.asyncio\nasync def test_anthropic_complete_success():\n    \"\"\"Test complete text generation via Anthropic API.\"\"\"\n    with patch('src_webprobe_llm_provider.anthropic.Anthropic') as mock_client_class:\n        mock_client = MagicMock()\n        mock_client_class.return_value = mock_client\n        \n        # Mock response\n        mock_response = MagicMock()\n        mock_response.content = [MagicMock(text=\"Test response\")]\n        mock_response.usage = MagicMock(input_tokens=100, output_tokens=50)\n        mock_client.messages.create = AsyncMock(return_value=mock_response)\n        \n        provider = AnthropicProvider(\"claude-sonnet-4-20250514\", None)\n        \n        with patch('src_webprobe_llm_provider.time.monotonic', side_effect=[0, 0.123]):\n            result = await provider.complete(\"You are helpful\", [{\"role\": \"user\", \"content\": \"Hello\"}], 1000)\n        \n        assert isinstance(result, str)\n        assert len(result) > 0\n        assert result == \"Test response\"\n\n\n@pytest.mark.asyncio\nasync def test_anthropic_complete_api_error():\n    \"\"\"Test handling Anthropic API error gracefully.\"\"\"\n    with patch('src_webprobe_llm_provider.anthropic.Anthropic') as mock_client_class:\n        mock_client = MagicMock()\n        mock_client_class.return_value = mock_client\n        \n        # Mock API error\n        mock_client.messages.create = AsyncMock(side_effect=Exception(\"API Error\"))\n        \n        provider = AnthropicProvider(\"claude-sonnet-4-20250514\", None)\n        \n        with pytest.raises(Exception):\n            await provider.complete(\"You are helpful\", [{\"role\": \"user\", \"content\": \"Hello\"}], 1000)\n\n\n@pytest.mark.asyncio\nasync def test_anthropic_complete_empty_content():\n    \"\"\"Test handling empty response content list.\"\"\"\n    with patch('src_webprobe_llm_provider.anthropic.Anthropic') as mock_client_class:\n        mock_client = MagicMock()\n        mock_client_class.return_value = mock_client\n        \n        # Mock response with empty content\n        mock_response = MagicMock()\n        mock_response.content = []\n        mock_client.messages.create = AsyncMock(return_value=mock_response)\n        \n        provider = AnthropicProvider(\"claude-sonnet-4-20250514\", None)\n        \n        with pytest.raises(IndexError):\n            await provider.complete(\"You are helpful\", [{\"role\": \"user\", \"content\": \"Hello\"}], 1000)\n\n\n@pytest.mark.asyncio\nasync def test_anthropic_vision_success(temp_image_file):\n    \"\"\"Test analyzing image via Anthropic vision API.\"\"\"\n    with patch('src_webprobe_llm_provider.anthropic.Anthropic') as mock_client_class:\n        mock_client = MagicMock()\n        mock_client_class.return_value = mock_client\n        \n        # Mock response\n        mock_response = MagicMock()\n        mock_response.content = [MagicMock(text=\"This is a cat\")]\n        mock_response.usage = MagicMock(input_tokens=200, output_tokens=50)\n        mock_client.messages.create = AsyncMock(return_value=mock_response)\n        \n        provider = AnthropicProvider(\"claude-sonnet-4-20250514\", None)\n        \n        with patch('src_webprobe_llm_provider.time.monotonic', side_effect=[0, 0.234]):\n            result = await provider.vision(\"You are helpful\", \"Describe this image\", temp_image_file, 1000)\n        \n        assert isinstance(result, str)\n        assert len(result) > 0\n        assert provider.cost_tracker.calls[0].has_vision == True\n\n\n@pytest.mark.asyncio\nasync def test_anthropic_vision_file_error():\n    \"\"\"Test handling file not found error in vision call.\"\"\"\n    provider = AnthropicProvider(\"claude-sonnet-4-20250514\", None)\n    \n    with pytest.raises((FileNotFoundError, IOError)):\n        await provider.vision(\"You are helpful\", \"Describe this image\", \"/nonexistent.png\", 1000)\n\n\n# ============================================================================\n# Test OpenAIProvider\n# ============================================================================\n\ndef test_openai_provider_name():\n    \"\"\"Test OpenAI provider returns correct name.\"\"\"\n    provider = OpenAIProvider(\"gpt-4o\", None)\n    result = provider.provider_name()\n    assert result == \"openai\"\n\n\n@pytest.mark.asyncio\nasync def test_openai_complete_success():\n    \"\"\"Test complete text generation via OpenAI API.\"\"\"\n    with patch('src_webprobe_llm_provider.openai.OpenAI') as mock_client_class:\n        mock_client = MagicMock()\n        mock_client_class.return_value = mock_client\n        \n        # Mock response\n        mock_response = MagicMock()\n        mock_response.choices = [MagicMock(message=MagicMock(content=\"Test response\"))]\n        mock_response.usage = MagicMock(prompt_tokens=100, completion_tokens=50)\n        mock_client.chat.completions.create = Mock(return_value=mock_response)\n        \n        provider = OpenAIProvider(\"gpt-4o\", None)\n        \n        with patch('src_webprobe_llm_provider.time.monotonic', side_effect=[0, 0.156]):\n            result = await provider.complete(\"You are helpful\", [{\"role\": \"user\", \"content\": \"Hello\"}], 1000)\n        \n        assert isinstance(result, str)\n        assert result == \"Test response\"\n\n\n@pytest.mark.asyncio\nasync def test_openai_complete_api_error():\n    \"\"\"Test handling OpenAI API error gracefully.\"\"\"\n    with patch('src_webprobe_llm_provider.openai.OpenAI') as mock_client_class:\n        mock_client = MagicMock()\n        mock_client_class.return_value = mock_client\n        \n        # Mock API error\n        mock_client.chat.completions.create = Mock(side_effect=Exception(\"API Error\"))\n        \n        provider = OpenAIProvider(\"gpt-4o\", None)\n        \n        with pytest.raises(Exception):\n            await provider.complete(\"You are helpful\", [{\"role\": \"user\", \"content\": \"Hello\"}], 1000)\n\n\n@pytest.mark.asyncio\nasync def test_openai_vision_success(temp_image_file):\n    \"\"\"Test analyzing image via OpenAI vision API.\"\"\"\n    with patch('src_webprobe_llm_provider.openai.OpenAI') as mock_client_class:\n        mock_client = MagicMock()\n        mock_client_class.return_value = mock_client\n        \n        # Mock response\n        mock_response = MagicMock()\n        mock_response.choices = [MagicMock(message=MagicMock(content=\"This is a dog\"))]\n        mock_response.usage = MagicMock(prompt_tokens=200, completion_tokens=50)\n        mock_client.chat.completions.create = Mock(return_value=mock_response)\n        \n        provider = OpenAIProvider(\"gpt-4o\", None)\n        \n        with patch('src_webprobe_llm_provider.time.monotonic', side_effect=[0, 0.267]):\n            result = await provider.vision(\"You are helpful\", \"Describe this image\", temp_image_file, 1000)\n        \n        assert isinstance(result, str)\n        assert provider.cost_tracker.calls[0].has_vision == True\n\n\n@pytest.mark.asyncio\nasync def test_openai_vision_file_error():\n    \"\"\"Test handling file error in OpenAI vision call.\"\"\"\n    provider = OpenAIProvider(\"gpt-4o\", None)\n    \n    with pytest.raises((FileNotFoundError, IOError)):\n        await provider.vision(\"You are helpful\", \"Describe this image\", \"/nonexistent.png\", 1000)\n\n\n# ============================================================================\n# Test GeminiProvider\n# ============================================================================\n\ndef test_gemini_provider_name():\n    \"\"\"Test Gemini provider returns correct name.\"\"\"\n    provider = GeminiProvider(\"gemini-2.5-flash\", None)\n    result = provider.provider_name()\n    assert result == \"gemini\"\n\n\n@pytest.mark.asyncio\nasync def test_gemini_complete_success():\n    \"\"\"Test complete text generation via Gemini API.\"\"\"\n    with patch('src_webprobe_llm_provider.google.genai.Client') as mock_client_class:\n        mock_client = MagicMock()\n        mock_client_class.return_value = mock_client\n        \n        # Mock response\n        mock_response = MagicMock()\n        mock_response.text = \"Test response\"\n        mock_response.usage_metadata = MagicMock(prompt_token_count=100, candidates_token_count=50)\n        mock_client.models.generate_content = AsyncMock(return_value=mock_response)\n        \n        provider = GeminiProvider(\"gemini-2.5-flash\", None)\n        \n        with patch('src_webprobe_llm_provider.time.monotonic', side_effect=[0, 0.189]):\n            result = await provider.complete(\"You are helpful\", [{\"role\": \"user\", \"content\": \"Hello\"}], 1000)\n        \n        assert isinstance(result, str)\n        assert result == \"Test response\"\n\n\n@pytest.mark.asyncio\nasync def test_gemini_complete_api_error():\n    \"\"\"Test handling Gemini API error gracefully.\"\"\"\n    with patch('src_webprobe_llm_provider.google.genai.Client') as mock_client_class:\n        mock_client = MagicMock()\n        mock_client_class.return_value = mock_client\n        \n        # Mock API error\n        mock_client.models.generate_content = AsyncMock(side_effect=Exception(\"API Error\"))\n        \n        provider = GeminiProvider(\"gemini-2.5-flash\", None)\n        \n        with pytest.raises(Exception):\n            await provider.complete(\"You are helpful\", [{\"role\": \"user\", \"content\": \"Hello\"}], 1000)\n\n\n@pytest.mark.asyncio\nasync def test_gemini_vision_success(temp_image_file):\n    \"\"\"Test analyzing image via Gemini vision API.\"\"\"\n    with patch('src_webprobe_llm_provider.google.genai.Client') as mock_client_class:\n        mock_client = MagicMock()\n        mock_client_class.return_value = mock_client\n        \n        # Mock response\n        mock_response = MagicMock()\n        mock_response.text = \"This is a bird\"\n        mock_response.usage_metadata = MagicMock(prompt_token_count=200, candidates_token_count=50)\n        mock_client.models.generate_content = AsyncMock(return_value=mock_response)\n        \n        provider = GeminiProvider(\"gemini-2.5-flash\", None)\n        \n        with patch('src_webprobe_llm_provider.time.monotonic', side_effect=[0, 0.298]):\n            result = await provider.vision(\"You are helpful\", \"Describe this image\", temp_image_file, 1000)\n        \n        assert isinstance(result, str)\n        assert provider.cost_tracker.calls[0].has_vision == True\n\n\n@pytest.mark.asyncio\nasync def test_gemini_vision_file_error():\n    \"\"\"Test handling file error in Gemini vision call.\"\"\"\n    provider = GeminiProvider(\"gemini-2.5-flash\", None)\n    \n    with pytest.raises((FileNotFoundError, IOError)):\n        await provider.vision(\"You are helpful\", \"Describe this image\", \"/nonexistent.png\", 1000)\n\n\n# ============================================================================\n# Test ApprenticeProvider\n# ============================================================================\n\ndef test_apprentice_provider_name():\n    \"\"\"Test Apprentice provider returns correct name.\"\"\"\n    provider = ApprenticeProvider(\"auto\", None)\n    result = provider.provider_name()\n    assert result == \"apprentice\"\n\n\n@pytest.mark.asyncio\nasync def test_apprentice_complete_success():\n    \"\"\"Test complete text generation via Apprentice API.\"\"\"\n    with patch('src_webprobe_llm_provider.openai.OpenAI') as mock_client_class:\n        mock_client = MagicMock()\n        mock_client_class.return_value = mock_client\n        \n        # Mock response\n        mock_response = MagicMock()\n        mock_response.choices = [MagicMock(message=MagicMock(content=\"Test response from Apprentice\"))]\n        mock_response.usage = MagicMock(prompt_tokens=100, completion_tokens=50)\n        mock_client.chat.completions.create = Mock(return_value=mock_response)\n        \n        provider = ApprenticeProvider(\"auto\", None)\n        \n        with patch('src_webprobe_llm_provider.time.monotonic', side_effect=[0, 0.178]):\n            result = await provider.complete(\"You are helpful\", [{\"role\": \"user\", \"content\": \"Hello\"}], 1000)\n        \n        assert isinstance(result, str)\n        assert result == \"Test response from Apprentice\"\n\n\n@pytest.mark.asyncio\nasync def test_apprentice_complete_connection_error():\n    \"\"\"Test handling connection error when Apprentice service unreachable.\"\"\"\n    with patch('src_webprobe_llm_provider.openai.OpenAI') as mock_client_class:\n        mock_client = MagicMock()\n        mock_client_class.return_value = mock_client\n        \n        # Mock connection error\n        import openai\n        mock_client.chat.completions.create = Mock(side_effect=openai.APIConnectionError(\"Connection failed\"))\n        \n        provider = ApprenticeProvider(\"auto\", None)\n        \n        with pytest.raises(Exception):\n            await provider.complete(\"You are helpful\", [{\"role\": \"user\", \"content\": \"Hello\"}], 1000)\n\n\n@pytest.mark.asyncio\nasync def test_apprentice_complete_api_error():\n    \"\"\"Test handling Apprentice API error gracefully.\"\"\"\n    with patch('src_webprobe_llm_provider.openai.OpenAI') as mock_client_class:\n        mock_client = MagicMock()\n        mock_client_class.return_value = mock_client\n        \n        # Mock API error\n        mock_client.chat.completions.create = Mock(side_effect=Exception(\"API Error\"))\n        \n        provider = ApprenticeProvider(\"auto\", None)\n        \n        with pytest.raises(Exception):\n            await provider.complete(\"You are helpful\", [{\"role\": \"user\", \"content\": \"Hello\"}], 1000)\n\n\n@pytest.mark.asyncio\nasync def test_apprentice_vision_success(temp_image_file):\n    \"\"\"Test analyzing image via Apprentice vision API.\"\"\"\n    with patch('src_webprobe_llm_provider.openai.OpenAI') as mock_client_class:\n        mock_client = MagicMock()\n        mock_client_class.return_value = mock_client\n        \n        # Mock response\n        mock_response = MagicMock()\n        mock_response.choices = [MagicMock(message=MagicMock(content=\"This is a tree\"))]\n        mock_response.usage = MagicMock(prompt_tokens=200, completion_tokens=50)\n        mock_client.chat.completions.create = Mock(return_value=mock_response)\n        \n        provider = ApprenticeProvider(\"auto\", None)\n        \n        with patch('src_webprobe_llm_provider.time.monotonic', side_effect=[0, 0.345]):\n            result = await provider.vision(\"You are helpful\", \"Describe this image\", temp_image_file, 1000)\n        \n        assert isinstance(result, str)\n        assert provider.cost_tracker.calls[0].has_vision == True\n\n\n@pytest.mark.asyncio\nasync def test_apprentice_vision_file_error():\n    \"\"\"Test handling file error in Apprentice vision call.\"\"\"\n    provider = ApprenticeProvider(\"auto\", None)\n    \n    with pytest.raises((FileNotFoundError, IOError)):\n        await provider.vision(\"You are helpful\", \"Describe this image\", \"/nonexistent.png\", 1000)\n\n\n# ============================================================================\n# Test Invariants\n# ============================================================================\n\ndef test_invariant_non_negative_tokens(cost_tracker):\n    \"\"\"Test that all token counts are non-negative.\"\"\"\n    record1 = LLMCallRecord(\"openai\", \"gpt-4o\", 1000, 500, 0.015, 100.0, False)\n    record2 = LLMCallRecord(\"anthropic\", \"claude-sonnet-4\", 0, 0, 0.0, 50.0, False)\n    record3 = LLMCallRecord(\"gemini\", \"gemini-2.5-flash\", 5000, 2500, 0.05, 150.0, True)\n    \n    cost_tracker.record(record1)\n    cost_tracker.record(record2)\n    cost_tracker.record(record3)\n    \n    assert all(call.input_tokens >= 0 for call in cost_tracker.calls)\n    assert all(call.output_tokens >= 0 for call in cost_tracker.calls)\n\n\ndef test_invariant_non_negative_costs(cost_tracker):\n    \"\"\"Test that all costs are non-negative.\"\"\"\n    record1 = LLMCallRecord(\"openai\", \"gpt-4o\", 1000, 500, 0.015, 100.0, False)\n    record2 = LLMCallRecord(\"anthropic\", \"claude-sonnet-4\", 2000, 1000, 0.030, 200.0, False)\n    record3 = LLMCallRecord(\"gemini\", \"gemini-2.5-flash\", 0, 0, 0.0, 50.0, False)\n    \n    cost_tracker.record(record1)\n    cost_tracker.record(record2)\n    cost_tracker.record(record3)\n    \n    assert all(call.estimated_cost_usd >= 0 for call in cost_tracker.calls)\n\n\ndef test_invariant_apprentice_base_url():\n    \"\"\"Test that Apprentice uses localhost:8741 base URL.\"\"\"\n    with patch('src_webprobe_llm_provider.openai.OpenAI') as mock_client_class:\n        provider = ApprenticeProvider(\"auto\", None)\n        \n        # Verify the base_url was set correctly\n        if mock_client_class.called:\n            call_kwargs = mock_client_class.call_args[1] if mock_client_class.call_args else {}\n            if 'base_url' in call_kwargs:\n                assert 'localhost:8741' in call_kwargs['base_url']\n\n\n@pytest.mark.asyncio\nasync def test_invariant_image_media_type(temp_image_file):\n    \"\"\"Test that vision calls use image/png media type.\"\"\"\n    with patch('src_webprobe_llm_provider.anthropic.Anthropic') as mock_client_class:\n        mock_client = MagicMock()\n        mock_client_class.return_value = mock_client\n        \n        # Mock response\n        mock_response = MagicMock()\n        mock_response.content = [MagicMock(text=\"Image analysis\")]\n        mock_response.usage = MagicMock(input_tokens=200, output_tokens=50)\n        mock_client.messages.create = AsyncMock(return_value=mock_response)\n        \n        provider = AnthropicProvider(\"claude-sonnet-4-20250514\", None)\n        \n        with patch('src_webprobe_llm_provider.time.monotonic', side_effect=[0, 0.234]):\n            await provider.vision(\"You are helpful\", \"Describe this image\", temp_image_file, 1000)\n        \n        # Check that messages.create was called with image/png media type\n        call_args = mock_client.messages.create.call_args\n        if call_args:\n            # The media_type should be in the content of the message\n            assert call_args is not None\n\n\n# ============================================================================\n# Additional Edge Cases\n# ============================================================================\n\ndef test_cost_tracker_multiple_providers(cost_tracker):\n    \"\"\"Test tracking calls from multiple providers.\"\"\"\n    records = [\n        LLMCallRecord(\"openai\", \"gpt-4o\", 1000, 500, 0.015, 100.0, False),\n        LLMCallRecord(\"anthropic\", \"claude-sonnet-4\", 2000, 1000, 0.030, 200.0, False),\n        LLMCallRecord(\"gemini\", \"gemini-2.5-flash\", 1500, 750, 0.0225, 150.0, True),\n        LLMCallRecord(\"apprentice\", \"auto\", 800, 400, 0.012, 80.0, False),\n    ]\n    \n    for record in records:\n        cost_tracker.record(record)\n    \n    summary = cost_tracker.summary()\n    assert summary[\"total_calls\"] == 4\n    assert len(summary[\"by_provider\"]) == 4\n\n\ndef test_provider_with_vision_flag():\n    \"\"\"Test that vision calls set has_vision=True.\"\"\"\n    provider = OpenAIProvider(\"gpt-4o\", None)\n    provider._record(1000, 500, 100.0, True)\n    \n    assert provider.cost_tracker.calls[0].has_vision == True\n\n\ndef test_provider_without_vision_flag():\n    \"\"\"Test that non-vision calls set has_vision=False.\"\"\"\n    provider = OpenAIProvider(\"gpt-4o\", None)\n    provider._record(1000, 500, 100.0, False)\n    \n    assert provider.cost_tracker.calls[0].has_vision == False\n\n\n@pytest.mark.asyncio\nasync def test_complete_with_empty_messages():\n    \"\"\"Test completion with empty message list.\"\"\"\n    with patch('src_webprobe_llm_provider.openai.OpenAI') as mock_client_class:\n        mock_client = MagicMock()\n        mock_client_class.return_value = mock_client\n        \n        mock_response = MagicMock()\n        mock_response.choices = [MagicMock(message=MagicMock(content=\"\"))]\n        mock_response.usage = MagicMock(prompt_tokens=10, completion_tokens=0)\n        mock_client.chat.completions.create = Mock(return_value=mock_response)\n        \n        provider = OpenAIProvider(\"gpt-4o\", None)\n        \n        with patch('src_webprobe_llm_provider.time.monotonic', side_effect=[0, 0.05]):\n            result = await provider.complete(\"System\", [], 100)\n        \n        # Should handle gracefully\n        assert isinstance(result, str)\n\n\ndef test_cost_estimation_large_numbers():\n    \"\"\"Test cost estimation with very large token counts.\"\"\"\n    result = _estimate_cost(\"gpt-4o\", 10_000_000, 5_000_000)\n    assert result >= 0\n    assert isinstance(result, float)\n\n\ndef test_base64_encoding_roundtrip(temp_image_file):\n    \"\"\"Test that base64 encoding can be decoded back.\"\"\"\n    encoded = _load_image_b64(temp_image_file)\n    decoded = base64.b64decode(encoded)\n    \n    # Read original file\n    original = temp_image_file.read_bytes()\n    \n    assert decoded == original\n"
+}

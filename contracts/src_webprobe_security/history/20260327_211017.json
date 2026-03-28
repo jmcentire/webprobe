@@ -1,0 +1,563 @@
+{
+  "component_id": "src_webprobe_security",
+  "name": "WebProbe Security Scanner",
+  "description": "Passive security scanning module that analyzes captured HTTP data for common web vulnerabilities including missing security headers, insecure cookies, mixed content, CORS misconfigurations, information disclosure, form security issues, and XSS signals. Operates on NodeCapture and SiteGraph objects to produce SecurityFinding reports without actively probing the target.",
+  "version": 1,
+  "types": [],
+  "functions": [
+    {
+      "name": "check_security_headers",
+      "description": "Analyzes HTTP response headers for missing or misconfigured security headers. Checks HSTS (Strict-Transport-Security), CSP (Content-Security-Policy), X-Frame-Options, X-Content-Type-Options, Referrer-Policy, and Permissions-Policy. Returns findings for missing headers, weak HSTS max-age (<1 year), CSP with unsafe-inline or unsafe-eval, weak X-Frame-Options values, and missing nosniff directive.",
+      "inputs": [
+        {
+          "name": "url",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "The URL being checked",
+          "validators": []
+        },
+        {
+          "name": "headers",
+          "type_ref": "ResponseHeaders",
+          "required": true,
+          "default": "",
+          "description": "Response headers object with raw headers dict",
+          "validators": []
+        },
+        {
+          "name": "auth_ctx",
+          "type_ref": "AuthContext",
+          "required": true,
+          "default": "",
+          "description": "Authentication context for the request",
+          "validators": []
+        }
+      ],
+      "output_type": "list[SecurityFinding]",
+      "error_cases": [
+        {
+          "name": "header_parsing_error",
+          "condition": "If headers.raw.items() raises exception",
+          "error_type": "AttributeError or TypeError",
+          "error_data": {}
+        },
+        {
+          "name": "regex_group_error",
+          "condition": "If max-age regex match exists but group(1) fails",
+          "error_type": "IndexError or AttributeError",
+          "error_data": {}
+        },
+        {
+          "name": "int_conversion_error",
+          "condition": "If max-age value cannot be converted to int",
+          "error_type": "ValueError",
+          "error_data": {}
+        }
+      ],
+      "preconditions": [
+        "headers.raw must be a dict-like object with string keys and values",
+        "url must be a valid string"
+      ],
+      "postconditions": [
+        "Returns list of SecurityFinding objects (may be empty)",
+        "All findings have category set to SecurityCategory.headers, SecurityCategory.xss, or related",
+        "All findings include url and auth_context",
+        "HSTS max-age findings only created if max-age header exists but value < 31536000"
+      ],
+      "idempotent": true,
+      "is_async": false,
+      "side_effects": [
+        "Creates new SecurityFinding objects"
+      ],
+      "structured_side_effects": [],
+      "performance_budget": null
+    },
+    {
+      "name": "check_cookies",
+      "description": "Examines cookie security attributes for all cookies. Detects missing Secure flag on HTTPS sites, missing HttpOnly flag on session-like cookies (heuristic: name contains session/token/auth/sid/jwt/access), and weak SameSite policy (not set or set to 'none'). Severity is elevated for session-like cookies.",
+      "inputs": [
+        {
+          "name": "url",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "The URL where cookies were captured",
+          "validators": []
+        },
+        {
+          "name": "cookies",
+          "type_ref": "list[CookieInfo]",
+          "required": true,
+          "default": "",
+          "description": "List of cookie objects to check",
+          "validators": []
+        },
+        {
+          "name": "auth_ctx",
+          "type_ref": "AuthContext",
+          "required": true,
+          "default": "",
+          "description": "Authentication context for the request",
+          "validators": []
+        }
+      ],
+      "output_type": "list[SecurityFinding]",
+      "error_cases": [
+        {
+          "name": "url_parse_error",
+          "condition": "If urlparse(url) fails",
+          "error_type": "ValueError",
+          "error_data": {}
+        },
+        {
+          "name": "cookie_attribute_error",
+          "condition": "If cookie object missing required attributes",
+          "error_type": "AttributeError",
+          "error_data": {}
+        }
+      ],
+      "preconditions": [
+        "url must be a valid string that urlparse can process",
+        "cookies must be iterable",
+        "Each cookie must have name, secure, http_only, same_site, and domain attributes"
+      ],
+      "postconditions": [
+        "Returns list of SecurityFinding objects (may be empty)",
+        "All findings have category set to SecurityCategory.cookies",
+        "Session-like cookies get higher severity ratings",
+        "Findings only created for HTTPS URLs when checking Secure flag"
+      ],
+      "idempotent": true,
+      "is_async": false,
+      "side_effects": [
+        "Creates new SecurityFinding objects"
+      ],
+      "structured_side_effects": [],
+      "performance_budget": null
+    },
+    {
+      "name": "check_mixed_content",
+      "description": "Detects HTTP resources loaded on HTTPS pages (mixed content). Categorizes by resource type with higher severity for scripts and stylesheets. Only runs checks if the page URL is HTTPS.",
+      "inputs": [
+        {
+          "name": "url",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "The page URL",
+          "validators": []
+        },
+        {
+          "name": "capture",
+          "type_ref": "NodeCapture",
+          "required": true,
+          "default": "",
+          "description": "Captured page data including resources list",
+          "validators": []
+        }
+      ],
+      "output_type": "list[SecurityFinding]",
+      "error_cases": [
+        {
+          "name": "resource_attribute_error",
+          "condition": "If resource object missing url or resource_type.value",
+          "error_type": "AttributeError",
+          "error_data": {}
+        }
+      ],
+      "preconditions": [
+        "url must be a string",
+        "capture.resources must be iterable",
+        "Each resource must have url, resource_type.value, and related attributes"
+      ],
+      "postconditions": [
+        "Returns empty list if URL does not start with 'https://'",
+        "Returns list of SecurityFinding objects for HTTP resources on HTTPS pages",
+        "All findings have category SecurityCategory.mixed_content",
+        "Scripts and stylesheets get SecuritySeverity.high, others get medium"
+      ],
+      "idempotent": true,
+      "is_async": false,
+      "side_effects": [
+        "Creates new SecurityFinding objects"
+      ],
+      "structured_side_effects": [],
+      "performance_budget": null
+    },
+    {
+      "name": "check_cors",
+      "description": "Checks for CORS misconfigurations in response headers. Detects Access-Control-Allow-Origin: * with credentials (critical severity) or without credentials (low severity).",
+      "inputs": [
+        {
+          "name": "url",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "The URL being checked",
+          "validators": []
+        },
+        {
+          "name": "headers",
+          "type_ref": "ResponseHeaders",
+          "required": true,
+          "default": "",
+          "description": "Response headers object",
+          "validators": []
+        },
+        {
+          "name": "auth_ctx",
+          "type_ref": "AuthContext",
+          "required": true,
+          "default": "",
+          "description": "Authentication context",
+          "validators": []
+        }
+      ],
+      "output_type": "list[SecurityFinding]",
+      "error_cases": [
+        {
+          "name": "header_access_error",
+          "condition": "If headers.raw access fails",
+          "error_type": "AttributeError or TypeError",
+          "error_data": {}
+        }
+      ],
+      "preconditions": [
+        "headers.raw must be a dict-like object"
+      ],
+      "postconditions": [
+        "Returns list of SecurityFinding objects (may be empty)",
+        "All findings have category SecurityCategory.cors",
+        "ACAO=* with ACAC=true gets critical severity",
+        "ACAO=* without credentials gets low severity"
+      ],
+      "idempotent": true,
+      "is_async": false,
+      "side_effects": [
+        "Creates new SecurityFinding objects"
+      ],
+      "structured_side_effects": [],
+      "performance_budget": null
+    },
+    {
+      "name": "check_information_disclosure",
+      "description": "Scans for information leakage in headers and page content. Checks: Server header with version numbers, X-Powered-By header, exposed .map files (status 200), and stack traces/error messages in page text using pattern matching.",
+      "inputs": [
+        {
+          "name": "url",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "The URL being checked",
+          "validators": []
+        },
+        {
+          "name": "headers",
+          "type_ref": "ResponseHeaders",
+          "required": true,
+          "default": "",
+          "description": "Response headers object",
+          "validators": []
+        },
+        {
+          "name": "capture",
+          "type_ref": "NodeCapture",
+          "required": true,
+          "default": "",
+          "description": "Captured page data including resources and page_text",
+          "validators": []
+        }
+      ],
+      "output_type": "list[SecurityFinding]",
+      "error_cases": [
+        {
+          "name": "regex_search_error",
+          "condition": "If re.search raises exception on malformed pattern or text",
+          "error_type": "re.error",
+          "error_data": {}
+        },
+        {
+          "name": "attribute_error",
+          "condition": "If capture missing page_text or resources attributes",
+          "error_type": "AttributeError",
+          "error_data": {}
+        }
+      ],
+      "preconditions": [
+        "headers.raw must be dict-like",
+        "capture.resources must be iterable",
+        "capture.page_text must be a string",
+        "capture.auth_context must exist"
+      ],
+      "postconditions": [
+        "Returns list of SecurityFinding objects (may be empty)",
+        "All findings have category SecurityCategory.information_disclosure",
+        "Stack trace findings are limited to one per page (breaks after first match)",
+        "Source map findings only for .map files with status_code == 200"
+      ],
+      "idempotent": true,
+      "is_async": false,
+      "side_effects": [
+        "Creates new SecurityFinding objects"
+      ],
+      "structured_side_effects": [],
+      "performance_budget": null
+    },
+    {
+      "name": "check_forms",
+      "description": "Analyzes form security: POST forms without CSRF tokens, password fields with autocomplete enabled, and forms on HTTPS pages that submit to HTTP endpoints.",
+      "inputs": [
+        {
+          "name": "url",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "The page URL containing the forms",
+          "validators": []
+        },
+        {
+          "name": "forms",
+          "type_ref": "list[FormInfo]",
+          "required": true,
+          "default": "",
+          "description": "List of form objects to analyze",
+          "validators": []
+        },
+        {
+          "name": "auth_ctx",
+          "type_ref": "AuthContext",
+          "required": true,
+          "default": "",
+          "description": "Authentication context",
+          "validators": []
+        }
+      ],
+      "output_type": "list[SecurityFinding]",
+      "error_cases": [
+        {
+          "name": "form_attribute_error",
+          "condition": "If form object missing required attributes",
+          "error_type": "AttributeError",
+          "error_data": {}
+        }
+      ],
+      "preconditions": [
+        "forms must be iterable",
+        "Each form must have method, has_csrf_token, action, has_password_field, and autocomplete_off attributes"
+      ],
+      "postconditions": [
+        "Returns list of SecurityFinding objects (may be empty)",
+        "Findings have category SecurityCategory.forms or SecurityCategory.mixed_content",
+        "POST forms without CSRF tokens get medium severity",
+        "Forms submitting to HTTP from HTTPS get high severity"
+      ],
+      "idempotent": true,
+      "is_async": false,
+      "side_effects": [
+        "Creates new SecurityFinding objects"
+      ],
+      "structured_side_effects": [],
+      "performance_budget": null
+    },
+    {
+      "name": "check_xss_signals",
+      "description": "Checks for XSS-related signals by detecting URL query parameters reflected in page content. Basic reflected XSS indicator using string matching.",
+      "inputs": [
+        {
+          "name": "url",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "The page URL with potential query parameters",
+          "validators": []
+        },
+        {
+          "name": "capture",
+          "type_ref": "NodeCapture",
+          "required": true,
+          "default": "",
+          "description": "Captured page data including page_text",
+          "validators": []
+        }
+      ],
+      "output_type": "list[SecurityFinding]",
+      "error_cases": [
+        {
+          "name": "url_parse_error",
+          "condition": "If urlparse fails on malformed URL",
+          "error_type": "ValueError",
+          "error_data": {}
+        },
+        {
+          "name": "string_split_error",
+          "condition": "If query parameter parsing fails",
+          "error_type": "ValueError",
+          "error_data": {}
+        }
+      ],
+      "preconditions": [
+        "url must be parseable by urlparse",
+        "capture.page_text must be a string",
+        "capture.auth_context must exist"
+      ],
+      "postconditions": [
+        "Returns list of SecurityFinding objects (may be empty)",
+        "All findings have category SecurityCategory.xss and severity medium",
+        "Only checks parameters longer than 3 characters",
+        "Findings created when parameter value found in page_text"
+      ],
+      "idempotent": true,
+      "is_async": false,
+      "side_effects": [
+        "Creates new SecurityFinding objects"
+      ],
+      "structured_side_effects": [],
+      "performance_budget": null
+    },
+    {
+      "name": "scan_capture",
+      "description": "Runs all passive security check functions on a single NodeCapture and aggregates results. Invokes check_security_headers, check_cookies, check_mixed_content, check_cors, check_information_disclosure, check_forms, and check_xss_signals.",
+      "inputs": [
+        {
+          "name": "url",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "The URL of the captured page",
+          "validators": []
+        },
+        {
+          "name": "capture",
+          "type_ref": "NodeCapture",
+          "required": true,
+          "default": "",
+          "description": "The captured page data to scan",
+          "validators": []
+        }
+      ],
+      "output_type": "list[SecurityFinding]",
+      "error_cases": [
+        {
+          "name": "check_function_error",
+          "condition": "If any called check function raises an exception",
+          "error_type": "Any exception from check_* functions",
+          "error_data": {}
+        }
+      ],
+      "preconditions": [
+        "capture must have response_headers, cookies, forms, auth_context, resources, and page_text attributes"
+      ],
+      "postconditions": [
+        "Returns aggregated list of all SecurityFinding objects from all check functions",
+        "Findings are ordered by check function execution order"
+      ],
+      "idempotent": true,
+      "is_async": false,
+      "side_effects": [
+        "Calls all check_* functions which create SecurityFinding objects"
+      ],
+      "structured_side_effects": [],
+      "performance_budget": null
+    },
+    {
+      "name": "scan_graph",
+      "description": "Runs security scans across all captured nodes in a SiteGraph. Deduplicates findings by (url, category, title) tuple and attaches findings to each capture's security_findings list for per-node reporting.",
+      "inputs": [
+        {
+          "name": "graph",
+          "type_ref": "SiteGraph",
+          "required": true,
+          "default": "",
+          "description": "The site graph containing all captured nodes",
+          "validators": []
+        }
+      ],
+      "output_type": "list[SecurityFinding]",
+      "error_cases": [
+        {
+          "name": "graph_access_error",
+          "condition": "If graph.nodes access or iteration fails",
+          "error_type": "AttributeError",
+          "error_data": {}
+        },
+        {
+          "name": "node_access_error",
+          "condition": "If node missing id or captures attributes",
+          "error_type": "AttributeError",
+          "error_data": {}
+        },
+        {
+          "name": "scan_capture_error",
+          "condition": "If scan_capture raises exception",
+          "error_type": "Any exception from scan_capture",
+          "error_data": {}
+        }
+      ],
+      "preconditions": [
+        "graph.nodes must be a dict-like object with .values() method",
+        "Each node must have .id and .captures attributes",
+        "Each capture must have .security_findings list attribute"
+      ],
+      "postconditions": [
+        "Returns deduplicated list of all SecurityFinding objects across all nodes",
+        "Each unique finding (by url, category, title) appears only once in return list",
+        "All findings are also appended to their respective capture.security_findings lists",
+        "Findings are deduplicated using set of (url, category.value, title) tuples"
+      ],
+      "idempotent": false,
+      "is_async": false,
+      "side_effects": [
+        "Mutates capture.security_findings lists by appending findings",
+        "Calls scan_capture for each node/capture pair"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "mutates_state",
+          "target": "capture.security_findings",
+          "description": "Appends SecurityFinding objects to each capture's security_findings list"
+        }
+      ],
+      "performance_budget": null
+    }
+  ],
+  "dependencies": [
+    "re",
+    "urllib.parse",
+    "webprobe.models"
+  ],
+  "dependency_contracts": {
+    "webprobe.models": [
+      "AuthContext",
+      "CookieInfo",
+      "FormInfo",
+      "NodeCapture",
+      "ResponseHeaders",
+      "SecurityCategory",
+      "SecurityFinding",
+      "SecuritySeverity",
+      "SiteGraph"
+    ]
+  },
+  "invariants": [
+    "HSTS max-age threshold is 31536000 seconds (1 year)",
+    "Session-like cookie heuristic keywords: 'session', 'token', 'auth', 'sid', 'jwt', 'access'",
+    "Stack trace patterns checked: 'traceback (most recent call last)', 'at .+\\\\(.+:\\\\d+:\\\\d+\\\\)', 'exception in thread', 'fatal error:.*on line \\\\d+', 'stack trace:', 'unhandled exception'",
+    "High-risk resource types for mixed content: 'script', 'stylesheet'",
+    "Valid X-Frame-Options values: 'DENY', 'SAMEORIGIN'",
+    "Minimum parameter length for XSS reflection check: 3 characters",
+    "Deduplication key for findings: (url, category.value, title)"
+  ],
+  "requires": [],
+  "processing_register": "",
+  "data_access": {
+    "reads": [],
+    "writes": [],
+    "rationale": "",
+    "side_effects": []
+  },
+  "authority": {
+    "domains": [],
+    "rationale": null
+  }
+}

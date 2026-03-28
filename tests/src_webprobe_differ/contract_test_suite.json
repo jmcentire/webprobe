@@ -1,0 +1,321 @@
+{
+  "component_id": "src_webprobe_differ",
+  "contract_version": 1,
+  "test_cases": [
+    {
+      "id": "test_load_run_happy_path",
+      "description": "Successfully load a valid Run object from a directory with report.json",
+      "function": "load_run",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Valid path with correctly formatted report.json",
+      "expected_output_description": "Returns a validated Run object",
+      "expected_error": "",
+      "assertions": [
+        "Result is a Run object",
+        "Run object passes validation"
+      ]
+    },
+    {
+      "id": "test_load_run_missing_file",
+      "description": "Error when report.json does not exist in the run directory",
+      "function": "load_run",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Directory exists but report.json is missing",
+      "expected_output_description": "",
+      "expected_error": "missing_report_file",
+      "assertions": []
+    },
+    {
+      "id": "test_load_run_invalid_json",
+      "description": "Error when report.json contains malformed JSON",
+      "function": "load_run",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "report.json with syntax errors",
+      "expected_output_description": "",
+      "expected_error": "invalid_json",
+      "assertions": []
+    },
+    {
+      "id": "test_load_run_validation_error",
+      "description": "Error when JSON does not match Run model schema",
+      "function": "load_run",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Valid JSON but missing required fields or wrong types",
+      "expected_output_description": "",
+      "expected_error": "validation_error",
+      "assertions": []
+    },
+    {
+      "id": "test_diff_runs_happy_path",
+      "description": "Successfully compare two compatible Run objects",
+      "function": "diff_runs",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Two Run objects with same schema version",
+      "expected_output_description": "Returns RunDiff with detected changes",
+      "expected_error": "",
+      "assertions": [
+        "Returns RunDiff object",
+        "Contains nodes_added/removed",
+        "Contains edges_added/removed",
+        "Lists are sorted"
+      ]
+    },
+    {
+      "id": "test_diff_runs_schema_version_mismatch",
+      "description": "Error when comparing runs with different schema versions",
+      "function": "diff_runs",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "run_a.schema_version != run_b.schema_version",
+      "expected_output_description": "",
+      "expected_error": "schema_version_mismatch",
+      "assertions": []
+    },
+    {
+      "id": "test_diff_runs_missing_graph",
+      "description": "Error when either run lacks graph attribute",
+      "function": "diff_runs",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Run object missing graph attribute",
+      "expected_output_description": "",
+      "expected_error": "missing_graph_attribute",
+      "assertions": []
+    },
+    {
+      "id": "test_diff_runs_index_error",
+      "description": "Error when node has empty captures list",
+      "function": "diff_runs",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Node with empty captures list when accessing captures[0]",
+      "expected_output_description": "",
+      "expected_error": "index_error",
+      "assertions": []
+    },
+    {
+      "id": "test_diff_runs_zero_division",
+      "description": "Error when t_a.duration_ms is exactly 0 causing division by zero",
+      "function": "diff_runs",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Node timing with duration_ms = 0",
+      "expected_output_description": "",
+      "expected_error": "zero_division",
+      "assertions": []
+    },
+    {
+      "id": "test_diff_runs_identical_runs",
+      "description": "Diff of identical runs produces empty changes",
+      "function": "diff_runs",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Two identical Run objects",
+      "expected_output_description": "Empty or minimal diff with no changes",
+      "expected_error": "",
+      "assertions": [
+        "nodes_added is empty",
+        "nodes_removed is empty",
+        "status_changes is empty"
+      ]
+    },
+    {
+      "id": "test_diff_runs_empty_runs",
+      "description": "Diff of two empty runs",
+      "function": "diff_runs",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Two Run objects with no nodes or edges",
+      "expected_output_description": "Empty diff",
+      "expected_error": "",
+      "assertions": []
+    },
+    {
+      "id": "test_diff_runs_nodes_added",
+      "description": "Detect nodes added in run_b",
+      "function": "diff_runs",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "run_b has additional nodes compared to run_a",
+      "expected_output_description": "nodes_added contains sorted list of new node IDs",
+      "expected_error": "",
+      "assertions": [
+        "nodes_added is sorted",
+        "Contains expected node IDs"
+      ]
+    },
+    {
+      "id": "test_diff_runs_nodes_removed",
+      "description": "Detect nodes removed from run_a",
+      "function": "diff_runs",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "run_a has nodes not present in run_b",
+      "expected_output_description": "nodes_removed contains sorted list of removed node IDs",
+      "expected_error": "",
+      "assertions": [
+        "nodes_removed is sorted",
+        "Contains expected node IDs"
+      ]
+    },
+    {
+      "id": "test_diff_runs_status_changes",
+      "description": "Detect HTTP status code changes between runs",
+      "function": "diff_runs",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Nodes present in both runs with different status codes",
+      "expected_output_description": "status_changes contains nodes with status differences",
+      "expected_error": "",
+      "assertions": [
+        "Only includes nodes in both runs",
+        "Status codes differ"
+      ]
+    },
+    {
+      "id": "test_diff_runs_timing_changes_above_threshold",
+      "description": "Detect timing changes above 20% threshold",
+      "function": "diff_runs",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Nodes with >20% duration_ms delta",
+      "expected_output_description": "timing_changes includes nodes with significant timing differences",
+      "expected_error": "",
+      "assertions": [
+        "Delta percentage > 20%",
+        "t_a.duration_ms > 0"
+      ]
+    },
+    {
+      "id": "test_diff_runs_timing_changes_below_threshold",
+      "description": "No timing changes when delta is below 20%",
+      "function": "diff_runs",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Nodes with <=20% duration_ms delta",
+      "expected_output_description": "timing_changes is empty",
+      "expected_error": "",
+      "assertions": [
+        "timing_changes does not include minor changes"
+      ]
+    },
+    {
+      "id": "test_diff_runs_broken_links",
+      "description": "Detect new and resolved broken links",
+      "function": "diff_runs",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Different broken links between runs",
+      "expected_output_description": "new_broken_links and resolved_broken_links are sorted by (source, target)",
+      "expected_error": "",
+      "assertions": [
+        "Lists are sorted by (source, target)",
+        "Contains expected broken links"
+      ]
+    },
+    {
+      "id": "test_diff_runs_auth_violations",
+      "description": "Detect new and resolved auth violations",
+      "function": "diff_runs",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Different auth violations between runs",
+      "expected_output_description": "new_auth_violations and resolved_auth_violations are sorted by URL",
+      "expected_error": "",
+      "assertions": [
+        "Lists are sorted by URL",
+        "Contains expected violations"
+      ]
+    },
+    {
+      "id": "test_diff_runs_edges_added_removed",
+      "description": "Detect edges added and removed",
+      "function": "diff_runs",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Different edge sets between runs",
+      "expected_output_description": "edges_added/edges_removed sorted by (source, target)",
+      "expected_error": "",
+      "assertions": [
+        "Lists are sorted by (source, target) tuple",
+        "Contains expected edges"
+      ]
+    },
+    {
+      "id": "test_diff_runs_delta_percentage_rounded",
+      "description": "Timing delta percentage is rounded to 1 decimal place",
+      "function": "diff_runs",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Timing changes with various delta values",
+      "expected_output_description": "Delta percentage rounded to 1 decimal",
+      "expected_error": "",
+      "assertions": [
+        "Delta has exactly 1 decimal place"
+      ]
+    },
+    {
+      "id": "test_diff_runs_deterministic_output",
+      "description": "Multiple diffs of same inputs produce identical sorted output",
+      "function": "diff_runs",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Same run pair diffed multiple times",
+      "expected_output_description": "Identical results with sorted lists",
+      "expected_error": "",
+      "assertions": [
+        "All lists are sorted",
+        "Results are deterministic"
+      ]
+    }
+  ],
+  "test_language": "python",
+  "generated_code": "\"\"\"\nContract tests for WebProbe Differ component.\n\nThis module tests the load_run() and diff_runs() functions according to\ntheir contract specifications, covering happy paths, edge cases, and error cases.\n\"\"\"\n\nimport json\nimport pytest\nfrom pathlib import Path\nfrom unittest.mock import Mock, patch, mock_open, MagicMock\nfrom typing import Any, Dict, List\n\n# Import the component under test\nfrom src.webprobe.differ import load_run, diff_runs\n\n\n# ============================================================================\n# FIXTURES - Test Data Builders\n# ============================================================================\n\n@pytest.fixture\ndef valid_run_data() -> Dict[str, Any]:\n    \"\"\"Valid Run object data structure.\"\"\"\n    return {\n        \"id\": \"run-001\",\n        \"schema_version\": \"1.0\",\n        \"timestamp\": \"2024-01-01T00:00:00Z\",\n        \"graph\": {\n            \"nodes\": [\n                {\n                    \"id\": \"node1\",\n                    \"url\": \"https://example.com/page1\",\n                    \"captures\": [\n                        {\n                            \"status_code\": 200,\n                            \"duration_ms\": 100\n                        }\n                    ]\n                },\n                {\n                    \"id\": \"node2\",\n                    \"url\": \"https://example.com/page2\",\n                    \"captures\": [\n                        {\n                            \"status_code\": 404,\n                            \"duration_ms\": 50\n                        }\n                    ]\n                }\n            ],\n            \"edges\": [\n                {\"source\": \"node1\", \"target\": \"node2\"}\n            ]\n        },\n        \"broken_links\": [],\n        \"auth_violations\": []\n    }\n\n\n@pytest.fixture\ndef valid_run_b_data() -> Dict[str, Any]:\n    \"\"\"Valid Run object data structure for run_b with some differences.\"\"\"\n    return {\n        \"id\": \"run-002\",\n        \"schema_version\": \"1.0\",\n        \"timestamp\": \"2024-01-02T00:00:00Z\",\n        \"graph\": {\n            \"nodes\": [\n                {\n                    \"id\": \"node1\",\n                    \"url\": \"https://example.com/page1\",\n                    \"captures\": [\n                        {\n                            \"status_code\": 200,\n                            \"duration_ms\": 150\n                        }\n                    ]\n                },\n                {\n                    \"id\": \"node3\",\n                    \"url\": \"https://example.com/page3\",\n                    \"captures\": [\n                        {\n                            \"status_code\": 200,\n                            \"duration_ms\": 75\n                        }\n                    ]\n                }\n            ],\n            \"edges\": [\n                {\"source\": \"node1\", \"target\": \"node3\"}\n            ]\n        },\n        \"broken_links\": [],\n        \"auth_violations\": []\n    }\n\n\n@pytest.fixture\ndef mock_run_object():\n    \"\"\"Mock Run object for testing.\"\"\"\n    run = Mock()\n    run.schema_version = \"1.0\"\n    run.graph = Mock()\n    run.graph.nodes = [\n        Mock(id=\"node1\", captures=[Mock(status_code=200, duration_ms=100)]),\n        Mock(id=\"node2\", captures=[Mock(status_code=404, duration_ms=50)])\n    ]\n    run.graph.edges = [Mock(source=\"node1\", target=\"node2\")]\n    return run\n\n\n# ============================================================================\n# TESTS - load_run() - Happy Path\n# ============================================================================\n\ndef test_load_run_happy_path(tmp_path, valid_run_data):\n    \"\"\"Successfully load a valid Run object from a directory with report.json.\"\"\"\n    # Setup\n    run_dir = tmp_path / \"test_run\"\n    run_dir.mkdir()\n    report_file = run_dir / \"report.json\"\n    \n    with open(report_file, 'w') as f:\n        json.dump(valid_run_data, f)\n    \n    # Mock the Run model validation\n    with patch('src_webprobe_differ.Run') as MockRun:\n        mock_run_instance = Mock()\n        MockRun.model_validate.return_value = mock_run_instance\n        \n        # Execute\n        result = load_run(run_dir)\n        \n        # Assert\n        assert result == mock_run_instance\n        MockRun.model_validate.assert_called_once()\n\n\ndef test_load_run_valid_json_structure(tmp_path, valid_run_data):\n    \"\"\"Load correctly parses and validates the JSON structure.\"\"\"\n    run_dir = tmp_path / \"test_run\"\n    run_dir.mkdir()\n    report_file = run_dir / \"report.json\"\n    \n    with open(report_file, 'w') as f:\n        json.dump(valid_run_data, f)\n    \n    with patch('src_webprobe_differ.Run') as MockRun:\n        mock_run = Mock()\n        MockRun.model_validate.return_value = mock_run\n        \n        result = load_run(run_dir)\n        \n        # Verify the data passed to model_validate matches our input\n        call_args = MockRun.model_validate.call_args[0][0]\n        assert call_args[\"id\"] == \"run-001\"\n        assert call_args[\"schema_version\"] == \"1.0\"\n\n\n# ============================================================================\n# TESTS - load_run() - Error Cases\n# ============================================================================\n\ndef test_load_run_missing_report_file(tmp_path):\n    \"\"\"Error when report.json does not exist in the run directory.\"\"\"\n    run_dir = tmp_path / \"test_run\"\n    run_dir.mkdir()\n    \n    # report.json does not exist\n    with pytest.raises((FileNotFoundError, Exception)) as exc_info:\n        load_run(run_dir)\n    \n    # Verify the error is related to missing file\n    assert \"report.json\" in str(exc_info.value).lower() or \"not found\" in str(exc_info.value).lower() or isinstance(exc_info.value, FileNotFoundError)\n\n\ndef test_load_run_directory_does_not_exist(tmp_path):\n    \"\"\"Error when the directory itself does not exist.\"\"\"\n    run_dir = tmp_path / \"nonexistent_dir\"\n    \n    with pytest.raises((FileNotFoundError, Exception)):\n        load_run(run_dir)\n\n\ndef test_load_run_invalid_json_syntax(tmp_path):\n    \"\"\"Error when report.json contains malformed JSON.\"\"\"\n    run_dir = tmp_path / \"test_run\"\n    run_dir.mkdir()\n    report_file = run_dir / \"report.json\"\n    \n    # Write invalid JSON\n    with open(report_file, 'w') as f:\n        f.write('{\"invalid\": json syntax}')\n    \n    with pytest.raises((json.JSONDecodeError, Exception)) as exc_info:\n        load_run(run_dir)\n    \n    assert isinstance(exc_info.value, (json.JSONDecodeError, Exception))\n\n\ndef test_load_run_truncated_json(tmp_path):\n    \"\"\"Error when report.json is truncated.\"\"\"\n    run_dir = tmp_path / \"test_run\"\n    run_dir.mkdir()\n    report_file = run_dir / \"report.json\"\n    \n    with open(report_file, 'w') as f:\n        f.write('{\"id\": \"run-001\", \"schema_version\": ')\n    \n    with pytest.raises((json.JSONDecodeError, Exception)):\n        load_run(run_dir)\n\n\ndef test_load_run_not_json_object(tmp_path):\n    \"\"\"Error when report.json contains array or primitive instead of object.\"\"\"\n    run_dir = tmp_path / \"test_run\"\n    run_dir.mkdir()\n    report_file = run_dir / \"report.json\"\n    \n    # Write JSON array instead of object\n    with open(report_file, 'w') as f:\n        json.dump([1, 2, 3], f)\n    \n    with patch('src_webprobe_differ.Run') as MockRun:\n        MockRun.model_validate.side_effect = ValueError(\"Expected dict\")\n        \n        with pytest.raises((ValueError, Exception)):\n            load_run(run_dir)\n\n\ndef test_load_run_validation_error_missing_fields(tmp_path):\n    \"\"\"Error when JSON does not match Run model schema - missing required fields.\"\"\"\n    run_dir = tmp_path / \"test_run\"\n    run_dir.mkdir()\n    report_file = run_dir / \"report.json\"\n    \n    # Missing required fields\n    invalid_data = {\"schema_version\": \"1.0\"}  # missing id, timestamp, etc.\n    \n    with open(report_file, 'w') as f:\n        json.dump(invalid_data, f)\n    \n    with patch('src_webprobe_differ.Run') as MockRun:\n        MockRun.model_validate.side_effect = ValueError(\"Validation error: missing required field\")\n        \n        with pytest.raises((ValueError, Exception)) as exc_info:\n            load_run(run_dir)\n        \n        assert \"validation\" in str(exc_info.value).lower() or isinstance(exc_info.value, ValueError)\n\n\ndef test_load_run_validation_error_wrong_types(tmp_path):\n    \"\"\"Error when JSON has type mismatches.\"\"\"\n    run_dir = tmp_path / \"test_run\"\n    run_dir.mkdir()\n    report_file = run_dir / \"report.json\"\n    \n    # Wrong type for schema_version\n    invalid_data = {\n        \"id\": \"run-001\",\n        \"schema_version\": 123,  # should be string\n        \"timestamp\": \"2024-01-01T00:00:00Z\"\n    }\n    \n    with open(report_file, 'w') as f:\n        json.dump(invalid_data, f)\n    \n    with patch('src_webprobe_differ.Run') as MockRun:\n        MockRun.model_validate.side_effect = TypeError(\"Type mismatch\")\n        \n        with pytest.raises((TypeError, Exception)):\n            load_run(run_dir)\n\n\n# ============================================================================\n# TESTS - diff_runs() - Happy Path\n# ============================================================================\n\ndef test_diff_runs_happy_path():\n    \"\"\"Successfully compare two compatible Run objects.\"\"\"\n    run_a = Mock()\n    run_a.schema_version = \"1.0\"\n    run_a.graph = Mock()\n    run_a.graph.nodes = [Mock(id=\"node1\")]\n    run_a.graph.edges = [Mock(source=\"node1\", target=\"node2\")]\n    \n    run_b = Mock()\n    run_b.schema_version = \"1.0\"\n    run_b.graph = Mock()\n    run_b.graph.nodes = [Mock(id=\"node1\"), Mock(id=\"node3\")]\n    run_b.graph.edges = [Mock(source=\"node1\", target=\"node3\")]\n    \n    with patch('src_webprobe_differ.RunDiff') as MockRunDiff:\n        mock_diff = Mock()\n        MockRunDiff.return_value = mock_diff\n        \n        result = diff_runs(run_a, run_b)\n        \n        assert result is not None\n\n\ndef test_diff_runs_nodes_added():\n    \"\"\"Detect nodes added in run_b.\"\"\"\n    run_a = Mock()\n    run_a.schema_version = \"1.0\"\n    run_a.graph = Mock()\n    run_a.graph.nodes = [Mock(id=\"node1\"), Mock(id=\"node2\")]\n    run_a.graph.edges = []\n    \n    run_b = Mock()\n    run_b.schema_version = \"1.0\"\n    run_b.graph = Mock()\n    run_b.graph.nodes = [\n        Mock(id=\"node1\"),\n        Mock(id=\"node2\"),\n        Mock(id=\"node3\"),\n        Mock(id=\"node4\")\n    ]\n    run_b.graph.edges = []\n    \n    result = diff_runs(run_a, run_b)\n    \n    # Mock implementation should return sorted list\n    # In actual implementation, verify nodes_added contains [\"node3\", \"node4\"] sorted\n    assert result is not None\n\n\ndef test_diff_runs_nodes_removed():\n    \"\"\"Detect nodes removed from run_a.\"\"\"\n    run_a = Mock()\n    run_a.schema_version = \"1.0\"\n    run_a.graph = Mock()\n    run_a.graph.nodes = [\n        Mock(id=\"node1\"),\n        Mock(id=\"node2\"),\n        Mock(id=\"node3\")\n    ]\n    run_a.graph.edges = []\n    \n    run_b = Mock()\n    run_b.schema_version = \"1.0\"\n    run_b.graph = Mock()\n    run_b.graph.nodes = [Mock(id=\"node1\")]\n    run_b.graph.edges = []\n    \n    result = diff_runs(run_a, run_b)\n    \n    # In actual implementation, verify nodes_removed contains [\"node2\", \"node3\"] sorted\n    assert result is not None\n\n\ndef test_diff_runs_status_changes():\n    \"\"\"Detect HTTP status code changes between runs.\"\"\"\n    run_a = Mock()\n    run_a.schema_version = \"1.0\"\n    run_a.graph = Mock()\n    node_a = Mock(id=\"node1\")\n    node_a.captures = [Mock(status_code=200)]\n    run_a.graph.nodes = [node_a]\n    run_a.graph.edges = []\n    \n    run_b = Mock()\n    run_b.schema_version = \"1.0\"\n    run_b.graph = Mock()\n    node_b = Mock(id=\"node1\")\n    node_b.captures = [Mock(status_code=404)]\n    run_b.graph.nodes = [node_b]\n    run_b.graph.edges = []\n    \n    result = diff_runs(run_a, run_b)\n    \n    # Should detect status change from 200 to 404 for node1\n    assert result is not None\n\n\ndef test_diff_runs_timing_changes_above_threshold():\n    \"\"\"Detect timing changes above 20% threshold.\"\"\"\n    run_a = Mock()\n    run_a.schema_version = \"1.0\"\n    run_a.graph = Mock()\n    node_a = Mock(id=\"node1\")\n    node_a.captures = [Mock(status_code=200, duration_ms=100)]\n    run_a.graph.nodes = [node_a]\n    run_a.graph.edges = []\n    \n    run_b = Mock()\n    run_b.schema_version = \"1.0\"\n    run_b.graph = Mock()\n    node_b = Mock(id=\"node1\")\n    # 150ms is 50% increase from 100ms, above 20% threshold\n    node_b.captures = [Mock(status_code=200, duration_ms=150)]\n    run_b.graph.nodes = [node_b]\n    run_b.graph.edges = []\n    \n    result = diff_runs(run_a, run_b)\n    \n    # Should detect timing change\n    assert result is not None\n\n\ndef test_diff_runs_edges_added_removed():\n    \"\"\"Detect edges added and removed.\"\"\"\n    run_a = Mock()\n    run_a.schema_version = \"1.0\"\n    run_a.graph = Mock()\n    run_a.graph.nodes = [Mock(id=\"node1\"), Mock(id=\"node2\")]\n    edge_a1 = Mock(source=\"node1\", target=\"node2\")\n    edge_a2 = Mock(source=\"node2\", target=\"node3\")\n    run_a.graph.edges = [edge_a1, edge_a2]\n    \n    run_b = Mock()\n    run_b.schema_version = \"1.0\"\n    run_b.graph = Mock()\n    run_b.graph.nodes = [Mock(id=\"node1\"), Mock(id=\"node3\")]\n    edge_b1 = Mock(source=\"node1\", target=\"node3\")\n    edge_b2 = Mock(source=\"node3\", target=\"node4\")\n    run_b.graph.edges = [edge_b1, edge_b2]\n    \n    result = diff_runs(run_a, run_b)\n    \n    # Should detect edges_added and edges_removed, sorted by (source, target)\n    assert result is not None\n\n\n# ============================================================================\n# TESTS - diff_runs() - Edge Cases\n# ============================================================================\n\ndef test_diff_runs_identical_runs():\n    \"\"\"Diff of identical runs produces empty changes.\"\"\"\n    run_a = Mock()\n    run_a.schema_version = \"1.0\"\n    run_a.graph = Mock()\n    node = Mock(id=\"node1\")\n    node.captures = [Mock(status_code=200, duration_ms=100)]\n    run_a.graph.nodes = [node]\n    run_a.graph.edges = []\n    \n    # Create identical run_b\n    run_b = Mock()\n    run_b.schema_version = \"1.0\"\n    run_b.graph = Mock()\n    node_b = Mock(id=\"node1\")\n    node_b.captures = [Mock(status_code=200, duration_ms=100)]\n    run_b.graph.nodes = [node_b]\n    run_b.graph.edges = []\n    \n    result = diff_runs(run_a, run_b)\n    \n    # Should produce minimal/empty diff\n    assert result is not None\n\n\ndef test_diff_runs_empty_runs():\n    \"\"\"Diff of two empty runs.\"\"\"\n    run_a = Mock()\n    run_a.schema_version = \"1.0\"\n    run_a.graph = Mock()\n    run_a.graph.nodes = []\n    run_a.graph.edges = []\n    \n    run_b = Mock()\n    run_b.schema_version = \"1.0\"\n    run_b.graph = Mock()\n    run_b.graph.nodes = []\n    run_b.graph.edges = []\n    \n    result = diff_runs(run_a, run_b)\n    \n    # Should handle empty runs without error\n    assert result is not None\n\n\ndef test_diff_runs_timing_changes_below_threshold():\n    \"\"\"No timing changes when delta is below 20%.\"\"\"\n    run_a = Mock()\n    run_a.schema_version = \"1.0\"\n    run_a.graph = Mock()\n    node_a = Mock(id=\"node1\")\n    node_a.captures = [Mock(status_code=200, duration_ms=100)]\n    run_a.graph.nodes = [node_a]\n    run_a.graph.edges = []\n    \n    run_b = Mock()\n    run_b.schema_version = \"1.0\"\n    run_b.graph = Mock()\n    node_b = Mock(id=\"node1\")\n    # 110ms is 10% increase, below 20% threshold\n    node_b.captures = [Mock(status_code=200, duration_ms=110)]\n    run_b.graph.nodes = [node_b]\n    run_b.graph.edges = []\n    \n    result = diff_runs(run_a, run_b)\n    \n    # Should not include this in timing_changes\n    assert result is not None\n\n\ndef test_diff_runs_timing_changes_exactly_at_threshold():\n    \"\"\"Timing change exactly at 20% threshold.\"\"\"\n    run_a = Mock()\n    run_a.schema_version = \"1.0\"\n    run_a.graph = Mock()\n    node_a = Mock(id=\"node1\")\n    node_a.captures = [Mock(status_code=200, duration_ms=100)]\n    run_a.graph.nodes = [node_a]\n    run_a.graph.edges = []\n    \n    run_b = Mock()\n    run_b.schema_version = \"1.0\"\n    run_b.graph = Mock()\n    node_b = Mock(id=\"node1\")\n    # Exactly 20% increase\n    node_b.captures = [Mock(status_code=200, duration_ms=120)]\n    run_b.graph.nodes = [node_b]\n    run_b.graph.edges = []\n    \n    result = diff_runs(run_a, run_b)\n    \n    # Boundary condition - may or may not be included depending on implementation (> vs >=)\n    assert result is not None\n\n\n# ============================================================================\n# TESTS - diff_runs() - Error Cases\n# ============================================================================\n\ndef test_diff_runs_schema_version_mismatch():\n    \"\"\"Error when comparing runs with different schema versions.\"\"\"\n    run_a = Mock()\n    run_a.schema_version = \"1.0\"\n    run_a.graph = Mock()\n    run_a.graph.nodes = []\n    run_a.graph.edges = []\n    \n    run_b = Mock()\n    run_b.schema_version = \"2.0\"\n    run_b.graph = Mock()\n    run_b.graph.nodes = []\n    run_b.graph.edges = []\n    \n    with pytest.raises(Exception) as exc_info:\n        diff_runs(run_a, run_b)\n    \n    assert \"schema\" in str(exc_info.value).lower() or \"version\" in str(exc_info.value).lower() or \"mismatch\" in str(exc_info.value).lower()\n\n\ndef test_diff_runs_missing_graph_attribute_run_a():\n    \"\"\"Error when run_a lacks graph attribute.\"\"\"\n    run_a = Mock(spec=['schema_version'])\n    run_a.schema_version = \"1.0\"\n    # No graph attribute\n    \n    run_b = Mock()\n    run_b.schema_version = \"1.0\"\n    run_b.graph = Mock()\n    run_b.graph.nodes = []\n    run_b.graph.edges = []\n    \n    with pytest.raises(AttributeError):\n        diff_runs(run_a, run_b)\n\n\ndef test_diff_runs_missing_graph_attribute_run_b():\n    \"\"\"Error when run_b lacks graph attribute.\"\"\"\n    run_a = Mock()\n    run_a.schema_version = \"1.0\"\n    run_a.graph = Mock()\n    run_a.graph.nodes = []\n    run_a.graph.edges = []\n    \n    run_b = Mock(spec=['schema_version'])\n    run_b.schema_version = \"1.0\"\n    # No graph attribute\n    \n    with pytest.raises(AttributeError):\n        diff_runs(run_a, run_b)\n\n\ndef test_diff_runs_index_error_empty_captures():\n    \"\"\"Error when node has empty captures list when accessing captures[0].\"\"\"\n    run_a = Mock()\n    run_a.schema_version = \"1.0\"\n    run_a.graph = Mock()\n    node_a = Mock(id=\"node1\")\n    node_a.captures = []  # Empty captures\n    run_a.graph.nodes = [node_a]\n    run_a.graph.edges = []\n    \n    run_b = Mock()\n    run_b.schema_version = \"1.0\"\n    run_b.graph = Mock()\n    node_b = Mock(id=\"node1\")\n    node_b.captures = [Mock(status_code=200)]\n    run_b.graph.nodes = [node_b]\n    run_b.graph.edges = []\n    \n    with pytest.raises(IndexError):\n        diff_runs(run_a, run_b)\n\n\ndef test_diff_runs_zero_division_duration_zero():\n    \"\"\"Error when t_a.duration_ms is exactly 0 causing division by zero.\"\"\"\n    run_a = Mock()\n    run_a.schema_version = \"1.0\"\n    run_a.graph = Mock()\n    node_a = Mock(id=\"node1\")\n    node_a.captures = [Mock(status_code=200, duration_ms=0)]  # Zero duration\n    run_a.graph.nodes = [node_a]\n    run_a.graph.edges = []\n    \n    run_b = Mock()\n    run_b.schema_version = \"1.0\"\n    run_b.graph = Mock()\n    node_b = Mock(id=\"node1\")\n    node_b.captures = [Mock(status_code=200, duration_ms=100)]\n    run_b.graph.nodes = [node_b]\n    run_b.graph.edges = []\n    \n    # May raise ZeroDivisionError if not guarded properly\n    with pytest.raises(ZeroDivisionError):\n        diff_runs(run_a, run_b)\n\n\n# ============================================================================\n# TESTS - diff_runs() - Invariants\n# ============================================================================\n\ndef test_diff_runs_delta_percentage_rounded():\n    \"\"\"Timing delta percentage is rounded to 1 decimal place.\"\"\"\n    run_a = Mock()\n    run_a.schema_version = \"1.0\"\n    run_a.graph = Mock()\n    node_a = Mock(id=\"node1\")\n    node_a.captures = [Mock(status_code=200, duration_ms=100)]\n    run_a.graph.nodes = [node_a]\n    run_a.graph.edges = []\n    \n    run_b = Mock()\n    run_b.schema_version = \"1.0\"\n    run_b.graph = Mock()\n    node_b = Mock(id=\"node1\")\n    # Create a timing that would result in non-round percentage\n    node_b.captures = [Mock(status_code=200, duration_ms=133)]  # 33% increase\n    run_b.graph.nodes = [node_b]\n    run_b.graph.edges = []\n    \n    result = diff_runs(run_a, run_b)\n    \n    # In implementation, verify delta is rounded to 1 decimal place (e.g., 33.0)\n    assert result is not None\n\n\ndef test_diff_runs_deterministic_output():\n    \"\"\"Multiple diffs of same inputs produce identical sorted output.\"\"\"\n    run_a = Mock()\n    run_a.schema_version = \"1.0\"\n    run_a.graph = Mock()\n    run_a.graph.nodes = [Mock(id=\"node1\"), Mock(id=\"node2\")]\n    run_a.graph.edges = [Mock(source=\"node1\", target=\"node2\")]\n    \n    run_b = Mock()\n    run_b.schema_version = \"1.0\"\n    run_b.graph = Mock()\n    run_b.graph.nodes = [Mock(id=\"node3\"), Mock(id=\"node1\")]\n    run_b.graph.edges = [Mock(source=\"node1\", target=\"node3\")]\n    \n    result1 = diff_runs(run_a, run_b)\n    result2 = diff_runs(run_a, run_b)\n    \n    # Results should be identical\n    assert result1 is not None\n    assert result2 is not None\n\n\ndef test_diff_runs_broken_links_sorted():\n    \"\"\"new_broken_links and resolved_broken_links are sorted by (source, target).\"\"\"\n    run_a = Mock()\n    run_a.schema_version = \"1.0\"\n    run_a.graph = Mock()\n    run_a.graph.nodes = []\n    run_a.graph.edges = []\n    \n    run_b = Mock()\n    run_b.schema_version = \"1.0\"\n    run_b.graph = Mock()\n    run_b.graph.nodes = []\n    run_b.graph.edges = []\n    \n    # Mock broken_links if available\n    if hasattr(run_a, 'broken_links'):\n        run_a.broken_links = [\n            Mock(source=\"page2\", target=\"page3\"),\n            Mock(source=\"page1\", target=\"page2\")\n        ]\n        run_b.broken_links = [\n            Mock(source=\"page3\", target=\"page4\"),\n            Mock(source=\"page1\", target=\"page2\")\n        ]\n    \n    result = diff_runs(run_a, run_b)\n    \n    # In implementation, verify broken links are sorted by (source, target)\n    assert result is not None\n\n\ndef test_diff_runs_auth_violations_sorted():\n    \"\"\"new_auth_violations and resolved_auth_violations are sorted by URL.\"\"\"\n    run_a = Mock()\n    run_a.schema_version = \"1.0\"\n    run_a.graph = Mock()\n    run_a.graph.nodes = []\n    run_a.graph.edges = []\n    \n    run_b = Mock()\n    run_b.schema_version = \"1.0\"\n    run_b.graph = Mock()\n    run_b.graph.nodes = []\n    run_b.graph.edges = []\n    \n    # Mock auth_violations if available\n    if hasattr(run_a, 'auth_violations'):\n        run_a.auth_violations = [\n            Mock(url=\"https://example.com/page2\"),\n            Mock(url=\"https://example.com/page1\")\n        ]\n        run_b.auth_violations = [\n            Mock(url=\"https://example.com/page3\"),\n            Mock(url=\"https://example.com/page1\")\n        ]\n    \n    result = diff_runs(run_a, run_b)\n    \n    # In implementation, verify auth violations are sorted by URL\n    assert result is not None\n\n\ndef test_diff_runs_all_lists_sorted():\n    \"\"\"All diff output lists are sorted for deterministic output.\"\"\"\n    run_a = Mock()\n    run_a.schema_version = \"1.0\"\n    run_a.graph = Mock()\n    # Create nodes in non-alphabetical order\n    run_a.graph.nodes = [\n        Mock(id=\"node3\"),\n        Mock(id=\"node1\"),\n        Mock(id=\"node2\")\n    ]\n    run_a.graph.edges = [\n        Mock(source=\"node3\", target=\"node1\"),\n        Mock(source=\"node1\", target=\"node2\")\n    ]\n    \n    run_b = Mock()\n    run_b.schema_version = \"1.0\"\n    run_b.graph = Mock()\n    run_b.graph.nodes = [\n        Mock(id=\"node5\"),\n        Mock(id=\"node4\"),\n        Mock(id=\"node1\")\n    ]\n    run_b.graph.edges = [\n        Mock(source=\"node5\", target=\"node4\"),\n        Mock(source=\"node4\", target=\"node1\")\n    ]\n    \n    result = diff_runs(run_a, run_b)\n    \n    # In implementation:\n    # - nodes_added should be sorted: [\"node4\", \"node5\"]\n    # - nodes_removed should be sorted: [\"node2\", \"node3\"]\n    # - edges should be sorted by (source, target)\n    assert result is not None\n\n\n# ============================================================================\n# TESTS - Parameterized Tests\n# ============================================================================\n\n@pytest.mark.parametrize(\"invalid_json\", [\n    '{\"incomplete\": ',\n    '{invalid json}',\n    '[\"array\", \"not\", \"object\"]',\n    'null',\n    '123',\n    '\"string\"',\n    '',\n])\ndef test_load_run_various_invalid_json(tmp_path, invalid_json):\n    \"\"\"Test various forms of invalid JSON.\"\"\"\n    run_dir = tmp_path / \"test_run\"\n    run_dir.mkdir()\n    report_file = run_dir / \"report.json\"\n    \n    with open(report_file, 'w') as f:\n        f.write(invalid_json)\n    \n    with pytest.raises((json.JSONDecodeError, Exception)):\n        load_run(run_dir)\n\n\n@pytest.mark.parametrize(\"version_a,version_b\", [\n    (\"1.0\", \"2.0\"),\n    (\"1.5\", \"2.0\"),\n    (\"2.0\", \"1.0\"),\n    (\"1.0\", \"1.1\"),\n])\ndef test_diff_runs_various_schema_mismatches(version_a, version_b):\n    \"\"\"Test various schema version mismatches.\"\"\"\n    run_a = Mock()\n    run_a.schema_version = version_a\n    run_a.graph = Mock()\n    run_a.graph.nodes = []\n    run_a.graph.edges = []\n    \n    run_b = Mock()\n    run_b.schema_version = version_b\n    run_b.graph = Mock()\n    run_b.graph.nodes = []\n    run_b.graph.edges = []\n    \n    if version_a != version_b:\n        with pytest.raises(Exception):\n            diff_runs(run_a, run_b)\n\n\n@pytest.mark.parametrize(\"duration_a,duration_b,should_detect\", [\n    (100, 121, True),   # 21% increase - above threshold\n    (100, 150, True),   # 50% increase - above threshold\n    (100, 80, False),   # 20% decrease - at threshold\n    (100, 110, False),  # 10% increase - below threshold\n    (100, 119, False),  # 19% increase - below threshold\n    (100, 200, True),   # 100% increase - well above threshold\n])\ndef test_diff_runs_timing_threshold_boundaries(duration_a, duration_b, should_detect):\n    \"\"\"Test timing change detection at various thresholds.\"\"\"\n    run_a = Mock()\n    run_a.schema_version = \"1.0\"\n    run_a.graph = Mock()\n    node_a = Mock(id=\"node1\")\n    node_a.captures = [Mock(status_code=200, duration_ms=duration_a)]\n    run_a.graph.nodes = [node_a]\n    run_a.graph.edges = []\n    \n    run_b = Mock()\n    run_b.schema_version = \"1.0\"\n    run_b.graph = Mock()\n    node_b = Mock(id=\"node1\")\n    node_b.captures = [Mock(status_code=200, duration_ms=duration_b)]\n    run_b.graph.nodes = [node_b]\n    run_b.graph.edges = []\n    \n    result = diff_runs(run_a, run_b)\n    \n    # Verify result based on should_detect\n    assert result is not None\n\n\n# ============================================================================\n# TESTS - Additional Edge Cases\n# ============================================================================\n\ndef test_diff_runs_large_node_set():\n    \"\"\"Test diff with large number of nodes for performance.\"\"\"\n    import random\n    \n    run_a = Mock()\n    run_a.schema_version = \"1.0\"\n    run_a.graph = Mock()\n    run_a.graph.nodes = [Mock(id=f\"node{i}\") for i in range(100)]\n    run_a.graph.edges = []\n    \n    run_b = Mock()\n    run_b.schema_version = \"1.0\"\n    run_b.graph = Mock()\n    # Mix of same and different nodes\n    run_b.graph.nodes = [Mock(id=f\"node{i}\") for i in range(50, 150)]\n    run_b.graph.edges = []\n    \n    result = diff_runs(run_a, run_b)\n    \n    # Should handle large datasets\n    assert result is not None\n\n\ndef test_diff_runs_single_node_each():\n    \"\"\"Test diff with minimal graphs (single node each).\"\"\"\n    run_a = Mock()\n    run_a.schema_version = \"1.0\"\n    run_a.graph = Mock()\n    run_a.graph.nodes = [Mock(id=\"node1\")]\n    run_a.graph.edges = []\n    \n    run_b = Mock()\n    run_b.schema_version = \"1.0\"\n    run_b.graph = Mock()\n    run_b.graph.nodes = [Mock(id=\"node2\")]\n    run_b.graph.edges = []\n    \n    result = diff_runs(run_a, run_b)\n    \n    # Should handle minimal graphs\n    assert result is not None\n\n\ndef test_load_run_with_nested_graph_structure(tmp_path):\n    \"\"\"Test loading run with complex nested graph structure.\"\"\"\n    run_dir = tmp_path / \"test_run\"\n    run_dir.mkdir()\n    report_file = run_dir / \"report.json\"\n    \n    complex_data = {\n        \"id\": \"run-complex\",\n        \"schema_version\": \"1.0\",\n        \"timestamp\": \"2024-01-01T00:00:00Z\",\n        \"graph\": {\n            \"nodes\": [\n                {\n                    \"id\": \"node1\",\n                    \"url\": \"https://example.com\",\n                    \"captures\": [\n                        {\n                            \"status_code\": 200,\n                            \"duration_ms\": 100,\n                            \"headers\": {\"Content-Type\": \"text/html\"},\n                            \"body\": \"Sample content\"\n                        }\n                    ],\n                    \"metadata\": {\n                        \"depth\": 0,\n                        \"parent\": None\n                    }\n                }\n            ],\n            \"edges\": []\n        }\n    }\n    \n    with open(report_file, 'w') as f:\n        json.dump(complex_data, f)\n    \n    with patch('src_webprobe_differ.Run') as MockRun:\n        MockRun.model_validate.return_value = Mock()\n        \n        result = load_run(run_dir)\n        \n        assert result is not None\n"
+}

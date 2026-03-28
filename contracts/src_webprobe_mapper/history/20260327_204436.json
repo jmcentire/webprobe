@@ -1,0 +1,692 @@
+{
+  "component_id": "src_webprobe_mapper",
+  "name": "Site Mapper",
+  "description": "Phase 1 site mapping module: discovers site structure via robots.txt parsing, sitemap extraction, and BFS crawling with authentication-aware link discovery. Builds a SiteGraph with nodes and edges for subsequent analysis phases.",
+  "version": 1,
+  "types": [
+    {
+      "name": "_LinkExtractor",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "links",
+          "type_ref": "list[tuple[str, str]]",
+          "required": true,
+          "default": "",
+          "description": "Accumulated (href, link_text) or (action, '') pairs",
+          "validators": []
+        },
+        {
+          "name": "_current_link",
+          "type_ref": "str | None",
+          "required": true,
+          "default": "",
+          "description": "Currently open anchor href, or None if not inside <a> tag",
+          "validators": []
+        },
+        {
+          "name": "_current_text",
+          "type_ref": "list[str]",
+          "required": true,
+          "default": "",
+          "description": "Text fragments accumulated inside current <a> tag",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "HTML parser that extracts href from <a> tags and action from <form> tags, accumulating link text for anchor tags.",
+      "owner_component": ""
+    }
+  ],
+  "functions": [
+    {
+      "name": "normalize_url",
+      "description": "Normalize a URL: resolve relative URLs against base, strip fragment, lowercase scheme/host, remove default ports, collapse double slashes, strip trailing slash (except root).",
+      "inputs": [
+        {
+          "name": "url",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "URL to normalize",
+          "validators": []
+        },
+        {
+          "name": "base",
+          "type_ref": "str | None",
+          "required": false,
+          "default": "None",
+          "description": "Base URL for resolving relative URLs",
+          "validators": []
+        }
+      ],
+      "output_type": "str",
+      "error_cases": [],
+      "preconditions": [],
+      "postconditions": [
+        "Returns empty string if URL lacks scheme or netloc",
+        "Scheme and netloc are lowercased",
+        "Default ports (:80 for http, :443 for https) are removed",
+        "Fragment identifier is removed",
+        "Path has double slashes collapsed to single slashes",
+        "Trailing slash stripped unless path is root '/'",
+        "Relative URLs are resolved against base if provided"
+      ],
+      "idempotent": false,
+      "is_async": false,
+      "side_effects": [],
+      "structured_side_effects": [
+        {
+          "kind": "none",
+          "target": "",
+          "description": ""
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "is_same_origin",
+      "description": "Check if url has same scheme, host, and port as base_url.",
+      "inputs": [
+        {
+          "name": "url",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "URL to check",
+          "validators": []
+        },
+        {
+          "name": "base_url",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Base URL for comparison",
+          "validators": []
+        }
+      ],
+      "output_type": "bool",
+      "error_cases": [],
+      "preconditions": [],
+      "postconditions": [
+        "Returns True if scheme and netloc (host:port) match",
+        "Returns False otherwise"
+      ],
+      "idempotent": false,
+      "is_async": false,
+      "side_effects": [],
+      "structured_side_effects": [
+        {
+          "kind": "none",
+          "target": "",
+          "description": ""
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "extract_links",
+      "description": "Extract (href, link_text) pairs from HTML by parsing <a> tags and <form> action attributes.",
+      "inputs": [
+        {
+          "name": "html",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "HTML content to parse",
+          "validators": []
+        }
+      ],
+      "output_type": "list[tuple[str, str]]",
+      "error_cases": [
+        {
+          "name": "parse_error",
+          "condition": "HTML parsing raises Exception",
+          "error_type": "Exception",
+          "error_data": {
+            "handling": "silently caught and ignored"
+          }
+        }
+      ],
+      "preconditions": [],
+      "postconditions": [
+        "Returns list of (href, link_text) tuples",
+        "Form actions appear with empty string as link_text",
+        "Parsing exceptions are silently suppressed"
+      ],
+      "idempotent": false,
+      "is_async": false,
+      "side_effects": [],
+      "structured_side_effects": [
+        {
+          "kind": "none",
+          "target": "",
+          "description": ""
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "parse_robots_txt",
+      "description": "Parse robots.txt content to extract disallowed paths and sitemap URLs.",
+      "inputs": [
+        {
+          "name": "text",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "robots.txt content",
+          "validators": []
+        },
+        {
+          "name": "base_url",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Base URL for the site (currently unused in implementation)",
+          "validators": []
+        }
+      ],
+      "output_type": "tuple[list[str], list[str]]",
+      "error_cases": [],
+      "preconditions": [],
+      "postconditions": [
+        "Returns (disallowed_paths, sitemap_urls)",
+        "Disallowed paths extracted from 'Disallow:' directives",
+        "Sitemap URLs extracted from 'Sitemap:' directives",
+        "Empty paths/URLs are filtered out",
+        "All values are stripped of whitespace"
+      ],
+      "idempotent": false,
+      "is_async": false,
+      "side_effects": [],
+      "structured_side_effects": [
+        {
+          "kind": "none",
+          "target": "",
+          "description": ""
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "parse_sitemap",
+      "description": "Parse sitemap XML (handles both sitemap indexes and URL sets) to extract location URLs.",
+      "inputs": [
+        {
+          "name": "xml_text",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "XML sitemap content",
+          "validators": []
+        }
+      ],
+      "output_type": "list[str]",
+      "error_cases": [
+        {
+          "name": "xml_parse_error",
+          "condition": "xml_text is malformed XML",
+          "error_type": "ET.ParseError",
+          "error_data": {
+            "handling": "returns empty list"
+          }
+        }
+      ],
+      "preconditions": [],
+      "postconditions": [
+        "Returns list of URLs found in <loc> elements",
+        "Handles namespace-prefixed XML",
+        "Extracts URLs from both <sitemap> and <url> elements",
+        "Returns empty list on XML parse errors"
+      ],
+      "idempotent": false,
+      "is_async": false,
+      "side_effects": [],
+      "structured_side_effects": [
+        {
+          "kind": "none",
+          "target": "",
+          "description": ""
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "_fetch",
+      "description": "Fetch a URL using aiohttp with optional delay. Returns status code, body, final URL after redirects, and duration in milliseconds.",
+      "inputs": [
+        {
+          "name": "session",
+          "type_ref": "aiohttp.ClientSession",
+          "required": true,
+          "default": "",
+          "description": "aiohttp session for making request",
+          "validators": []
+        },
+        {
+          "name": "url",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "URL to fetch",
+          "validators": []
+        },
+        {
+          "name": "delay_ms",
+          "type_ref": "int",
+          "required": false,
+          "default": "0",
+          "description": "Delay before request in milliseconds",
+          "validators": []
+        }
+      ],
+      "output_type": "tuple[int, str, str, float]",
+      "error_cases": [
+        {
+          "name": "network_error",
+          "condition": "Any exception during fetch (timeout, connection error, etc.)",
+          "error_type": "Exception",
+          "error_data": {
+            "handling": "returns (0, '', url, duration_ms)"
+          }
+        }
+      ],
+      "preconditions": [],
+      "postconditions": [
+        "Returns (status_code, body, final_url, duration_ms)",
+        "Follows redirects automatically",
+        "On exception, returns (0, '', original_url, duration_ms)",
+        "Body text encoding errors are replaced",
+        "30 second total timeout enforced"
+      ],
+      "idempotent": false,
+      "is_async": true,
+      "side_effects": [
+        "Network I/O",
+        "Sleeps if delay_ms > 0"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "network_call",
+          "target": "url parameter",
+          "description": ""
+        },
+        {
+          "kind": "logging",
+          "target": "",
+          "description": "implicit via aiohttp"
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "_crawl_pass",
+      "description": "BFS crawl starting from base_url and seed_urls. Respects max depth, robots.txt, exclude patterns, and auth context. Returns discovered nodes and edges.",
+      "inputs": [
+        {
+          "name": "base_url",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Root URL for the crawl",
+          "validators": []
+        },
+        {
+          "name": "seed_urls",
+          "type_ref": "Sequence[str]",
+          "required": true,
+          "default": "",
+          "description": "Additional URLs to seed the crawl",
+          "validators": []
+        },
+        {
+          "name": "config",
+          "type_ref": "WebprobeConfig",
+          "required": true,
+          "default": "",
+          "description": "Configuration object with crawl settings",
+          "validators": []
+        },
+        {
+          "name": "auth_manager",
+          "type_ref": "AuthManager | None",
+          "required": false,
+          "default": "None",
+          "description": "Authentication manager for session setup",
+          "validators": []
+        },
+        {
+          "name": "auth_context",
+          "type_ref": "AuthContext",
+          "required": false,
+          "default": "AuthContext.anonymous",
+          "description": "Authentication context for this crawl pass",
+          "validators": []
+        },
+        {
+          "name": "disallowed_paths",
+          "type_ref": "Sequence[str]",
+          "required": false,
+          "default": "()",
+          "description": "Paths disallowed by robots.txt",
+          "validators": []
+        }
+      ],
+      "output_type": "tuple[dict[str, Node], list[Edge]]",
+      "error_cases": [],
+      "preconditions": [],
+      "postconditions": [
+        "Returns (nodes_dict, edges_list) where keys are normalized URLs",
+        "Respects config.crawl.max_nodes limit",
+        "Respects config.crawl.max_depth limit",
+        "Filters URLs by config.crawl.url_exclude_patterns",
+        "Respects robots.txt disallowed paths if config.crawl.respect_robots=True",
+        "Does not follow external links if config.crawl.follow_external=False",
+        "Nodes marked requires_auth=True if status is 401/403 or auth redirect detected",
+        "Edges created for all links found in 200 responses"
+      ],
+      "idempotent": false,
+      "is_async": true,
+      "side_effects": [
+        "Creates aiohttp.ClientSession",
+        "Makes HTTP requests via _fetch"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "network_call",
+          "target": "base_url and seed_urls",
+          "description": ""
+        },
+        {
+          "kind": "mutates_state",
+          "target": "internal visited set and queue",
+          "description": ""
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "map_site",
+      "description": "Phase 1 site mapping orchestrator. Fetches robots.txt, parses sitemaps, performs anonymous and authenticated crawl passes, merges results into SiteGraph with auth requirements identified.",
+      "inputs": [
+        {
+          "name": "config",
+          "type_ref": "WebprobeConfig",
+          "required": true,
+          "default": "",
+          "description": "Configuration for crawling and auth",
+          "validators": []
+        },
+        {
+          "name": "url",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Base URL to map",
+          "validators": []
+        },
+        {
+          "name": "framework_routes",
+          "type_ref": "Sequence[str] | None",
+          "required": false,
+          "default": "None",
+          "description": "Additional routes discovered via framework analysis",
+          "validators": []
+        }
+      ],
+      "output_type": "tuple[SiteGraph, PhaseStatus]",
+      "error_cases": [],
+      "preconditions": [],
+      "postconditions": [
+        "Returns (SiteGraph, PhaseStatus)",
+        "PhaseStatus tracks timing and completion",
+        "SiteGraph contains merged nodes from anonymous and authenticated passes",
+        "Nodes accessible in both passes marked requires_auth=False",
+        "Nodes only in authenticated pass marked requires_auth=True",
+        "Nodes only in anonymous pass with no auth indicators marked requires_auth=False",
+        "Edges deduplicated by (source, target, auth_context)",
+        "Fetches robots.txt and processes sitemaps (including nested)",
+        "Adds framework_routes to seed_urls if provided",
+        "Authenticated crawl only runs if auth_manager.has_auth=True"
+      ],
+      "idempotent": false,
+      "is_async": true,
+      "side_effects": [
+        "Creates aiohttp sessions",
+        "Makes multiple HTTP requests",
+        "Updates PhaseStatus timestamps"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "network_call",
+          "target": "robots.txt, sitemaps, and all crawled URLs",
+          "description": ""
+        },
+        {
+          "kind": "mutates_state",
+          "target": "PhaseStatus object",
+          "description": ""
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "__init__",
+      "description": "_LinkExtractor constructor. Initializes HTMLParser and link collection state.",
+      "inputs": [],
+      "output_type": "None",
+      "error_cases": [],
+      "preconditions": [],
+      "postconditions": [
+        "self.links initialized to empty list",
+        "self._current_link initialized to None",
+        "self._current_text initialized to empty list"
+      ],
+      "idempotent": false,
+      "is_async": false,
+      "side_effects": [],
+      "structured_side_effects": [
+        {
+          "kind": "mutates_state",
+          "target": "self instance variables",
+          "description": ""
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "handle_starttag",
+      "description": "HTMLParser callback for start tags. Captures href from <a> tags and action from <form> tags.",
+      "inputs": [
+        {
+          "name": "tag",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "HTML tag name",
+          "validators": []
+        },
+        {
+          "name": "attrs",
+          "type_ref": "list[tuple[str, str | None]]",
+          "required": true,
+          "default": "",
+          "description": "List of (attribute_name, attribute_value) tuples",
+          "validators": []
+        }
+      ],
+      "output_type": "None",
+      "error_cases": [],
+      "preconditions": [],
+      "postconditions": [
+        "If tag='a' with 'href' attribute, sets _current_link and resets _current_text",
+        "If tag='form' with 'action' attribute, appends (action, '') to links",
+        "None or empty attribute values default to empty string"
+      ],
+      "idempotent": false,
+      "is_async": false,
+      "side_effects": [],
+      "structured_side_effects": [
+        {
+          "kind": "mutates_state",
+          "target": "self._current_link, self._current_text, self.links",
+          "description": ""
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "handle_data",
+      "description": "HTMLParser callback for text data. Accumulates text content inside <a> tags.",
+      "inputs": [
+        {
+          "name": "data",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Text data between tags",
+          "validators": []
+        }
+      ],
+      "output_type": "None",
+      "error_cases": [],
+      "preconditions": [],
+      "postconditions": [
+        "If inside <a> tag (_current_link is not None), appends data to _current_text"
+      ],
+      "idempotent": false,
+      "is_async": false,
+      "side_effects": [],
+      "structured_side_effects": [
+        {
+          "kind": "mutates_state",
+          "target": "self._current_text",
+          "description": ""
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "handle_endtag",
+      "description": "HTMLParser callback for end tags. Finalizes link extraction for </a> tags.",
+      "inputs": [
+        {
+          "name": "tag",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "HTML tag name",
+          "validators": []
+        }
+      ],
+      "output_type": "None",
+      "error_cases": [],
+      "preconditions": [],
+      "postconditions": [
+        "If tag='a' and _current_link is set, joins accumulated text and appends (href, text) to links",
+        "Resets _current_link and _current_text to None and empty list"
+      ],
+      "idempotent": false,
+      "is_async": false,
+      "side_effects": [],
+      "structured_side_effects": [
+        {
+          "kind": "mutates_state",
+          "target": "self.links, self._current_link, self._current_text",
+          "description": ""
+        }
+      ],
+      "performance_budget": null
+    }
+  ],
+  "dependencies": [
+    "asyncio",
+    "re",
+    "time",
+    "xml.etree.ElementTree",
+    "datetime",
+    "html.parser",
+    "typing",
+    "urllib.parse",
+    "aiohttp",
+    "webprobe.auth",
+    "webprobe.config",
+    "webprobe.models"
+  ],
+  "dependency_contracts": {
+    "webprobe.auth": [
+      "AuthManager",
+      "AuthContext"
+    ],
+    "webprobe.config": [
+      "WebprobeConfig"
+    ],
+    "webprobe.models": [
+      "AuthContext",
+      "DiscoveryMethod",
+      "Edge",
+      "Node",
+      "NodeState",
+      "PhaseStatus",
+      "SiteGraph",
+      "TimingData"
+    ],
+    "aiohttp": [
+      "ClientSession",
+      "ClientTimeout"
+    ],
+    "xml.etree.ElementTree": [
+      "fromstring",
+      "ParseError"
+    ],
+    "html.parser": [
+      "HTMLParser"
+    ]
+  },
+  "invariants": [
+    "All URLs are normalized before use in graph construction",
+    "Crawl respects max_nodes and max_depth limits from config",
+    "robots.txt disallowed paths honored when config.crawl.respect_robots=True",
+    "External links not followed when config.crawl.follow_external=False",
+    "Auth detection: status 401/403 or auth redirect indicates requires_auth=True",
+    "Nodes appearing in both anonymous and authenticated passes marked as public (requires_auth=False)",
+    "30 second timeout enforced on all HTTP requests"
+  ],
+  "requires": [],
+  "processing_register": "",
+  "data_access": {
+    "reads": [
+      "robots.txt",
+      "sitemap.xml",
+      "HTML pages",
+      "HTTP responses"
+    ],
+    "writes": [],
+    "rationale": "Read-only module that fetches and parses web content to build site graph",
+    "side_effects": [
+      {
+        "type": "network_call",
+        "classification": "external",
+        "fields": [
+          "robots.txt",
+          "sitemaps",
+          "crawled URLs"
+        ],
+        "rationale": "Makes HTTP GET requests to discover site structure"
+      }
+    ]
+  },
+  "authority": {
+    "domains": [
+      "site_mapping",
+      "url_discovery",
+      "robots_txt_parsing",
+      "sitemap_parsing",
+      "link_extraction"
+    ],
+    "rationale": "Module owns the site discovery and graph construction logic for Phase 1 of webprobe"
+  }
+}

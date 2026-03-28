@@ -1,0 +1,499 @@
+{
+  "component_id": "src_webprobe_browser",
+  "contract_version": 1,
+  "test_cases": [
+    {
+      "id": "test_init_happy_path",
+      "description": "Test __init__ initializes BrowserPool with config and sets internal state to None",
+      "function": "__init__",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "config": "mock_capture_config"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "_config is set to provided config",
+        "_playwright is None",
+        "_browser is None"
+      ]
+    },
+    {
+      "id": "test_init_with_valid_config",
+      "description": "Test __init__ accepts valid CaptureConfig and stores it",
+      "function": "__init__",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "config": "mock_capture_config_with_custom_viewport"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "_config matches provided config",
+        "Internal state properly initialized"
+      ]
+    },
+    {
+      "id": "test_start_happy_path",
+      "description": "Test start() successfully launches Playwright and Chromium browser",
+      "function": "start",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "_playwright is not None after start",
+        "_browser is not None after start",
+        "Browser is launched in headless mode"
+      ]
+    },
+    {
+      "id": "test_start_playwright_failure",
+      "description": "Test start() raises PlaywrightStartFailure when Playwright fails to start",
+      "function": "start",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "PlaywrightStartFailure",
+      "assertions": []
+    },
+    {
+      "id": "test_start_browser_launch_failure",
+      "description": "Test start() raises BrowserLaunchFailure when Chromium fails to launch",
+      "function": "start",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "BrowserLaunchFailure",
+      "assertions": []
+    },
+    {
+      "id": "test_new_context_happy_path_no_auth",
+      "description": "Test new_context() creates isolated context without authentication",
+      "function": "new_context",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "auth": "None",
+        "base_url": "https://example.com"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "Returns BrowserContext",
+        "Context has correct viewport dimensions",
+        "ignore_https_errors is True"
+      ]
+    },
+    {
+      "id": "test_new_context_happy_path_with_auth",
+      "description": "Test new_context() creates context with authentication applied",
+      "function": "new_context",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "auth": "mock_auth_manager_with_auth",
+        "base_url": "https://example.com"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "Returns BrowserContext",
+        "Authentication is applied to context",
+        "Context has correct viewport"
+      ]
+    },
+    {
+      "id": "test_new_context_without_start",
+      "description": "Test new_context() raises AssertionError when called before start()",
+      "function": "new_context",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "auth": "None",
+        "base_url": "https://example.com"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "AssertionError",
+      "assertions": []
+    },
+    {
+      "id": "test_new_context_creation_failure",
+      "description": "Test new_context() raises ContextCreationFailure when browser fails to create context",
+      "function": "new_context",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "auth": "None",
+        "base_url": "https://example.com"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "ContextCreationFailure",
+      "assertions": []
+    },
+    {
+      "id": "test_new_context_auth_application_failure",
+      "description": "Test new_context() raises AuthApplicationFailure when auth.apply_to_context() fails",
+      "function": "new_context",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "auth": "mock_auth_manager_that_fails",
+        "base_url": "https://example.com"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "AuthApplicationFailure",
+      "assertions": []
+    },
+    {
+      "id": "test_new_context_auth_without_has_auth",
+      "description": "Test new_context() with auth manager that has has_auth=False does not apply auth",
+      "function": "new_context",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "auth": "mock_auth_manager_without_auth",
+        "base_url": "https://example.com"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "Returns BrowserContext",
+        "apply_to_context is not called"
+      ]
+    },
+    {
+      "id": "test_new_context_multiple_contexts",
+      "description": "Test new_context() can create multiple isolated contexts",
+      "function": "new_context",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "auth": "None",
+        "base_url": "https://example.com"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "Multiple contexts can be created",
+        "Each context is isolated"
+      ]
+    },
+    {
+      "id": "test_stop_happy_path",
+      "description": "Test stop() closes browser and stops Playwright",
+      "function": "stop",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "_browser is None after stop",
+        "_playwright is None after stop",
+        "Browser close was called",
+        "Playwright stop was called"
+      ]
+    },
+    {
+      "id": "test_stop_idempotent",
+      "description": "Test stop() can be called multiple times safely",
+      "function": "stop",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "Multiple calls to stop() do not raise errors",
+        "State remains consistent"
+      ]
+    },
+    {
+      "id": "test_stop_browser_close_failure",
+      "description": "Test stop() raises BrowserCloseFailure when browser close fails",
+      "function": "stop",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "BrowserCloseFailure",
+      "assertions": []
+    },
+    {
+      "id": "test_stop_playwright_stop_failure",
+      "description": "Test stop() raises PlaywrightStopFailure when Playwright stop fails",
+      "function": "stop",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "PlaywrightStopFailure",
+      "assertions": []
+    },
+    {
+      "id": "test_aenter_happy_path",
+      "description": "Test __aenter__() starts browser and returns self",
+      "function": "__aenter__",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "start() is called",
+        "Returns self",
+        "Browser is started"
+      ]
+    },
+    {
+      "id": "test_aenter_start_failure",
+      "description": "Test __aenter__() raises StartFailure when start() fails",
+      "function": "__aenter__",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "StartFailure",
+      "assertions": []
+    },
+    {
+      "id": "test_aexit_happy_path",
+      "description": "Test __aexit__() stops browser and cleans up resources",
+      "function": "__aexit__",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "stop() is called",
+        "Resources are cleaned up"
+      ]
+    },
+    {
+      "id": "test_aexit_stop_failure",
+      "description": "Test __aexit__() raises StopFailure when stop() fails",
+      "function": "__aexit__",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "StopFailure",
+      "assertions": []
+    },
+    {
+      "id": "test_aexit_cleans_up_on_exception",
+      "description": "Test __aexit__() cleans up resources even when exception occurred in context",
+      "function": "__aexit__",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "stop() is called regardless of exception",
+        "Resources are cleaned up"
+      ]
+    },
+    {
+      "id": "test_async_context_manager_full_lifecycle",
+      "description": "Test full async context manager lifecycle with async with statement",
+      "function": "__aenter__",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "Browser starts on entry",
+        "Browser stops on exit",
+        "Can use BrowserPool within context"
+      ]
+    },
+    {
+      "id": "test_invariant_browser_requires_playwright",
+      "description": "Test invariant: if _browser is not None, then _playwright is not None",
+      "function": "start",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "When _browser exists, _playwright also exists",
+        "Invariant holds after start()"
+      ]
+    },
+    {
+      "id": "test_invariant_after_start_both_non_none",
+      "description": "Test invariant: after successful start(), both _playwright and _browser are non-None",
+      "function": "start",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "_playwright is not None",
+        "_browser is not None"
+      ]
+    },
+    {
+      "id": "test_invariant_after_stop_both_none",
+      "description": "Test invariant: after stop() completes, both _playwright and _browser are None",
+      "function": "stop",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "_playwright is None",
+        "_browser is None"
+      ]
+    },
+    {
+      "id": "test_invariant_contexts_ignore_https_errors",
+      "description": "Test invariant: all contexts created have ignore_https_errors=True",
+      "function": "new_context",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "auth": "None",
+        "base_url": "https://example.com"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "Context has ignore_https_errors=True"
+      ]
+    },
+    {
+      "id": "test_invariant_contexts_use_config_viewport",
+      "description": "Test invariant: all contexts use viewport dimensions from _config",
+      "function": "new_context",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "auth": "None",
+        "base_url": "https://example.com"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "Context viewport matches _config.viewport_width",
+        "Context viewport matches _config.viewport_height"
+      ]
+    },
+    {
+      "id": "test_invariant_browser_headless_mode",
+      "description": "Test invariant: browser is always launched in headless mode",
+      "function": "start",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "Browser is launched with headless=True"
+      ]
+    },
+    {
+      "id": "test_state_transition_start_twice",
+      "description": "Test calling start() twice in sequence",
+      "function": "start",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "Second start() handles already started state appropriately"
+      ]
+    },
+    {
+      "id": "test_new_context_various_base_urls",
+      "description": "Test new_context() with various base URL formats",
+      "function": "new_context",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "auth": "None",
+        "base_url": "http://localhost:8080"
+      },
+      "input_description": "",
+      "expected_output_description": "",
+      "expected_error": "",
+      "assertions": [
+        "Context is created with any valid base URL"
+      ]
+    }
+  ],
+  "test_language": "python",
+  "generated_code": "\"\"\"\nContract tests for BrowserPool - Browser Pool Manager\n\nThis test suite verifies the BrowserPool implementation against its contract\nusing a layered approach with mocked dependencies for comprehensive coverage.\n\nTest Categories:\n- Happy path tests for all functions\n- Edge cases based on preconditions\n- Error case tests for all 9 error types\n- Invariant tests for contract guarantees\n- State transition tests\n- Async context manager protocol tests\n\"\"\"\n\nimport pytest\nfrom unittest.mock import Mock, AsyncMock, MagicMock, patch, call\nfrom typing import Optional\n\n\n# Import the component under test\n# Adjust import path as needed based on actual module structure\ntry:\n    from src.webprobe.browser import BrowserPool\nexcept ImportError:\n    # Fallback for different module structures\n    try:\n        from src.webprobe.browser import BrowserPool\n    except ImportError:\n        # Create mock for testing infrastructure\n        class BrowserPool:\n            pass\n\n\n# Mock exception types that should be defined in the module\nclass PlaywrightStartFailure(Exception):\n    \"\"\"Raised when Playwright fails to start\"\"\"\n    pass\n\n\nclass BrowserLaunchFailure(Exception):\n    \"\"\"Raised when Chromium browser fails to launch\"\"\"\n    pass\n\n\nclass ContextCreationFailure(Exception):\n    \"\"\"Raised when Browser fails to create new context\"\"\"\n    pass\n\n\nclass AuthApplicationFailure(Exception):\n    \"\"\"Raised when auth.apply_to_context() raises an exception\"\"\"\n    pass\n\n\nclass BrowserCloseFailure(Exception):\n    \"\"\"Raised when Browser close operation fails\"\"\"\n    pass\n\n\nclass PlaywrightStopFailure(Exception):\n    \"\"\"Raised when Playwright stop operation fails\"\"\"\n    pass\n\n\nclass StartFailure(Exception):\n    \"\"\"Raised when start() raises an exception in __aenter__\"\"\"\n    pass\n\n\nclass StopFailure(Exception):\n    \"\"\"Raised when stop() raises an exception in __aexit__\"\"\"\n    pass\n\n\n# Fixtures for common test setup\n@pytest.fixture\ndef mock_capture_config():\n    \"\"\"Create a mock CaptureConfig with default values\"\"\"\n    config = Mock()\n    config.viewport_width = 1920\n    config.viewport_height = 1080\n    return config\n\n\n@pytest.fixture\ndef mock_capture_config_with_custom_viewport():\n    \"\"\"Create a mock CaptureConfig with custom viewport\"\"\"\n    config = Mock()\n    config.viewport_width = 1024\n    config.viewport_height = 768\n    return config\n\n\n@pytest.fixture\ndef mock_playwright():\n    \"\"\"Create a mock Playwright instance\"\"\"\n    playwright = AsyncMock()\n    playwright.chromium = AsyncMock()\n    mock_browser = AsyncMock()\n    mock_browser.close = AsyncMock()\n    mock_context = AsyncMock()\n    mock_browser.new_context = AsyncMock(return_value=mock_context)\n    playwright.chromium.launch = AsyncMock(return_value=mock_browser)\n    playwright.stop = AsyncMock()\n    return playwright\n\n\n@pytest.fixture\ndef mock_browser():\n    \"\"\"Create a mock Browser instance\"\"\"\n    browser = AsyncMock()\n    browser.close = AsyncMock()\n    mock_context = AsyncMock()\n    browser.new_context = AsyncMock(return_value=mock_context)\n    return browser\n\n\n@pytest.fixture\ndef mock_auth_manager_with_auth():\n    \"\"\"Create a mock AuthManager with has_auth=True\"\"\"\n    auth = Mock()\n    auth.has_auth = True\n    auth.apply_to_context = AsyncMock()\n    return auth\n\n\n@pytest.fixture\ndef mock_auth_manager_without_auth():\n    \"\"\"Create a mock AuthManager with has_auth=False\"\"\"\n    auth = Mock()\n    auth.has_auth = False\n    auth.apply_to_context = AsyncMock()\n    return auth\n\n\n@pytest.fixture\ndef mock_auth_manager_that_fails():\n    \"\"\"Create a mock AuthManager that fails when applying auth\"\"\"\n    auth = Mock()\n    auth.has_auth = True\n    auth.apply_to_context = AsyncMock(side_effect=AuthApplicationFailure(\"Auth failed\"))\n    return auth\n\n\n# Happy Path Tests\n\ndef test_init_happy_path(mock_capture_config):\n    \"\"\"Test __init__ initializes BrowserPool with config and sets internal state to None\"\"\"\n    pool = BrowserPool(mock_capture_config)\n    \n    assert pool._config == mock_capture_config\n    assert pool._playwright is None\n    assert pool._browser is None\n\n\n@pytest.mark.asyncio\nasync def test_start_happy_path(mock_capture_config, mock_playwright):\n    \"\"\"Test start() successfully launches Playwright and Chromium browser\"\"\"\n    pool = BrowserPool(mock_capture_config)\n    \n    with patch('playwright.async_api.async_playwright', return_value=AsyncMock(__aenter__=AsyncMock(return_value=mock_playwright))):\n        await pool.start()\n    \n    assert pool._playwright is not None\n    assert pool._browser is not None\n    # Verify headless mode\n    if hasattr(pool._browser, 'launch_call'):\n        assert pool._browser.launch_call.get('headless', True) is True\n\n\n@pytest.mark.asyncio\nasync def test_new_context_happy_path_no_auth(mock_capture_config):\n    \"\"\"Test new_context() creates isolated context without authentication\"\"\"\n    pool = BrowserPool(mock_capture_config)\n    \n    # Set up started state\n    mock_browser = AsyncMock()\n    mock_context = AsyncMock()\n    mock_browser.new_context = AsyncMock(return_value=mock_context)\n    pool._playwright = Mock()\n    pool._browser = mock_browser\n    \n    context = await pool.new_context(auth=None, base_url=\"https://example.com\")\n    \n    assert context is not None\n    mock_browser.new_context.assert_called_once()\n    call_kwargs = mock_browser.new_context.call_args[1]\n    assert call_kwargs['ignore_https_errors'] is True\n    assert call_kwargs['viewport']['width'] == mock_capture_config.viewport_width\n    assert call_kwargs['viewport']['height'] == mock_capture_config.viewport_height\n\n\n@pytest.mark.asyncio\nasync def test_new_context_happy_path_with_auth(mock_capture_config, mock_auth_manager_with_auth):\n    \"\"\"Test new_context() creates context with authentication applied\"\"\"\n    pool = BrowserPool(mock_capture_config)\n    \n    # Set up started state\n    mock_browser = AsyncMock()\n    mock_context = AsyncMock()\n    mock_browser.new_context = AsyncMock(return_value=mock_context)\n    pool._playwright = Mock()\n    pool._browser = mock_browser\n    \n    context = await pool.new_context(auth=mock_auth_manager_with_auth, base_url=\"https://example.com\")\n    \n    assert context is not None\n    mock_auth_manager_with_auth.apply_to_context.assert_called_once_with(mock_context)\n\n\n@pytest.mark.asyncio\nasync def test_stop_happy_path(mock_capture_config):\n    \"\"\"Test stop() closes browser and stops Playwright\"\"\"\n    pool = BrowserPool(mock_capture_config)\n    \n    # Set up started state\n    mock_browser = AsyncMock()\n    mock_playwright = AsyncMock()\n    pool._browser = mock_browser\n    pool._playwright = mock_playwright\n    \n    await pool.stop()\n    \n    assert pool._browser is None\n    assert pool._playwright is None\n    mock_browser.close.assert_called_once()\n    mock_playwright.stop.assert_called_once()\n\n\n@pytest.mark.asyncio\nasync def test_aenter_happy_path(mock_capture_config, mock_playwright):\n    \"\"\"Test __aenter__() starts browser and returns self\"\"\"\n    pool = BrowserPool(mock_capture_config)\n    \n    with patch('playwright.async_api.async_playwright', return_value=AsyncMock(__aenter__=AsyncMock(return_value=mock_playwright))):\n        result = await pool.__aenter__()\n    \n    assert result is pool\n    assert pool._playwright is not None\n    assert pool._browser is not None\n\n\n@pytest.mark.asyncio\nasync def test_aexit_happy_path(mock_capture_config):\n    \"\"\"Test __aexit__() stops browser and cleans up resources\"\"\"\n    pool = BrowserPool(mock_capture_config)\n    \n    # Set up started state\n    mock_browser = AsyncMock()\n    mock_playwright = AsyncMock()\n    pool._browser = mock_browser\n    pool._playwright = mock_playwright\n    \n    await pool.__aexit__(None, None, None)\n    \n    assert pool._browser is None\n    assert pool._playwright is None\n    mock_browser.close.assert_called_once()\n\n\n@pytest.mark.asyncio\nasync def test_async_context_manager_full_lifecycle(mock_capture_config, mock_playwright):\n    \"\"\"Test full async context manager lifecycle with async with statement\"\"\"\n    pool = BrowserPool(mock_capture_config)\n    \n    with patch('playwright.async_api.async_playwright', return_value=AsyncMock(__aenter__=AsyncMock(return_value=mock_playwright))):\n        async with pool as p:\n            assert p is pool\n            assert p._playwright is not None\n            assert p._browser is not None\n        \n        # After exiting context\n        assert pool._browser is None\n        assert pool._playwright is None\n\n\n# Edge Case Tests\n\ndef test_init_with_valid_config(mock_capture_config_with_custom_viewport):\n    \"\"\"Test __init__ accepts valid CaptureConfig and stores it\"\"\"\n    pool = BrowserPool(mock_capture_config_with_custom_viewport)\n    \n    assert pool._config == mock_capture_config_with_custom_viewport\n    assert pool._config.viewport_width == 1024\n    assert pool._config.viewport_height == 768\n    assert pool._playwright is None\n    assert pool._browser is None\n\n\n@pytest.mark.asyncio\nasync def test_new_context_auth_without_has_auth(mock_capture_config, mock_auth_manager_without_auth):\n    \"\"\"Test new_context() with auth manager that has has_auth=False does not apply auth\"\"\"\n    pool = BrowserPool(mock_capture_config)\n    \n    # Set up started state\n    mock_browser = AsyncMock()\n    mock_context = AsyncMock()\n    mock_browser.new_context = AsyncMock(return_value=mock_context)\n    pool._playwright = Mock()\n    pool._browser = mock_browser\n    \n    context = await pool.new_context(auth=mock_auth_manager_without_auth, base_url=\"https://example.com\")\n    \n    assert context is not None\n    # apply_to_context should not be called when has_auth is False\n    mock_auth_manager_without_auth.apply_to_context.assert_not_called()\n\n\n@pytest.mark.asyncio\nasync def test_new_context_multiple_contexts(mock_capture_config):\n    \"\"\"Test new_context() can create multiple isolated contexts\"\"\"\n    pool = BrowserPool(mock_capture_config)\n    \n    # Set up started state\n    mock_browser = AsyncMock()\n    mock_context1 = AsyncMock()\n    mock_context2 = AsyncMock()\n    mock_browser.new_context = AsyncMock(side_effect=[mock_context1, mock_context2])\n    pool._playwright = Mock()\n    pool._browser = mock_browser\n    \n    context1 = await pool.new_context(auth=None, base_url=\"https://example1.com\")\n    context2 = await pool.new_context(auth=None, base_url=\"https://example2.com\")\n    \n    assert context1 is not None\n    assert context2 is not None\n    assert context1 != context2\n    assert mock_browser.new_context.call_count == 2\n\n\n@pytest.mark.asyncio\nasync def test_stop_idempotent(mock_capture_config):\n    \"\"\"Test stop() can be called multiple times safely\"\"\"\n    pool = BrowserPool(mock_capture_config)\n    \n    # Set up started state\n    mock_browser = AsyncMock()\n    mock_playwright = AsyncMock()\n    pool._browser = mock_browser\n    pool._playwright = mock_playwright\n    \n    # Call stop multiple times\n    await pool.stop()\n    await pool.stop()\n    await pool.stop()\n    \n    # Should remain in stopped state\n    assert pool._browser is None\n    assert pool._playwright is None\n    # Close/stop should only be called once\n    mock_browser.close.assert_called_once()\n    mock_playwright.stop.assert_called_once()\n\n\n@pytest.mark.asyncio\nasync def test_aexit_cleans_up_on_exception(mock_capture_config):\n    \"\"\"Test __aexit__() cleans up resources even when exception occurred in context\"\"\"\n    pool = BrowserPool(mock_capture_config)\n    \n    # Set up started state\n    mock_browser = AsyncMock()\n    mock_playwright = AsyncMock()\n    pool._browser = mock_browser\n    pool._playwright = mock_playwright\n    \n    # Simulate exception in context\n    exc_type = ValueError\n    exc_value = ValueError(\"Test exception\")\n    exc_tb = None\n    \n    await pool.__aexit__(exc_type, exc_value, exc_tb)\n    \n    # Resources should still be cleaned up\n    assert pool._browser is None\n    assert pool._playwright is None\n    mock_browser.close.assert_called_once()\n\n\n@pytest.mark.asyncio\nasync def test_state_transition_start_twice(mock_capture_config, mock_playwright):\n    \"\"\"Test calling start() twice in sequence\"\"\"\n    pool = BrowserPool(mock_capture_config)\n    \n    with patch('playwright.async_api.async_playwright', return_value=AsyncMock(__aenter__=AsyncMock(return_value=mock_playwright))):\n        await pool.start()\n        first_browser = pool._browser\n        \n        # Call start again\n        await pool.start()\n        \n        # Should handle appropriately (either no-op or restart)\n        assert pool._browser is not None\n        assert pool._playwright is not None\n\n\n@pytest.mark.asyncio\nasync def test_new_context_various_base_urls(mock_capture_config):\n    \"\"\"Test new_context() with various base URL formats\"\"\"\n    pool = BrowserPool(mock_capture_config)\n    \n    # Set up started state\n    mock_browser = AsyncMock()\n    mock_context = AsyncMock()\n    mock_browser.new_context = AsyncMock(return_value=mock_context)\n    pool._playwright = Mock()\n    pool._browser = mock_browser\n    \n    urls = [\n        \"http://localhost:8080\",\n        \"https://example.com:443\",\n        \"http://192.168.1.1\",\n        \"https://subdomain.example.com/path\"\n    ]\n    \n    for url in urls:\n        context = await pool.new_context(auth=None, base_url=url)\n        assert context is not None\n\n\n# Error Case Tests\n\n@pytest.mark.asyncio\nasync def test_start_playwright_failure(mock_capture_config):\n    \"\"\"Test start() raises PlaywrightStartFailure when Playwright fails to start\"\"\"\n    pool = BrowserPool(mock_capture_config)\n    \n    with patch('playwright.async_api.async_playwright', side_effect=PlaywrightStartFailure(\"Failed to start\")):\n        with pytest.raises(PlaywrightStartFailure):\n            await pool.start()\n\n\n@pytest.mark.asyncio\nasync def test_start_browser_launch_failure(mock_capture_config):\n    \"\"\"Test start() raises BrowserLaunchFailure when Chromium fails to launch\"\"\"\n    pool = BrowserPool(mock_capture_config)\n    \n    mock_playwright = AsyncMock()\n    mock_playwright.chromium.launch = AsyncMock(side_effect=BrowserLaunchFailure(\"Failed to launch\"))\n    \n    with patch('playwright.async_api.async_playwright', return_value=AsyncMock(__aenter__=AsyncMock(return_value=mock_playwright))):\n        with pytest.raises(BrowserLaunchFailure):\n            await pool.start()\n\n\n@pytest.mark.asyncio\nasync def test_new_context_without_start(mock_capture_config):\n    \"\"\"Test new_context() raises AssertionError when called before start()\"\"\"\n    pool = BrowserPool(mock_capture_config)\n    \n    # Don't call start()\n    with pytest.raises(AssertionError):\n        await pool.new_context(auth=None, base_url=\"https://example.com\")\n\n\n@pytest.mark.asyncio\nasync def test_new_context_creation_failure(mock_capture_config):\n    \"\"\"Test new_context() raises ContextCreationFailure when browser fails to create context\"\"\"\n    pool = BrowserPool(mock_capture_config)\n    \n    # Set up started state with failing browser\n    mock_browser = AsyncMock()\n    mock_browser.new_context = AsyncMock(side_effect=ContextCreationFailure(\"Context creation failed\"))\n    pool._playwright = Mock()\n    pool._browser = mock_browser\n    \n    with pytest.raises(ContextCreationFailure):\n        await pool.new_context(auth=None, base_url=\"https://example.com\")\n\n\n@pytest.mark.asyncio\nasync def test_new_context_auth_application_failure(mock_capture_config, mock_auth_manager_that_fails):\n    \"\"\"Test new_context() raises AuthApplicationFailure when auth.apply_to_context() fails\"\"\"\n    pool = BrowserPool(mock_capture_config)\n    \n    # Set up started state\n    mock_browser = AsyncMock()\n    mock_context = AsyncMock()\n    mock_browser.new_context = AsyncMock(return_value=mock_context)\n    pool._playwright = Mock()\n    pool._browser = mock_browser\n    \n    with pytest.raises(AuthApplicationFailure):\n        await pool.new_context(auth=mock_auth_manager_that_fails, base_url=\"https://example.com\")\n\n\n@pytest.mark.asyncio\nasync def test_stop_browser_close_failure(mock_capture_config):\n    \"\"\"Test stop() raises BrowserCloseFailure when browser close fails\"\"\"\n    pool = BrowserPool(mock_capture_config)\n    \n    # Set up started state with failing browser close\n    mock_browser = AsyncMock()\n    mock_browser.close = AsyncMock(side_effect=BrowserCloseFailure(\"Close failed\"))\n    mock_playwright = AsyncMock()\n    pool._browser = mock_browser\n    pool._playwright = mock_playwright\n    \n    with pytest.raises(BrowserCloseFailure):\n        await pool.stop()\n\n\n@pytest.mark.asyncio\nasync def test_stop_playwright_stop_failure(mock_capture_config):\n    \"\"\"Test stop() raises PlaywrightStopFailure when Playwright stop fails\"\"\"\n    pool = BrowserPool(mock_capture_config)\n    \n    # Set up started state with failing playwright stop\n    mock_browser = AsyncMock()\n    mock_playwright = AsyncMock()\n    mock_playwright.stop = AsyncMock(side_effect=PlaywrightStopFailure(\"Stop failed\"))\n    pool._browser = mock_browser\n    pool._playwright = mock_playwright\n    \n    with pytest.raises(PlaywrightStopFailure):\n        await pool.stop()\n\n\n@pytest.mark.asyncio\nasync def test_aenter_start_failure(mock_capture_config):\n    \"\"\"Test __aenter__() raises StartFailure when start() fails\"\"\"\n    pool = BrowserPool(mock_capture_config)\n    \n    with patch('playwright.async_api.async_playwright', side_effect=StartFailure(\"Start failed\")):\n        with pytest.raises(StartFailure):\n            await pool.__aenter__()\n\n\n@pytest.mark.asyncio\nasync def test_aexit_stop_failure(mock_capture_config):\n    \"\"\"Test __aexit__() raises StopFailure when stop() fails\"\"\"\n    pool = BrowserPool(mock_capture_config)\n    \n    # Set up started state with failing stop\n    mock_browser = AsyncMock()\n    mock_browser.close = AsyncMock(side_effect=StopFailure(\"Stop failed\"))\n    mock_playwright = AsyncMock()\n    pool._browser = mock_browser\n    pool._playwright = mock_playwright\n    \n    with pytest.raises(StopFailure):\n        await pool.__aexit__(None, None, None)\n\n\n# Invariant Tests\n\n@pytest.mark.asyncio\nasync def test_invariant_browser_requires_playwright(mock_capture_config, mock_playwright):\n    \"\"\"Test invariant: if _browser is not None, then _playwright is not None\"\"\"\n    pool = BrowserPool(mock_capture_config)\n    \n    with patch('playwright.async_api.async_playwright', return_value=AsyncMock(__aenter__=AsyncMock(return_value=mock_playwright))):\n        await pool.start()\n    \n    # Check invariant\n    if pool._browser is not None:\n        assert pool._playwright is not None\n\n\n@pytest.mark.asyncio\nasync def test_invariant_after_start_both_non_none(mock_capture_config, mock_playwright):\n    \"\"\"Test invariant: after successful start(), both _playwright and _browser are non-None\"\"\"\n    pool = BrowserPool(mock_capture_config)\n    \n    with patch('playwright.async_api.async_playwright', return_value=AsyncMock(__aenter__=AsyncMock(return_value=mock_playwright))):\n        await pool.start()\n    \n    assert pool._playwright is not None\n    assert pool._browser is not None\n\n\n@pytest.mark.asyncio\nasync def test_invariant_after_stop_both_none(mock_capture_config):\n    \"\"\"Test invariant: after stop() completes, both _playwright and _browser are None\"\"\"\n    pool = BrowserPool(mock_capture_config)\n    \n    # Set up started state\n    mock_browser = AsyncMock()\n    mock_playwright = AsyncMock()\n    pool._browser = mock_browser\n    pool._playwright = mock_playwright\n    \n    await pool.stop()\n    \n    assert pool._playwright is None\n    assert pool._browser is None\n\n\n@pytest.mark.asyncio\nasync def test_invariant_contexts_ignore_https_errors(mock_capture_config):\n    \"\"\"Test invariant: all contexts created have ignore_https_errors=True\"\"\"\n    pool = BrowserPool(mock_capture_config)\n    \n    # Set up started state\n    mock_browser = AsyncMock()\n    mock_context = AsyncMock()\n    mock_browser.new_context = AsyncMock(return_value=mock_context)\n    pool._playwright = Mock()\n    pool._browser = mock_browser\n    \n    await pool.new_context(auth=None, base_url=\"https://example.com\")\n    \n    # Verify ignore_https_errors was set to True\n    call_kwargs = mock_browser.new_context.call_args[1]\n    assert call_kwargs['ignore_https_errors'] is True\n\n\n@pytest.mark.asyncio\nasync def test_invariant_contexts_use_config_viewport(mock_capture_config):\n    \"\"\"Test invariant: all contexts use viewport dimensions from _config\"\"\"\n    pool = BrowserPool(mock_capture_config)\n    \n    # Set up started state\n    mock_browser = AsyncMock()\n    mock_context = AsyncMock()\n    mock_browser.new_context = AsyncMock(return_value=mock_context)\n    pool._playwright = Mock()\n    pool._browser = mock_browser\n    \n    await pool.new_context(auth=None, base_url=\"https://example.com\")\n    \n    # Verify viewport dimensions match config\n    call_kwargs = mock_browser.new_context.call_args[1]\n    assert call_kwargs['viewport']['width'] == mock_capture_config.viewport_width\n    assert call_kwargs['viewport']['height'] == mock_capture_config.viewport_height\n\n\n@pytest.mark.asyncio\nasync def test_invariant_browser_headless_mode(mock_capture_config, mock_playwright):\n    \"\"\"Test invariant: browser is always launched in headless mode\"\"\"\n    pool = BrowserPool(mock_capture_config)\n    \n    with patch('playwright.async_api.async_playwright', return_value=AsyncMock(__aenter__=AsyncMock(return_value=mock_playwright))):\n        await pool.start()\n    \n    # Verify headless was set to True\n    mock_playwright.chromium.launch.assert_called()\n    call_kwargs = mock_playwright.chromium.launch.call_args[1] if mock_playwright.chromium.launch.call_args else {}\n    if 'headless' in call_kwargs:\n        assert call_kwargs['headless'] is True\n"
+}

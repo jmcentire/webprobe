@@ -1,0 +1,270 @@
+{
+  "component_id": "src_webprobe_frameworks",
+  "name": "Framework Route Detection",
+  "description": "Auto-detects web framework types (Astro, Next.js, SvelteKit) from project root directories and extracts URL routes from their file-based routing conventions. Converts filesystem paths to URL patterns with support for dynamic segments.",
+  "version": 1,
+  "types": [
+    {
+      "name": "Path",
+      "kind": "primitive",
+      "fields": [],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "pathlib.Path - filesystem path object",
+      "owner_component": "pathlib"
+    }
+  ],
+  "functions": [
+    {
+      "name": "_path_to_route",
+      "description": "Convert a file path under a pages directory to a URL route. Strips file extensions, converts 'index' to root, and transforms dynamic segments ([param] -> :param, [...rest] -> *rest).",
+      "inputs": [
+        {
+          "name": "filepath",
+          "type_ref": "Path",
+          "required": true,
+          "default": "",
+          "description": "File path to convert to route",
+          "validators": []
+        },
+        {
+          "name": "pages_dir",
+          "type_ref": "Path",
+          "required": true,
+          "default": "",
+          "description": "Base pages directory for relative path calculation",
+          "validators": []
+        },
+        {
+          "name": "strip_extensions",
+          "type_ref": "tuple[str, ...]",
+          "required": true,
+          "default": "",
+          "description": "File extensions to strip from the final path segment",
+          "validators": []
+        }
+      ],
+      "output_type": "str",
+      "error_cases": [
+        {
+          "name": "ValueError",
+          "condition": "filepath is not relative to pages_dir",
+          "error_type": "ValueError",
+          "error_data": {
+            "raised_by": "filepath.relative_to(pages_dir)"
+          }
+        }
+      ],
+      "preconditions": [
+        "filepath must be relative to or under pages_dir for relative_to() to succeed"
+      ],
+      "postconditions": [
+        "Returns a route string starting with '/'",
+        "File extensions in strip_extensions are removed from the last path component",
+        "Path segments named 'index' at the end are removed",
+        "Dynamic segments [param] are converted to :param",
+        "Catch-all segments [...rest] are converted to *rest"
+      ],
+      "idempotent": true,
+      "is_async": false,
+      "side_effects": [],
+      "structured_side_effects": [],
+      "performance_budget": null
+    },
+    {
+      "name": "detect_astro",
+      "description": "Detect routes from an Astro project by scanning src/pages/** for .astro, .md, .mdx, .html files. Also checks web/src/pages for monorepo patterns.",
+      "inputs": [
+        {
+          "name": "project_root",
+          "type_ref": "Path",
+          "required": true,
+          "default": "",
+          "description": "Root directory of the Astro project",
+          "validators": []
+        }
+      ],
+      "output_type": "list[str]",
+      "error_cases": [],
+      "preconditions": [],
+      "postconditions": [
+        "Returns sorted list of unique route strings",
+        "Returns empty list if src/pages and web/src/pages directories don't exist",
+        "All returned routes start with '/'",
+        "Routes are deduplicated via set conversion"
+      ],
+      "idempotent": true,
+      "is_async": false,
+      "side_effects": [
+        "Reads filesystem to check directory existence (is_dir)",
+        "Recursively scans directories for files matching extensions"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "reads_file",
+          "target": "src/pages/**, web/src/pages/**",
+          "description": "Scans for .astro, .md, .mdx, .html files"
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "detect_nextjs",
+      "description": "Detect routes from a Next.js project supporting both App Router (app/**/page.{tsx,jsx,ts,js}) and Pages Router (pages/**/*.{tsx,jsx,ts,js}). Excludes files starting with underscore in Pages Router.",
+      "inputs": [
+        {
+          "name": "project_root",
+          "type_ref": "Path",
+          "required": true,
+          "default": "",
+          "description": "Root directory of the Next.js project",
+          "validators": []
+        }
+      ],
+      "output_type": "list[str]",
+      "error_cases": [],
+      "preconditions": [],
+      "postconditions": [
+        "Returns sorted list of unique route strings",
+        "Returns empty list if neither app/ nor pages/ directories exist",
+        "All returned routes start with '/'",
+        "Routes are deduplicated via set conversion",
+        "Files starting with _ in pages/ are excluded"
+      ],
+      "idempotent": true,
+      "is_async": false,
+      "side_effects": [
+        "Reads filesystem to check directory existence (is_dir)",
+        "Recursively scans app/ for page.{tsx,jsx,ts,js} files",
+        "Recursively scans pages/ for *.{tsx,jsx,ts,js} files"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "reads_file",
+          "target": "app/**/page.*, pages/**/*.*",
+          "description": "Scans for Next.js page files in app and pages directories"
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "detect_sveltekit",
+      "description": "Detect routes from a SvelteKit project by scanning src/routes/**/ for +page.svelte files.",
+      "inputs": [
+        {
+          "name": "project_root",
+          "type_ref": "Path",
+          "required": true,
+          "default": "",
+          "description": "Root directory of the SvelteKit project",
+          "validators": []
+        }
+      ],
+      "output_type": "list[str]",
+      "error_cases": [],
+      "preconditions": [],
+      "postconditions": [
+        "Returns sorted list of unique route strings",
+        "Returns empty list if src/routes directory doesn't exist",
+        "All returned routes start with '/'",
+        "Routes are deduplicated via set conversion"
+      ],
+      "idempotent": true,
+      "is_async": false,
+      "side_effects": [
+        "Reads filesystem to check directory existence (is_dir)",
+        "Recursively scans src/routes for +page.svelte files"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "reads_file",
+          "target": "src/routes/**/ +page.svelte",
+          "description": "Scans for SvelteKit page files"
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "detect_framework",
+      "description": "Auto-detect web framework type from project root by checking for framework-specific config files, then extract routes. Checks in order: Astro (astro.config.*), Next.js (next.config.*), SvelteKit (svelte.config.*).",
+      "inputs": [
+        {
+          "name": "project_root",
+          "type_ref": "Path",
+          "required": true,
+          "default": "",
+          "description": "Root directory of the web project",
+          "validators": []
+        }
+      ],
+      "output_type": "tuple[str | None, list[str]]",
+      "error_cases": [],
+      "preconditions": [],
+      "postconditions": [
+        "Returns (framework_name, routes) tuple",
+        "framework_name is 'astro', 'nextjs', 'sveltekit', or None",
+        "If framework detected, routes are extracted using corresponding detector function",
+        "If no framework detected, returns (None, [])",
+        "Detection order: Astro -> Next.js -> SvelteKit",
+        "Also checks web/astro.config.* for monorepo Astro projects"
+      ],
+      "idempotent": true,
+      "is_async": false,
+      "side_effects": [
+        "Reads filesystem to glob for config files",
+        "Delegates to framework-specific detector which performs additional filesystem reads"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "reads_file",
+          "target": "astro.config.*, web/astro.config.*, next.config.*, svelte.config.*",
+          "description": "Globs for framework configuration files"
+        }
+      ],
+      "performance_budget": null
+    }
+  ],
+  "dependencies": [
+    "pathlib",
+    "re"
+  ],
+  "dependency_contracts": {},
+  "invariants": [
+    "All routes produced start with '/'",
+    "All route lists are sorted and deduplicated",
+    "Dynamic segment conversions: [param] -> :param, [...rest] -> *rest",
+    "Astro extensions: .astro, .md, .mdx, .html",
+    "Next.js extensions: .tsx, .jsx, .ts, .js",
+    "SvelteKit page file pattern: +page.svelte",
+    "Framework detection is order-dependent: Astro, Next.js, SvelteKit"
+  ],
+  "requires": [],
+  "processing_register": "",
+  "data_access": {
+    "reads": [
+      "filesystem"
+    ],
+    "writes": [],
+    "rationale": "Module performs read-only filesystem scanning to detect project structure and extract routes",
+    "side_effects": [
+      {
+        "type": "filesystem_read",
+        "classification": "read_only",
+        "fields": [
+          "project_root",
+          "src/pages",
+          "app",
+          "pages",
+          "src/routes",
+          "web"
+        ],
+        "rationale": "Scans directories and files to detect framework type and extract routing information"
+      }
+    ]
+  },
+  "authority": {
+    "domains": [],
+    "rationale": null
+  }
+}

@@ -1,0 +1,168 @@
+{
+  "component_id": "src_webprobe_differ",
+  "name": "WebProbe Differ",
+  "description": "Cross-run diffing and trending module for webprobe. Compares two Run snapshots to detect changes in site structure (nodes/edges), HTTP status codes, response timings, broken links, and authentication boundary violations.",
+  "version": 1,
+  "types": [],
+  "functions": [
+    {
+      "name": "load_run",
+      "description": "Load a Run object from a run directory by reading and parsing report.json",
+      "inputs": [
+        {
+          "name": "run_dir",
+          "type_ref": "Path",
+          "required": true,
+          "default": "",
+          "description": "Directory containing a report.json file",
+          "validators": []
+        }
+      ],
+      "output_type": "Run",
+      "error_cases": [
+        {
+          "name": "missing_report_file",
+          "condition": "report.json does not exist in run_dir",
+          "error_type": "FileNotFoundError",
+          "error_data": {
+            "message": "No report.json in {run_dir}"
+          }
+        },
+        {
+          "name": "invalid_json",
+          "condition": "report.json contains invalid JSON",
+          "error_type": "json.JSONDecodeError",
+          "error_data": {}
+        },
+        {
+          "name": "validation_error",
+          "condition": "JSON does not match Run model schema",
+          "error_type": "ValidationError",
+          "error_data": {}
+        }
+      ],
+      "preconditions": [
+        "run_dir must be a valid Path object"
+      ],
+      "postconditions": [
+        "Returns a validated Run object parsed from report.json",
+        "Run object passes model_validate validation"
+      ],
+      "idempotent": false,
+      "is_async": false,
+      "side_effects": [
+        "Reads file from filesystem"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "reads_file",
+          "target": "run_dir/report.json",
+          "description": "Reads report.json file to load Run data"
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "diff_runs",
+      "description": "Compare two Run objects and produce a comprehensive RunDiff showing all structural and content changes including nodes, edges, HTTP status changes, timing changes (>20% threshold), broken link changes, and auth violation changes",
+      "inputs": [
+        {
+          "name": "run_a",
+          "type_ref": "Run",
+          "required": true,
+          "default": "",
+          "description": "First run (baseline)",
+          "validators": []
+        },
+        {
+          "name": "run_b",
+          "type_ref": "Run",
+          "required": true,
+          "default": "",
+          "description": "Second run (comparison target)",
+          "validators": []
+        }
+      ],
+      "output_type": "RunDiff",
+      "error_cases": [
+        {
+          "name": "schema_version_mismatch",
+          "condition": "run_a.schema_version != run_b.schema_version",
+          "error_type": "ValueError",
+          "error_data": {
+            "message": "Schema version mismatch: {run_a.schema_version} vs {run_b.schema_version}"
+          }
+        },
+        {
+          "name": "missing_graph_attribute",
+          "condition": "Either run lacks graph attribute",
+          "error_type": "AttributeError",
+          "error_data": {}
+        },
+        {
+          "name": "index_error",
+          "condition": "Node has empty captures list when accessing captures[0]",
+          "error_type": "IndexError",
+          "error_data": {}
+        },
+        {
+          "name": "zero_division",
+          "condition": "t_a.duration_ms is exactly 0 (should not occur due to guard, but possible in edge case)",
+          "error_type": "ZeroDivisionError",
+          "error_data": {}
+        }
+      ],
+      "preconditions": [
+        "run_a.schema_version == run_b.schema_version",
+        "Both runs must have valid graph objects with nodes and edges",
+        "run_a and run_b must be valid Run objects"
+      ],
+      "postconditions": [
+        "Returns RunDiff with all detected changes",
+        "nodes_added contains sorted list of new node IDs in run_b",
+        "nodes_removed contains sorted list of node IDs removed from run_a",
+        "edges_added/edges_removed are sorted by (source, target) tuple",
+        "status_changes only includes nodes present in both runs with different HTTP status codes",
+        "timing_changes only includes nodes with >20% duration_ms delta where t_a.duration_ms > 0",
+        "new_broken_links/resolved_broken_links are sorted by (source, target) tuple",
+        "new_auth_violations/resolved_auth_violations are sorted by URL"
+      ],
+      "idempotent": false,
+      "is_async": false,
+      "side_effects": [
+        "None - pure computation"
+      ],
+      "structured_side_effects": [],
+      "performance_budget": null
+    }
+  ],
+  "dependencies": [
+    "json",
+    "pathlib",
+    "webprobe.models"
+  ],
+  "dependency_contracts": {},
+  "invariants": [
+    "Timing change threshold is fixed at 20% (0.20)",
+    "Edge identity is determined by (source, target) tuple",
+    "BrokenLink identity is determined by (source, target) tuple",
+    "AuthBoundaryViolation identity is determined by url field",
+    "All diff lists are sorted for deterministic output",
+    "Status comparison uses first capture (index 0) when available",
+    "Delta percentage for timing is rounded to 1 decimal place"
+  ],
+  "requires": [],
+  "processing_register": "",
+  "data_access": {
+    "reads": [
+      "filesystem"
+    ],
+    "writes": [],
+    "rationale": "load_run reads report.json from filesystem; diff_runs performs pure in-memory computation",
+    "side_effects": []
+  },
+  "authority": {
+    "domains": [],
+    "rationale": null
+  }
+}

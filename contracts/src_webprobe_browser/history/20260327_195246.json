@@ -1,0 +1,364 @@
+{
+  "component_id": "src_webprobe_browser",
+  "name": "Browser Pool Manager",
+  "description": "Manages Playwright browser lifecycle and context pool. Provides a single Chromium browser instance with the ability to create multiple isolated browser contexts for concurrent page operations. Supports async context manager protocol for automatic resource cleanup.",
+  "version": 1,
+  "types": [
+    {
+      "name": "BrowserPool",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "_config",
+          "type_ref": "CaptureConfig",
+          "required": true,
+          "default": "",
+          "description": "Configuration containing viewport dimensions and capture settings",
+          "validators": []
+        },
+        {
+          "name": "_playwright",
+          "type_ref": "Playwright | None",
+          "required": true,
+          "default": "",
+          "description": "Playwright instance, None before start() is called",
+          "validators": []
+        },
+        {
+          "name": "_browser",
+          "type_ref": "Browser | None",
+          "required": true,
+          "default": "",
+          "description": "Chromium browser instance, None before start() is called",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "Manages a single Playwright browser instance with multiple contexts. Supports async context manager protocol for automatic lifecycle management.",
+      "owner_component": ""
+    }
+  ],
+  "functions": [
+    {
+      "name": "__init__",
+      "description": "Initialize BrowserPool with configuration. Sets up internal state with null browser and playwright instances.",
+      "inputs": [
+        {
+          "name": "config",
+          "type_ref": "CaptureConfig",
+          "required": true,
+          "default": "",
+          "description": "Configuration object containing viewport dimensions and other capture settings",
+          "validators": []
+        }
+      ],
+      "output_type": "None",
+      "error_cases": [],
+      "preconditions": [
+        "config must be a valid CaptureConfig instance"
+      ],
+      "postconditions": [
+        "_config is set to provided config",
+        "_playwright is initialized to None",
+        "_browser is initialized to None"
+      ],
+      "idempotent": false,
+      "is_async": false,
+      "side_effects": [
+        "mutates_state"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "mutates_state",
+          "target": "_config, _playwright, _browser",
+          "description": "Initializes instance attributes"
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "start",
+      "description": "Launch the Playwright browser instance. Starts Playwright and launches a headless Chromium browser.",
+      "inputs": [],
+      "output_type": "None",
+      "error_cases": [
+        {
+          "name": "PlaywrightStartFailure",
+          "condition": "Playwright fails to start",
+          "error_type": "Exception",
+          "error_data": {}
+        },
+        {
+          "name": "BrowserLaunchFailure",
+          "condition": "Chromium browser fails to launch",
+          "error_type": "Exception",
+          "error_data": {}
+        }
+      ],
+      "preconditions": [],
+      "postconditions": [
+        "_playwright is a running Playwright instance",
+        "_browser is a launched Chromium browser in headless mode"
+      ],
+      "idempotent": false,
+      "is_async": true,
+      "side_effects": [
+        "mutates_state",
+        "network_call"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "mutates_state",
+          "target": "_playwright, _browser",
+          "description": "Sets playwright and browser instances"
+        },
+        {
+          "kind": "network_call",
+          "target": "Playwright/Chromium",
+          "description": "May download browser binaries if not cached"
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "new_context",
+      "description": "Create a new browser context with configured viewport and optional authentication. Each context is an isolated browsing session. HTTPS errors are ignored for all contexts.",
+      "inputs": [
+        {
+          "name": "auth",
+          "type_ref": "AuthManager | None",
+          "required": false,
+          "default": "None",
+          "description": "Optional authentication manager to apply credentials to the context",
+          "validators": []
+        },
+        {
+          "name": "base_url",
+          "type_ref": "str",
+          "required": false,
+          "default": "\"\"",
+          "description": "Base URL for authentication context",
+          "validators": []
+        }
+      ],
+      "output_type": "BrowserContext",
+      "error_cases": [
+        {
+          "name": "AssertionError",
+          "condition": "_browser is None (start() not called)",
+          "error_type": "AssertionError",
+          "error_data": {
+            "message": "Call start() first"
+          }
+        },
+        {
+          "name": "ContextCreationFailure",
+          "condition": "Browser fails to create new context",
+          "error_type": "Exception",
+          "error_data": {}
+        },
+        {
+          "name": "AuthApplicationFailure",
+          "condition": "auth.apply_to_context() raises an exception",
+          "error_type": "Exception",
+          "error_data": {}
+        }
+      ],
+      "preconditions": [
+        "_browser is not None (start() must be called first)",
+        "_config.viewport_width is defined",
+        "_config.viewport_height is defined"
+      ],
+      "postconditions": [
+        "Returns a new isolated BrowserContext with configured viewport",
+        "Context has ignore_https_errors=True",
+        "If auth provided and has_auth=True, authentication is applied to context"
+      ],
+      "idempotent": false,
+      "is_async": true,
+      "side_effects": [
+        "mutates_state"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "mutates_state",
+          "target": "Browser context pool",
+          "description": "Creates new browser context in the browser instance"
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "stop",
+      "description": "Close the browser and stop Playwright. Idempotent - safe to call multiple times. Cleans up all resources.",
+      "inputs": [],
+      "output_type": "None",
+      "error_cases": [
+        {
+          "name": "BrowserCloseFailure",
+          "condition": "Browser close operation fails",
+          "error_type": "Exception",
+          "error_data": {}
+        },
+        {
+          "name": "PlaywrightStopFailure",
+          "condition": "Playwright stop operation fails",
+          "error_type": "Exception",
+          "error_data": {}
+        }
+      ],
+      "preconditions": [],
+      "postconditions": [
+        "_browser is closed and set to None",
+        "_playwright is stopped and set to None",
+        "All browser contexts are implicitly closed"
+      ],
+      "idempotent": true,
+      "is_async": true,
+      "side_effects": [
+        "mutates_state"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "mutates_state",
+          "target": "_browser, _playwright",
+          "description": "Closes browser, stops playwright, nulls both fields"
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "__aenter__",
+      "description": "Async context manager entry. Starts the browser and returns self.",
+      "inputs": [],
+      "output_type": "BrowserPool",
+      "error_cases": [
+        {
+          "name": "StartFailure",
+          "condition": "start() raises an exception",
+          "error_type": "Exception",
+          "error_data": {}
+        }
+      ],
+      "preconditions": [],
+      "postconditions": [
+        "Browser is started (start() has been called)",
+        "Returns self for use in async with statement"
+      ],
+      "idempotent": false,
+      "is_async": true,
+      "side_effects": [
+        "mutates_state",
+        "network_call"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "mutates_state",
+          "target": "self",
+          "description": "Calls start() which initializes browser"
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "__aexit__",
+      "description": "Async context manager exit. Stops the browser and cleans up resources regardless of whether an exception occurred.",
+      "inputs": [
+        {
+          "name": "args",
+          "type_ref": "object",
+          "required": false,
+          "default": "",
+          "description": "Exception information (exc_type, exc_val, exc_tb) passed by context manager protocol",
+          "validators": []
+        }
+      ],
+      "output_type": "None",
+      "error_cases": [
+        {
+          "name": "StopFailure",
+          "condition": "stop() raises an exception",
+          "error_type": "Exception",
+          "error_data": {}
+        }
+      ],
+      "preconditions": [],
+      "postconditions": [
+        "Browser is stopped (stop() has been called)",
+        "All resources are cleaned up"
+      ],
+      "idempotent": false,
+      "is_async": true,
+      "side_effects": [
+        "mutates_state"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "mutates_state",
+          "target": "self",
+          "description": "Calls stop() which closes browser and playwright"
+        }
+      ],
+      "performance_budget": null
+    }
+  ],
+  "dependencies": [
+    "playwright.async_api",
+    "webprobe.auth",
+    "webprobe.config"
+  ],
+  "dependency_contracts": {
+    "playwright.async_api": [
+      "Browser",
+      "BrowserContext",
+      "Playwright",
+      "async_playwright"
+    ],
+    "webprobe.auth": [
+      "AuthManager"
+    ],
+    "webprobe.config": [
+      "CaptureConfig"
+    ]
+  },
+  "invariants": [
+    "If _browser is not None, then _playwright is not None",
+    "After start() completes successfully, both _playwright and _browser are non-None",
+    "After stop() completes, both _playwright and _browser are None",
+    "All contexts created have ignore_https_errors=True",
+    "All contexts use viewport dimensions from _config",
+    "Browser is always launched in headless mode"
+  ],
+  "requires": [
+    "Playwright must be installed and browser binaries available",
+    "System must support running headless Chromium",
+    "CaptureConfig must have viewport_width and viewport_height attributes"
+  ],
+  "processing_register": "",
+  "data_access": {
+    "reads": [
+      "memory"
+    ],
+    "writes": [
+      "memory"
+    ],
+    "rationale": "Manages in-memory browser lifecycle state. No persistent storage operations.",
+    "side_effects": [
+      {
+        "type": "browser_process",
+        "classification": "external_process",
+        "fields": [
+          "_browser",
+          "_playwright"
+        ],
+        "rationale": "Launches and manages Chromium browser process via Playwright"
+      }
+    ]
+  },
+  "authority": {
+    "domains": [],
+    "rationale": null
+  }
+}

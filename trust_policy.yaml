@@ -1,0 +1,34 @@
+classification_tiers:
+  - name: PUBLIC
+    description: "Report data, graph structure, timing metrics — safe to share"
+  - name: AUTH
+    description: "Auth credentials, session tokens — never in reports"
+  - name: PII
+    description: "Not applicable — webprobe does not handle user PII"
+
+authority_map:
+  schema: models
+  configuration: config
+  authentication: auth
+  site_discovery: mapper
+  browser_management: browser
+  page_capture: capturer
+  security_analysis: security
+  graph_analysis: analyzer
+  llm_orchestration: llm_provider
+  visual_analysis: visual
+  finding_suppression: mask
+  llm_exploration: explorer
+  reporting: reporter
+  diff_analysis: differ
+  user_interface: cli
+
+human_gate_triggers:
+  - "Agent count exceeds concurrency_warn_threshold"
+  - "Schema version bump required"
+
+canary_eligibility:
+  - component: explorer
+    reason: "LLM-driven, non-deterministic output — always canary in CI"
+  - component: visual
+    reason: "Vision model output varies — findings may differ between runs"

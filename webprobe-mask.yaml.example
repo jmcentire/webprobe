@@ -1,0 +1,18 @@
+# webprobe mask file -- suppress known/expected findings
+# Place as webprobe-mask.yaml in project root or pass via --mask
+
+rules:
+  # Example: suppress HSTS warnings for local dev
+  # - url_pattern: "localhost"
+  #   title_pattern: "Missing Strict-Transport"
+  #   reason: "HSTS not applicable to localhost"
+
+  # Example: suppress all info-level findings
+  # - title_pattern: ".*"
+  #   category: "headers"
+  #   reason: "Headers are handled at CDN level"
+
+  # Example: suppress specific visual findings on a known page
+  # - url_pattern: "/legacy-page"
+  #   title_pattern: "Visual:.*"
+  #   reason: "Legacy page, scheduled for redesign"

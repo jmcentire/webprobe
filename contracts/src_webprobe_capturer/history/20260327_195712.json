@@ -1,0 +1,568 @@
+{
+  "component_id": "src_webprobe_capturer",
+  "name": "Web Probe Capturer",
+  "description": "Playwright-based page capture module (Phase 2). Visits nodes in the site graph with a real browser, intercepts network resources, captures console messages, extracts page metadata (title, text, links), collects cookies and forms, measures timing metrics (TTFB, DOM content loaded, load event), and optionally takes full-page screenshots. Supports both authenticated and anonymous contexts.",
+  "version": 1,
+  "types": [
+    {
+      "name": "ResourceType",
+      "kind": "enum",
+      "fields": [],
+      "item_type": "",
+      "variants": [
+        "document",
+        "script",
+        "stylesheet",
+        "image",
+        "font",
+        "media",
+        "xhr",
+        "fetch",
+        "websocket",
+        "other"
+      ],
+      "inner_types": [],
+      "description": "Resource type enumeration (imported from webprobe.models)",
+      "owner_component": "webprobe.models"
+    },
+    {
+      "name": "ConsoleMessageLevel",
+      "kind": "enum",
+      "fields": [],
+      "item_type": "",
+      "variants": [
+        "log",
+        "warning",
+        "error",
+        "info",
+        "debug"
+      ],
+      "inner_types": [],
+      "description": "Console message severity level (imported from webprobe.models)",
+      "owner_component": "webprobe.models"
+    }
+  ],
+  "functions": [
+    {
+      "name": "_map_resource_type",
+      "description": "Maps Playwright's resource type string to the internal ResourceType enum. Returns ResourceType.other for unknown types.",
+      "inputs": [
+        {
+          "name": "playwright_type",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Playwright resource type string (e.g., 'document', 'script', 'xhr')",
+          "validators": []
+        }
+      ],
+      "output_type": "ResourceType",
+      "error_cases": [],
+      "preconditions": [],
+      "postconditions": [
+        "Returns a valid ResourceType enum value",
+        "Unknown types map to ResourceType.other"
+      ],
+      "idempotent": true,
+      "is_async": false,
+      "side_effects": [],
+      "structured_side_effects": [
+        {
+          "kind": "none",
+          "target": "",
+          "description": ""
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "_map_console_level",
+      "description": "Maps console message type string to the internal ConsoleMessageLevel enum. Returns ConsoleMessageLevel.log for unknown types.",
+      "inputs": [
+        {
+          "name": "msg_type",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Console message type string (e.g., 'log', 'warning', 'error')",
+          "validators": []
+        }
+      ],
+      "output_type": "ConsoleMessageLevel",
+      "error_cases": [],
+      "preconditions": [],
+      "postconditions": [
+        "Returns a valid ConsoleMessageLevel enum value",
+        "Unknown types map to ConsoleMessageLevel.log"
+      ],
+      "idempotent": true,
+      "is_async": false,
+      "side_effects": [],
+      "structured_side_effects": [
+        {
+          "kind": "none",
+          "target": "",
+          "description": ""
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "_screenshot_path",
+      "description": "Generates a relative screenshot file path from URL and authentication context. Converts URL path to filename (_index for root, _<path> for others), URL-encodes query strings, and organizes by auth context subdirectory.",
+      "inputs": [
+        {
+          "name": "url",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "The URL being captured",
+          "validators": []
+        },
+        {
+          "name": "auth_context",
+          "type_ref": "AuthContext",
+          "required": true,
+          "default": "",
+          "description": "Authentication context (authenticated or anonymous)",
+          "validators": []
+        }
+      ],
+      "output_type": "str",
+      "error_cases": [],
+      "preconditions": [],
+      "postconditions": [
+        "Returns path in format: screenshots/{auth_context.value}/{sanitized_url}.png",
+        "Root path (/) becomes '_index.png'",
+        "Path segments are joined with underscores",
+        "Query strings are URL-encoded and appended"
+      ],
+      "idempotent": true,
+      "is_async": false,
+      "side_effects": [],
+      "structured_side_effects": [
+        {
+          "kind": "none",
+          "target": "",
+          "description": ""
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "_visit_node",
+      "description": "Visits a single node with Playwright browser, capturing all page data: HTTP response, timing metrics, resources, console messages, cookies, forms, links, and screenshot. Handles both authenticated and anonymous contexts. Uses semaphore for concurrency control.",
+      "inputs": [
+        {
+          "name": "pool",
+          "type_ref": "BrowserPool",
+          "required": true,
+          "default": "",
+          "description": "Browser pool for managing Playwright contexts",
+          "validators": []
+        },
+        {
+          "name": "node",
+          "type_ref": "Node",
+          "required": true,
+          "default": "",
+          "description": "The node to visit from the site graph",
+          "validators": []
+        },
+        {
+          "name": "auth_context",
+          "type_ref": "AuthContext",
+          "required": true,
+          "default": "",
+          "description": "Authentication context for this visit",
+          "validators": []
+        },
+        {
+          "name": "auth_manager",
+          "type_ref": "AuthManager",
+          "required": true,
+          "default": "",
+          "description": "Auth manager for authenticated sessions",
+          "validators": []
+        },
+        {
+          "name": "config",
+          "type_ref": "WebprobeConfig",
+          "required": true,
+          "default": "",
+          "description": "Configuration object containing capture settings",
+          "validators": []
+        },
+        {
+          "name": "run_dir",
+          "type_ref": "Path",
+          "required": true,
+          "default": "",
+          "description": "Run directory for saving screenshots",
+          "validators": []
+        },
+        {
+          "name": "semaphore",
+          "type_ref": "asyncio.Semaphore",
+          "required": true,
+          "default": "",
+          "description": "Semaphore for concurrency control",
+          "validators": []
+        }
+      ],
+      "output_type": "NodeCapture",
+      "error_cases": [
+        {
+          "name": "navigation_timeout",
+          "condition": "Page navigation exceeds config.capture.timeout_ms",
+          "error_type": "Exception",
+          "error_data": {
+            "handled": "true",
+            "result": "http_status remains None, captures continues"
+          }
+        },
+        {
+          "name": "javascript_evaluation_error",
+          "condition": "JavaScript evaluation fails (performance timing, page text, links, forms, or cookies)",
+          "error_type": "Exception",
+          "error_data": {
+            "handled": "true",
+            "result": "affected fields set to default values (empty list/string/None)"
+          }
+        },
+        {
+          "name": "screenshot_error",
+          "condition": "Screenshot capture fails",
+          "error_type": "Exception",
+          "error_data": {
+            "handled": "true",
+            "result": "screenshot_path set to empty string"
+          }
+        },
+        {
+          "name": "response_body_error",
+          "condition": "Fetching response body fails in on_response handler",
+          "error_type": "Exception",
+          "error_data": {
+            "handled": "true",
+            "result": "size_bytes set to None for that resource"
+          }
+        }
+      ],
+      "preconditions": [
+        "pool is a valid BrowserPool",
+        "node contains a valid state.url",
+        "run_dir exists or can be created",
+        "semaphore is initialized"
+      ],
+      "postconditions": [
+        "Returns a complete NodeCapture object with all captured data",
+        "Browser context is closed even on error",
+        "Screenshot file is created if config.capture.screenshot is True and capture succeeds",
+        "Resources list contains all intercepted HTTP responses",
+        "Console messages contain all browser console output during page load"
+      ],
+      "idempotent": false,
+      "is_async": true,
+      "side_effects": [
+        "Creates a new browser context and page",
+        "Navigates to node.state.url",
+        "Creates screenshot directory and file if screenshot is enabled",
+        "Waits for network idle state",
+        "Executes JavaScript in the page context to gather performance timing, links, and forms"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "network_call",
+          "target": "node.state.url",
+          "description": "Navigates to the URL with Playwright"
+        },
+        {
+          "kind": "writes_file",
+          "target": "screenshot file",
+          "description": "Writes PNG screenshot if config.capture.screenshot is True"
+        },
+        {
+          "kind": "mutates_state",
+          "target": "browser context",
+          "description": "Creates and modifies browser context state"
+        }
+      ],
+      "performance_budget": {
+        "p95_latency_ms": null,
+        "max_memory_mb": null,
+        "complexity": "O(1) per node + O(n) for n resources/forms/cookies"
+      }
+    },
+    {
+      "name": "on_response",
+      "description": "Async event handler (nested function within _visit_node) that intercepts HTTP responses during page navigation. Extracts resource metadata including URL, type, status, size, and timing, and appends to the resources list.",
+      "inputs": [
+        {
+          "name": "response",
+          "type_ref": "Response",
+          "required": true,
+          "default": "",
+          "description": "Playwright Response object from intercepted HTTP request",
+          "validators": []
+        }
+      ],
+      "output_type": "None",
+      "error_cases": [
+        {
+          "name": "body_fetch_error",
+          "condition": "response.body() raises an exception or response is not OK",
+          "error_type": "Exception",
+          "error_data": {
+            "handled": "true",
+            "result": "size_bytes set to None"
+          }
+        }
+      ],
+      "preconditions": [
+        "response is a valid Playwright Response object",
+        "resources list is accessible in closure scope"
+      ],
+      "postconditions": [
+        "A Resource object is appended to the resources list",
+        "Resource contains URL, type, status code, size (if available), mime type, and timing data"
+      ],
+      "idempotent": false,
+      "is_async": true,
+      "side_effects": [
+        "Mutates the resources list by appending a new Resource object",
+        "Fetches response body to determine size"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "mutates_state",
+          "target": "resources list",
+          "description": "Appends Resource object to captured resources"
+        },
+        {
+          "kind": "network_call",
+          "target": "response body",
+          "description": "Fetches response body to calculate size"
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "on_console",
+      "description": "Synchronous event handler (nested function within _visit_node) that intercepts browser console messages during page navigation. Maps message level and appends to console_messages list.",
+      "inputs": [
+        {
+          "name": "msg",
+          "type_ref": "object",
+          "required": true,
+          "default": "",
+          "description": "Playwright console message object with type and text attributes",
+          "validators": []
+        }
+      ],
+      "output_type": "None",
+      "error_cases": [],
+      "preconditions": [
+        "msg has 'type' and 'text' attributes",
+        "console_messages list is accessible in closure scope",
+        "node.state.url is accessible in closure scope"
+      ],
+      "postconditions": [
+        "A ConsoleMessage object is appended to the console_messages list",
+        "Message level is mapped via _map_console_level"
+      ],
+      "idempotent": false,
+      "is_async": false,
+      "side_effects": [
+        "Mutates the console_messages list by appending a new ConsoleMessage object"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "mutates_state",
+          "target": "console_messages list",
+          "description": "Appends ConsoleMessage object"
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "capture_site",
+      "description": "Phase 2 entry point: orchestrates visiting all nodes in the site graph with Playwright. Creates concurrent tasks for each (node, auth_context) pair, gathers results, attaches captures to nodes, verifies edges based on outgoing links, and returns updated graph with phase status.",
+      "inputs": [
+        {
+          "name": "config",
+          "type_ref": "WebprobeConfig",
+          "required": true,
+          "default": "",
+          "description": "Configuration containing capture settings (concurrency, timeout, screenshot flag, auth settings)",
+          "validators": []
+        },
+        {
+          "name": "graph",
+          "type_ref": "SiteGraph",
+          "required": true,
+          "default": "",
+          "description": "Site graph from Phase 1 with nodes and edges to capture",
+          "validators": []
+        },
+        {
+          "name": "run_dir",
+          "type_ref": "Path",
+          "required": true,
+          "default": "",
+          "description": "Run directory for storing screenshots and artifacts",
+          "validators": []
+        }
+      ],
+      "output_type": "tuple[SiteGraph, PhaseStatus]",
+      "error_cases": [
+        {
+          "name": "visit_node_exception",
+          "condition": "_visit_node raises an exception for a specific node",
+          "error_type": "Exception",
+          "error_data": {
+            "handled": "true",
+            "result": "Creates minimal NodeCapture with error message in page_text, capture still appended to node"
+          }
+        }
+      ],
+      "preconditions": [
+        "graph.nodes contains valid Node objects with state.url and auth_contexts_available",
+        "run_dir is a valid Path",
+        "config.capture.concurrency is positive integer"
+      ],
+      "postconditions": [
+        "Every node in graph has captures appended for each auth context",
+        "Edges are marked as verified if target URL appears in source node's outgoing links",
+        "PhaseStatus.status is 'completed'",
+        "PhaseStatus contains timing information (started_at, completed_at, duration_ms)",
+        "Exception results are converted to minimal NodeCapture objects with error text"
+      ],
+      "idempotent": false,
+      "is_async": true,
+      "side_effects": [
+        "Creates AuthManager and BrowserPool",
+        "Spawns concurrent async tasks (up to config.capture.concurrency)",
+        "Mutates graph.nodes by appending captures",
+        "Mutates graph.edges by setting verified flags",
+        "Creates screenshot files if config.capture.screenshot is True"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "mutates_state",
+          "target": "graph",
+          "description": "Appends captures to nodes and sets edge verification flags"
+        },
+        {
+          "kind": "network_call",
+          "target": "all node URLs",
+          "description": "Visits each node URL with Playwright"
+        },
+        {
+          "kind": "writes_file",
+          "target": "screenshots",
+          "description": "Creates screenshot files for each captured page"
+        }
+      ],
+      "performance_budget": {
+        "p95_latency_ms": null,
+        "max_memory_mb": null,
+        "complexity": "O(n*m) where n=number of nodes, m=auth contexts per node"
+      }
+    }
+  ],
+  "dependencies": [
+    "asyncio",
+    "time",
+    "datetime",
+    "pathlib",
+    "urllib.parse",
+    "playwright.async_api",
+    "webprobe.auth",
+    "webprobe.browser",
+    "webprobe.config",
+    "webprobe.models"
+  ],
+  "dependency_contracts": {
+    "playwright.async_api": [
+      "Page",
+      "Response"
+    ],
+    "webprobe.auth": [
+      "AuthManager"
+    ],
+    "webprobe.browser": [
+      "BrowserPool"
+    ],
+    "webprobe.config": [
+      "WebprobeConfig"
+    ],
+    "webprobe.models": [
+      "AuthContext",
+      "ConsoleMessage",
+      "ConsoleMessageLevel",
+      "CookieInfo",
+      "FormInfo",
+      "Node",
+      "NodeCapture",
+      "PhaseStatus",
+      "Resource",
+      "ResourceType",
+      "ResponseHeaders",
+      "SiteGraph",
+      "TimingData"
+    ]
+  },
+  "invariants": [
+    "_RESOURCE_TYPE_MAP is a constant dictionary mapping Playwright resource types to internal ResourceType enum",
+    "All unknown resource types map to ResourceType.other",
+    "All unknown console message types map to ConsoleMessageLevel.log",
+    "Screenshot paths follow format: screenshots/{auth_context}/{sanitized_url}.png",
+    "Resource timing duration_ms is always set to 0 in on_response handler (placeholder for future performance API integration)",
+    "All exceptions during page capture are caught and handled gracefully with default values",
+    "Browser contexts are always closed in finally block to prevent resource leaks",
+    "Phase 2 always completes successfully (exceptions converted to error captures)"
+  ],
+  "requires": [],
+  "processing_register": "",
+  "data_access": {
+    "reads": [
+      "filesystem"
+    ],
+    "writes": [
+      "filesystem"
+    ],
+    "rationale": "This module performs browser automation and file I/O for screenshots. It reads configuration, mutates the site graph object, and writes screenshot files.",
+    "side_effects": [
+      {
+        "type": "network_call",
+        "classification": "external",
+        "fields": [
+          "node.state.url"
+        ],
+        "rationale": "Navigates to URLs with Playwright browser"
+      },
+      {
+        "type": "file_write",
+        "classification": "local",
+        "fields": [
+          "screenshot_abs"
+        ],
+        "rationale": "Writes PNG screenshots to run directory"
+      },
+      {
+        "type": "state_mutation",
+        "classification": "internal",
+        "fields": [
+          "graph.nodes[].captures",
+          "graph.edges[].verified"
+        ],
+        "rationale": "Appends capture results to nodes and updates edge verification status"
+      }
+    ]
+  },
+  "authority": {
+    "domains": [],
+    "rationale": null
+  }
+}

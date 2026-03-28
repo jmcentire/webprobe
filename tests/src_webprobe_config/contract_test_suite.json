@@ -1,0 +1,566 @@
+{
+  "component_id": "src_webprobe_config",
+  "contract_version": 1,
+  "test_cases": [
+    {
+      "id": "test_load_config_with_valid_full_config",
+      "description": "Happy path: Load a complete valid configuration file with all fields populated",
+      "function": "load_config",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "path": "config.yaml"
+      },
+      "input_description": "Path to a valid YAML file with complete WebprobeConfig structure",
+      "expected_output_description": "Returns WebprobeConfig instance with all values from file",
+      "expected_error": "",
+      "assertions": [
+        "Result is WebprobeConfig instance",
+        "All fields match YAML content"
+      ]
+    },
+    {
+      "id": "test_load_config_with_none_path_returns_defaults",
+      "description": "Happy path: Load config with None path when no default configs exist",
+      "function": "load_config",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "path": "None"
+      },
+      "input_description": "",
+      "expected_output_description": "Returns WebprobeConfig with all default values",
+      "expected_error": "",
+      "assertions": [
+        "Result is WebprobeConfig instance",
+        "Default values are applied"
+      ]
+    },
+    {
+      "id": "test_load_config_with_pathlib_path_object",
+      "description": "Happy path: Load config using Path object instead of string",
+      "function": "load_config",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "path": "Path('config.yaml')"
+      },
+      "input_description": "",
+      "expected_output_description": "Returns WebprobeConfig from file specified by Path object",
+      "expected_error": "",
+      "assertions": [
+        "Result is WebprobeConfig instance",
+        "Path object is properly handled"
+      ]
+    },
+    {
+      "id": "test_load_config_searches_default_paths",
+      "description": "Happy path: None path searches ./webprobe.yaml then ~/.webprobe/webprobe.yaml",
+      "function": "load_config",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "path": "None"
+      },
+      "input_description": "",
+      "expected_output_description": "Loads from first existing default path or returns defaults",
+      "expected_error": "",
+      "assertions": [
+        "Searches in correct order",
+        "Returns first found or defaults"
+      ]
+    },
+    {
+      "id": "test_load_config_with_partial_config",
+      "description": "Happy path: Load config with only some sections populated, others use defaults",
+      "function": "load_config",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "path": "partial_config.yaml"
+      },
+      "input_description": "",
+      "expected_output_description": "Returns WebprobeConfig with provided values and defaults for missing sections",
+      "expected_error": "",
+      "assertions": [
+        "Provided sections loaded correctly",
+        "Missing sections use defaults"
+      ]
+    },
+    {
+      "id": "test_load_config_with_minimal_config",
+      "description": "Edge case: Load config with only required fields, all optional fields missing",
+      "function": "load_config",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "path": "minimal_config.yaml"
+      },
+      "input_description": "",
+      "expected_output_description": "Returns WebprobeConfig with defaults for optional fields",
+      "expected_error": "",
+      "assertions": [
+        "Required fields present",
+        "Optional fields have defaults"
+      ]
+    },
+    {
+      "id": "test_load_config_empty_config_file",
+      "description": "Edge case: Config file exists but is completely empty",
+      "function": "load_config",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "path": "empty_config.yaml"
+      },
+      "input_description": "",
+      "expected_output_description": "Returns WebprobeConfig with all default values",
+      "expected_error": "",
+      "assertions": [
+        "Result is WebprobeConfig instance",
+        "All defaults applied"
+      ]
+    },
+    {
+      "id": "test_load_config_with_empty_string_path",
+      "description": "Edge case: Path is empty string (not None)",
+      "function": "load_config",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "path": "''"
+      },
+      "input_description": "",
+      "expected_output_description": "Raises explicit_path_not_found error",
+      "expected_error": "explicit_path_not_found",
+      "assertions": [
+        "Error type is explicit_path_not_found"
+      ]
+    },
+    {
+      "id": "test_load_config_boundary_max_depth_zero",
+      "description": "Edge case: CrawlConfig.max_depth set to 0",
+      "function": "load_config",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "path": "boundary_max_depth_zero.yaml"
+      },
+      "input_description": "",
+      "expected_output_description": "Returns WebprobeConfig with max_depth=0 if validator allows",
+      "expected_error": "",
+      "assertions": [
+        "max_depth is 0 or validation error occurs"
+      ]
+    },
+    {
+      "id": "test_load_config_boundary_max_nodes_large",
+      "description": "Edge case: CrawlConfig.max_nodes set to very large value",
+      "function": "load_config",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "path": "boundary_max_nodes_large.yaml"
+      },
+      "input_description": "",
+      "expected_output_description": "Returns WebprobeConfig with large max_nodes value",
+      "expected_error": "",
+      "assertions": [
+        "max_nodes is the large value specified"
+      ]
+    },
+    {
+      "id": "test_load_config_literal_auth_methods_all_variants",
+      "description": "Edge case: Test all Literal variants for auth method",
+      "function": "load_config",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "path": "auth_methods.yaml"
+      },
+      "input_description": "",
+      "expected_output_description": "Returns WebprobeConfig with each auth method variant",
+      "expected_error": "",
+      "assertions": [
+        "All valid Literal values accepted"
+      ]
+    },
+    {
+      "id": "test_load_config_empty_credentials_list",
+      "description": "Edge case: AuthConfig.credentials is empty list",
+      "function": "load_config",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "path": "empty_credentials.yaml"
+      },
+      "input_description": "",
+      "expected_output_description": "Returns WebprobeConfig with empty credentials list",
+      "expected_error": "",
+      "assertions": [
+        "credentials list is empty"
+      ]
+    },
+    {
+      "id": "test_load_config_empty_url_exclude_patterns",
+      "description": "Edge case: CrawlConfig.url_exclude_patterns is empty list",
+      "function": "load_config",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "path": "empty_patterns.yaml"
+      },
+      "input_description": "",
+      "expected_output_description": "Returns WebprobeConfig with empty url_exclude_patterns",
+      "expected_error": "",
+      "assertions": [
+        "url_exclude_patterns is empty"
+      ]
+    },
+    {
+      "id": "test_load_config_special_characters_in_path",
+      "description": "Edge case: Config path contains spaces and special characters",
+      "function": "load_config",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "path": "path with spaces & special.yaml"
+      },
+      "input_description": "",
+      "expected_output_description": "Loads config correctly or raises appropriate error",
+      "expected_error": "",
+      "assertions": [
+        "Path handling is correct"
+      ]
+    },
+    {
+      "id": "test_load_config_relative_vs_absolute_path",
+      "description": "Edge case: Test both relative and absolute paths",
+      "function": "load_config",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "path": "relative or absolute"
+      },
+      "input_description": "",
+      "expected_output_description": "Both path types work correctly",
+      "expected_error": "",
+      "assertions": [
+        "Relative and absolute paths both work"
+      ]
+    },
+    {
+      "id": "test_load_config_explicit_path_not_found",
+      "description": "Error case: Explicit path provided but file does not exist",
+      "function": "load_config",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "path": "nonexistent.yaml"
+      },
+      "input_description": "",
+      "expected_output_description": "Raises explicit_path_not_found error",
+      "expected_error": "explicit_path_not_found",
+      "assertions": [
+        "Error type is explicit_path_not_found",
+        "Error message contains path"
+      ]
+    },
+    {
+      "id": "test_load_config_directory_instead_of_file",
+      "description": "Error case: Explicit path points to directory not file",
+      "function": "load_config",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "path": "directory_path"
+      },
+      "input_description": "",
+      "expected_output_description": "Raises file_read_error or explicit_path_not_found",
+      "expected_error": "file_read_error",
+      "assertions": [
+        "Appropriate error raised for directory"
+      ]
+    },
+    {
+      "id": "test_load_config_yaml_syntax_error",
+      "description": "Error case: YAML file contains invalid syntax",
+      "function": "load_config",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "path": "invalid_syntax.yaml"
+      },
+      "input_description": "",
+      "expected_output_description": "Raises yaml_parsing_error with helpful message",
+      "expected_error": "yaml_parsing_error",
+      "assertions": [
+        "Error type is yaml_parsing_error",
+        "Error message helpful"
+      ]
+    },
+    {
+      "id": "test_load_config_yaml_malformed_structure",
+      "description": "Error case: YAML is valid but structure is malformed (unclosed brackets)",
+      "function": "load_config",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "path": "malformed.yaml"
+      },
+      "input_description": "",
+      "expected_output_description": "Raises yaml_parsing_error",
+      "expected_error": "yaml_parsing_error",
+      "assertions": [
+        "Error type is yaml_parsing_error"
+      ]
+    },
+    {
+      "id": "test_load_config_yaml_tabs_instead_of_spaces",
+      "description": "Error case: YAML uses tabs which can cause parsing issues",
+      "function": "load_config",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "path": "tabs.yaml"
+      },
+      "input_description": "",
+      "expected_output_description": "Raises yaml_parsing_error for tab issues",
+      "expected_error": "yaml_parsing_error",
+      "assertions": [
+        "Error handling for tabs"
+      ]
+    },
+    {
+      "id": "test_load_config_pydantic_validation_wrong_type",
+      "description": "Error case: Field has wrong type (string instead of int)",
+      "function": "load_config",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "path": "wrong_type.yaml"
+      },
+      "input_description": "",
+      "expected_output_description": "Raises pydantic_validation_error for type mismatch",
+      "expected_error": "pydantic_validation_error",
+      "assertions": [
+        "Error type is pydantic_validation_error",
+        "Field name in error"
+      ]
+    },
+    {
+      "id": "test_load_config_pydantic_validation_invalid_literal",
+      "description": "Error case: Literal field has value outside allowed options",
+      "function": "load_config",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "path": "invalid_literal.yaml"
+      },
+      "input_description": "",
+      "expected_output_description": "Raises pydantic_validation_error for invalid Literal value",
+      "expected_error": "pydantic_validation_error",
+      "assertions": [
+        "Error type is pydantic_validation_error",
+        "Valid options listed"
+      ]
+    },
+    {
+      "id": "test_load_config_pydantic_validation_negative_int",
+      "description": "Error case: Integer field has negative value when positive required",
+      "function": "load_config",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "path": "negative_int.yaml"
+      },
+      "input_description": "",
+      "expected_output_description": "Raises pydantic_validation_error for constraint violation",
+      "expected_error": "pydantic_validation_error",
+      "assertions": [
+        "Error type is pydantic_validation_error"
+      ]
+    },
+    {
+      "id": "test_load_config_pydantic_validation_wrong_list_type",
+      "description": "Error case: List field contains wrong element type",
+      "function": "load_config",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "path": "wrong_list_type.yaml"
+      },
+      "input_description": "",
+      "expected_output_description": "Raises pydantic_validation_error for list element type mismatch",
+      "expected_error": "pydantic_validation_error",
+      "assertions": [
+        "Error type is pydantic_validation_error"
+      ]
+    },
+    {
+      "id": "test_load_config_pydantic_validation_nested_error",
+      "description": "Error case: Nested struct validation fails (AuthCredential within AuthConfig)",
+      "function": "load_config",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "path": "nested_error.yaml"
+      },
+      "input_description": "",
+      "expected_output_description": "Raises pydantic_validation_error with nested path",
+      "expected_error": "pydantic_validation_error",
+      "assertions": [
+        "Error type is pydantic_validation_error",
+        "Nested field path in error"
+      ]
+    },
+    {
+      "id": "test_load_config_file_read_permission_denied",
+      "description": "Error case: File exists but cannot be read due to permissions",
+      "function": "load_config",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "path": "no_permission.yaml"
+      },
+      "input_description": "",
+      "expected_output_description": "Raises file_read_error for permission issues",
+      "expected_error": "file_read_error",
+      "assertions": [
+        "Error type is file_read_error"
+      ]
+    },
+    {
+      "id": "test_load_config_file_encoding_error",
+      "description": "Error case: File has encoding issues (invalid UTF-8)",
+      "function": "load_config",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "path": "bad_encoding.yaml"
+      },
+      "input_description": "",
+      "expected_output_description": "Raises file_read_error for encoding issues",
+      "expected_error": "file_read_error",
+      "assertions": [
+        "Error type is file_read_error"
+      ]
+    },
+    {
+      "id": "test_load_config_credentials_not_leaked_in_error",
+      "description": "Error case: Validation error does not leak credential values",
+      "function": "load_config",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "path": "config_with_creds.yaml"
+      },
+      "input_description": "",
+      "expected_output_description": "Error message does not contain bearer_token or cookie_value",
+      "expected_error": "pydantic_validation_error",
+      "assertions": [
+        "bearer_token not in error",
+        "cookie_value not in error"
+      ]
+    },
+    {
+      "id": "test_load_config_invariant_search_paths_order",
+      "description": "Invariant: Search paths are checked in exact order: ./webprobe.yaml then ~/.webprobe/webprobe.yaml",
+      "function": "load_config",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "path": "None"
+      },
+      "input_description": "",
+      "expected_output_description": "Searches paths in documented order",
+      "expected_error": "",
+      "assertions": [
+        "First path checked is ./webprobe.yaml",
+        "Second path is ~/.webprobe/webprobe.yaml"
+      ]
+    },
+    {
+      "id": "test_load_config_invariant_immutable_defaults",
+      "description": "Invariant: Default values are immutable or use Field(default_factory=...)",
+      "function": "load_config",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "path": "None"
+      },
+      "input_description": "",
+      "expected_output_description": "Multiple calls return independent default instances",
+      "expected_error": "",
+      "assertions": [
+        "Modifying one instance does not affect another"
+      ]
+    },
+    {
+      "id": "test_load_config_invariant_pydantic_v2",
+      "description": "Invariant: All models use BaseModel from pydantic v2",
+      "function": "load_config",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "path": "None"
+      },
+      "input_description": "",
+      "expected_output_description": "Models are pydantic v2 BaseModel instances",
+      "expected_error": "",
+      "assertions": [
+        "Uses pydantic v2 API"
+      ]
+    },
+    {
+      "id": "test_load_config_invariant_idempotent_loading",
+      "description": "Invariant: Loading same config file twice gives equivalent results",
+      "function": "load_config",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "path": "config.yaml"
+      },
+      "input_description": "",
+      "expected_output_description": "Two loads produce equal WebprobeConfig instances",
+      "expected_error": "",
+      "assertions": [
+        "First load equals second load"
+      ]
+    }
+  ],
+  "test_language": "python",
+  "generated_code": "\"\"\"\nContract tests for webprobe configuration loader.\n\nTests the load_config function which loads configuration from YAML files\nwith fallback to defaults, validating against Pydantic models.\n\nTest organization:\n1. Happy path tests: Valid configs, None paths, Path objects, default searches\n2. Edge cases: Empty files, boundary values, Literal variants, special paths\n3. Error cases: Missing files, YAML errors, validation errors, permission issues\n4. Invariants: Search path order, immutable defaults, idempotent loading\n\"\"\"\n\nimport pytest\nfrom pathlib import Path\nfrom unittest.mock import mock_open, patch, MagicMock\nimport tempfile\nimport os\n\n# Import the module under test\nfrom src.webprobe.config import (\n    load_config,\n    WebprobeConfig,\n    AuthConfig,\n    AuthCredential,\n    CrawlConfig,\n    CaptureConfig,\n)\n\n\n# ============================================================================\n# HAPPY PATH TESTS\n# ============================================================================\n\n\ndef test_load_config_with_valid_full_config(tmp_path):\n    \"\"\"Happy path: Load a complete valid configuration file with all fields populated.\"\"\"\n    config_file = tmp_path / \"config.yaml\"\n    config_content = \"\"\"\nauth:\n  method: bearer\n  cookie_name: session\n  cookie_value: abc123\n  bearer_token: token_xyz\n  header_name: X-Auth\n  header_value: value1\n  login_url: https://example.com/login\n  auth_indicator: logged_in\n  credentials:\n    - name: cred1\n      method: cookie\n      cookie_name: auth\n      cookie_value: val1\n      bearer_token: \"\"\n      header_name: \"\"\n      header_value: \"\"\ncrawl:\n  max_depth: 5\n  max_nodes: 100\n  respect_robots: true\n  follow_external: false\n  url_exclude_patterns:\n    - \".*\\\\.pdf$\"\n    - \".*logout.*\"\n  request_delay_ms: 500\ncapture:\n  concurrency: 4\n  timeout_ms: 30000\n  screenshot: true\n  viewport_width: 1920\n  viewport_height: 1080\noutput_dir: /tmp/output\n\"\"\"\n    config_file.write_text(config_content)\n    \n    result = load_config(str(config_file))\n    \n    assert isinstance(result, WebprobeConfig)\n    assert result.auth.method == \"bearer\"\n    assert result.auth.bearer_token == \"token_xyz\"\n    assert len(result.auth.credentials) == 1\n    assert result.auth.credentials[0].name == \"cred1\"\n    assert result.crawl.max_depth == 5\n    assert result.crawl.max_nodes == 100\n    assert result.crawl.respect_robots is True\n    assert len(result.crawl.url_exclude_patterns) == 2\n    assert result.capture.concurrency == 4\n    assert result.capture.screenshot is True\n    assert result.output_dir == \"/tmp/output\"\n\n\ndef test_load_config_with_none_path_returns_defaults(tmp_path, monkeypatch):\n    \"\"\"Happy path: Load config with None path when no default configs exist.\"\"\"\n    # Change to a temp directory where no config files exist\n    monkeypatch.chdir(tmp_path)\n    \n    # Mock home to point to temp directory\n    fake_home = tmp_path / \"fake_home\"\n    fake_home.mkdir()\n    monkeypatch.setattr(Path, \"home\", lambda: fake_home)\n    \n    result = load_config(None)\n    \n    assert isinstance(result, WebprobeConfig)\n    # Verify it returns defaults (checking a few key fields)\n    assert isinstance(result.auth, AuthConfig)\n    assert isinstance(result.crawl, CrawlConfig)\n    assert isinstance(result.capture, CaptureConfig)\n\n\ndef test_load_config_with_pathlib_path_object(tmp_path):\n    \"\"\"Happy path: Load config using Path object instead of string.\"\"\"\n    config_file = tmp_path / \"config.yaml\"\n    config_content = \"\"\"\nauth:\n  method: none\ncrawl:\n  max_depth: 3\ncapture:\n  concurrency: 2\noutput_dir: /output\n\"\"\"\n    config_file.write_text(config_content)\n    \n    result = load_config(config_file)  # Pass Path object directly\n    \n    assert isinstance(result, WebprobeConfig)\n    assert result.auth.method == \"none\"\n    assert result.crawl.max_depth == 3\n\n\ndef test_load_config_searches_default_paths(tmp_path, monkeypatch):\n    \"\"\"Happy path: None path searches ./webprobe.yaml then ~/.webprobe/webprobe.yaml.\"\"\"\n    # Setup: Create config in home directory\n    fake_home = tmp_path / \"fake_home\"\n    fake_home.mkdir()\n    webprobe_dir = fake_home / \".webprobe\"\n    webprobe_dir.mkdir()\n    home_config = webprobe_dir / \"webprobe.yaml\"\n    home_config.write_text(\"auth:\\n  method: header\\ncrawl:\\n  max_depth: 7\\ncapture:\\n  concurrency: 3\\noutput_dir: /home/output\")\n    \n    # Change to temp directory (no local webprobe.yaml)\n    work_dir = tmp_path / \"work\"\n    work_dir.mkdir()\n    monkeypatch.chdir(work_dir)\n    monkeypatch.setattr(Path, \"home\", lambda: fake_home)\n    \n    result = load_config(None)\n    \n    # Should load from home directory since local doesn't exist\n    assert isinstance(result, WebprobeConfig)\n    assert result.auth.method == \"header\"\n    assert result.crawl.max_depth == 7\n\n\ndef test_load_config_prefers_local_over_home(tmp_path, monkeypatch):\n    \"\"\"Happy path: When both default paths exist, prefer ./webprobe.yaml.\"\"\"\n    # Setup home config\n    fake_home = tmp_path / \"fake_home\"\n    fake_home.mkdir()\n    webprobe_dir = fake_home / \".webprobe\"\n    webprobe_dir.mkdir()\n    home_config = webprobe_dir / \"webprobe.yaml\"\n    home_config.write_text(\"auth:\\n  method: header\\ncrawl:\\n  max_depth: 99\\ncapture:\\n  concurrency: 1\\noutput_dir: /home\")\n    \n    # Setup local config (should take precedence)\n    work_dir = tmp_path / \"work\"\n    work_dir.mkdir()\n    local_config = work_dir / \"webprobe.yaml\"\n    local_config.write_text(\"auth:\\n  method: cookie\\ncrawl:\\n  max_depth: 3\\ncapture:\\n  concurrency: 2\\noutput_dir: /local\")\n    \n    monkeypatch.chdir(work_dir)\n    monkeypatch.setattr(Path, \"home\", lambda: fake_home)\n    \n    result = load_config(None)\n    \n    # Should load from local, not home\n    assert result.auth.method == \"cookie\"\n    assert result.crawl.max_depth == 3\n    assert result.output_dir == \"/local\"\n\n\ndef test_load_config_with_partial_config(tmp_path):\n    \"\"\"Happy path: Load config with only some sections populated, others use defaults.\"\"\"\n    config_file = tmp_path / \"partial_config.yaml\"\n    config_content = \"\"\"\ncrawl:\n  max_depth: 10\n  max_nodes: 200\n\"\"\"\n    config_file.write_text(config_content)\n    \n    result = load_config(str(config_file))\n    \n    assert isinstance(result, WebprobeConfig)\n    assert result.crawl.max_depth == 10\n    assert result.crawl.max_nodes == 200\n    # Other sections should have defaults\n    assert isinstance(result.auth, AuthConfig)\n    assert isinstance(result.capture, CaptureConfig)\n\n\n# ============================================================================\n# EDGE CASE TESTS\n# ============================================================================\n\n\ndef test_load_config_with_minimal_config(tmp_path):\n    \"\"\"Edge case: Load config with only required fields, all optional fields missing.\"\"\"\n    config_file = tmp_path / \"minimal_config.yaml\"\n    # Minimal valid config - testing what fields are truly required\n    config_content = \"\"\"\nauth:\n  method: none\ncrawl:\n  max_depth: 1\ncapture:\n  concurrency: 1\noutput_dir: /out\n\"\"\"\n    config_file.write_text(config_content)\n    \n    result = load_config(str(config_file))\n    \n    assert isinstance(result, WebprobeConfig)\n    assert result.auth.method == \"none\"\n    assert result.crawl.max_depth == 1\n\n\ndef test_load_config_empty_config_file(tmp_path):\n    \"\"\"Edge case: Config file exists but is completely empty.\"\"\"\n    config_file = tmp_path / \"empty_config.yaml\"\n    config_file.write_text(\"\")\n    \n    result = load_config(str(config_file))\n    \n    # Empty file should result in defaults\n    assert isinstance(result, WebprobeConfig)\n\n\ndef test_load_config_with_empty_string_path():\n    \"\"\"Edge case: Path is empty string (not None).\"\"\"\n    with pytest.raises(Exception) as exc_info:\n        load_config(\"\")\n    \n    # Empty string path should raise explicit_path_not_found\n    assert \"not found\" in str(exc_info.value).lower() or \"exist\" in str(exc_info.value).lower()\n\n\ndef test_load_config_boundary_max_depth_zero(tmp_path):\n    \"\"\"Edge case: CrawlConfig.max_depth set to 0.\"\"\"\n    config_file = tmp_path / \"boundary_max_depth_zero.yaml\"\n    config_content = \"\"\"\ncrawl:\n  max_depth: 0\n  max_nodes: 10\ncapture:\n  concurrency: 1\noutput_dir: /out\n\"\"\"\n    config_file.write_text(config_content)\n    \n    try:\n        result = load_config(str(config_file))\n        # If it succeeds, verify the value\n        assert result.crawl.max_depth == 0\n    except Exception as e:\n        # If validation rejects it, that's also acceptable\n        assert \"validation\" in str(e).lower() or \"max_depth\" in str(e).lower()\n\n\ndef test_load_config_boundary_max_nodes_large(tmp_path):\n    \"\"\"Edge case: CrawlConfig.max_nodes set to very large value.\"\"\"\n    config_file = tmp_path / \"boundary_max_nodes_large.yaml\"\n    config_content = \"\"\"\ncrawl:\n  max_depth: 5\n  max_nodes: 999999999\ncapture:\n  concurrency: 1\noutput_dir: /out\n\"\"\"\n    config_file.write_text(config_content)\n    \n    result = load_config(str(config_file))\n    \n    assert result.crawl.max_nodes == 999999999\n\n\ndef test_load_config_literal_auth_methods_all_variants(tmp_path):\n    \"\"\"Edge case: Test all Literal variants for auth method.\"\"\"\n    methods = [\"cookie\", \"bearer\", \"header\", \"none\"]\n    \n    for method in methods:\n        config_file = tmp_path / f\"auth_{method}.yaml\"\n        config_content = f\"\"\"\nauth:\n  method: {method}\ncrawl:\n  max_depth: 1\ncapture:\n  concurrency: 1\noutput_dir: /out\n\"\"\"\n        config_file.write_text(config_content)\n        \n        result = load_config(str(config_file))\n        assert result.auth.method == method\n\n\ndef test_load_config_empty_credentials_list(tmp_path):\n    \"\"\"Edge case: AuthConfig.credentials is empty list.\"\"\"\n    config_file = tmp_path / \"empty_credentials.yaml\"\n    config_content = \"\"\"\nauth:\n  method: none\n  credentials: []\ncrawl:\n  max_depth: 1\ncapture:\n  concurrency: 1\noutput_dir: /out\n\"\"\"\n    config_file.write_text(config_content)\n    \n    result = load_config(str(config_file))\n    \n    assert result.auth.credentials == []\n\n\ndef test_load_config_empty_url_exclude_patterns(tmp_path):\n    \"\"\"Edge case: CrawlConfig.url_exclude_patterns is empty list.\"\"\"\n    config_file = tmp_path / \"empty_patterns.yaml\"\n    config_content = \"\"\"\ncrawl:\n  max_depth: 1\n  url_exclude_patterns: []\ncapture:\n  concurrency: 1\noutput_dir: /out\n\"\"\"\n    config_file.write_text(config_content)\n    \n    result = load_config(str(config_file))\n    \n    assert result.crawl.url_exclude_patterns == []\n\n\ndef test_load_config_special_characters_in_path(tmp_path):\n    \"\"\"Edge case: Config path contains spaces and special characters.\"\"\"\n    config_file = tmp_path / \"path with spaces & special.yaml\"\n    config_content = \"\"\"\nauth:\n  method: none\ncrawl:\n  max_depth: 1\ncapture:\n  concurrency: 1\noutput_dir: /out\n\"\"\"\n    config_file.write_text(config_content)\n    \n    result = load_config(str(config_file))\n    \n    assert isinstance(result, WebprobeConfig)\n\n\ndef test_load_config_relative_vs_absolute_path(tmp_path, monkeypatch):\n    \"\"\"Edge case: Test both relative and absolute paths.\"\"\"\n    # Setup\n    work_dir = tmp_path / \"work\"\n    work_dir.mkdir()\n    config_file = work_dir / \"config.yaml\"\n    config_content = \"\"\"\nauth:\n  method: none\ncrawl:\n  max_depth: 2\ncapture:\n  concurrency: 1\noutput_dir: /out\n\"\"\"\n    config_file.write_text(config_content)\n    \n    # Test absolute path\n    result_abs = load_config(str(config_file.absolute()))\n    assert isinstance(result_abs, WebprobeConfig)\n    assert result_abs.crawl.max_depth == 2\n    \n    # Test relative path\n    monkeypatch.chdir(work_dir)\n    result_rel = load_config(\"config.yaml\")\n    assert isinstance(result_rel, WebprobeConfig)\n    assert result_rel.crawl.max_depth == 2\n\n\n# ============================================================================\n# ERROR CASE TESTS\n# ============================================================================\n\n\ndef test_load_config_explicit_path_not_found():\n    \"\"\"Error case: Explicit path provided but file does not exist.\"\"\"\n    with pytest.raises(Exception) as exc_info:\n        load_config(\"nonexistent_file_12345.yaml\")\n    \n    error_msg = str(exc_info.value).lower()\n    assert \"not found\" in error_msg or \"exist\" in error_msg or \"no such file\" in error_msg\n\n\ndef test_load_config_directory_instead_of_file(tmp_path):\n    \"\"\"Error case: Explicit path points to directory not file.\"\"\"\n    directory = tmp_path / \"a_directory\"\n    directory.mkdir()\n    \n    with pytest.raises(Exception) as exc_info:\n        load_config(str(directory))\n    \n    # Should raise an error (file_read_error or similar)\n    assert exc_info.value is not None\n\n\ndef test_load_config_yaml_syntax_error(tmp_path):\n    \"\"\"Error case: YAML file contains invalid syntax.\"\"\"\n    config_file = tmp_path / \"invalid_syntax.yaml\"\n    config_content = \"\"\"\nauth:\n  method: none\n  unclosed: [bracket, value\ncrawl:\n  max_depth: 1\n\"\"\"\n    config_file.write_text(config_content)\n    \n    with pytest.raises(Exception) as exc_info:\n        load_config(str(config_file))\n    \n    error_msg = str(exc_info.value).lower()\n    assert \"yaml\" in error_msg or \"parse\" in error_msg or \"syntax\" in error_msg\n\n\ndef test_load_config_yaml_malformed_structure(tmp_path):\n    \"\"\"Error case: YAML is valid but structure is malformed.\"\"\"\n    config_file = tmp_path / \"malformed.yaml\"\n    config_content = \"\"\"\nauth:\nmethod: none\n  extra_indent: wrong\n\"\"\"\n    config_file.write_text(config_content)\n    \n    with pytest.raises(Exception) as exc_info:\n        load_config(str(config_file))\n    \n    error_msg = str(exc_info.value).lower()\n    assert \"yaml\" in error_msg or \"parse\" in error_msg or \"validation\" in error_msg\n\n\ndef test_load_config_yaml_tabs_instead_of_spaces(tmp_path):\n    \"\"\"Error case: YAML uses tabs which can cause parsing issues.\"\"\"\n    config_file = tmp_path / \"tabs.yaml\"\n    # Using tabs in YAML\n    config_content = \"auth:\\n\\tmethod: none\\ncrawl:\\n\\tmax_depth: 1\"\n    config_file.write_text(config_content)\n    \n    with pytest.raises(Exception) as exc_info:\n        load_config(str(config_file))\n    \n    error_msg = str(exc_info.value).lower()\n    # Might be yaml error or validation error\n    assert \"yaml\" in error_msg or \"parse\" in error_msg or \"validation\" in error_msg\n\n\ndef test_load_config_pydantic_validation_wrong_type(tmp_path):\n    \"\"\"Error case: Field has wrong type (string instead of int).\"\"\"\n    config_file = tmp_path / \"wrong_type.yaml\"\n    config_content = \"\"\"\ncrawl:\n  max_depth: \"not_a_number\"\n  max_nodes: 10\ncapture:\n  concurrency: 1\noutput_dir: /out\n\"\"\"\n    config_file.write_text(config_content)\n    \n    with pytest.raises(Exception) as exc_info:\n        load_config(str(config_file))\n    \n    error_msg = str(exc_info.value).lower()\n    assert \"validation\" in error_msg or \"type\" in error_msg or \"int\" in error_msg\n\n\ndef test_load_config_pydantic_validation_invalid_literal(tmp_path):\n    \"\"\"Error case: Literal field has value outside allowed options.\"\"\"\n    config_file = tmp_path / \"invalid_literal.yaml\"\n    config_content = \"\"\"\nauth:\n  method: invalid_method\ncrawl:\n  max_depth: 1\ncapture:\n  concurrency: 1\noutput_dir: /out\n\"\"\"\n    config_file.write_text(config_content)\n    \n    with pytest.raises(Exception) as exc_info:\n        load_config(str(config_file))\n    \n    error_msg = str(exc_info.value).lower()\n    assert \"validation\" in error_msg or \"literal\" in error_msg or \"invalid_method\" in error_msg\n\n\ndef test_load_config_pydantic_validation_negative_int(tmp_path):\n    \"\"\"Error case: Integer field has negative value when positive required.\"\"\"\n    config_file = tmp_path / \"negative_int.yaml\"\n    config_content = \"\"\"\ncrawl:\n  max_depth: -5\n  max_nodes: 10\ncapture:\n  concurrency: 1\noutput_dir: /out\n\"\"\"\n    config_file.write_text(config_content)\n    \n    with pytest.raises(Exception) as exc_info:\n        load_config(str(config_file))\n    \n    error_msg = str(exc_info.value).lower()\n    assert \"validation\" in error_msg or \"negative\" in error_msg or \"greater\" in error_msg\n\n\ndef test_load_config_pydantic_validation_wrong_list_type(tmp_path):\n    \"\"\"Error case: List field contains wrong element type.\"\"\"\n    config_file = tmp_path / \"wrong_list_type.yaml\"\n    config_content = \"\"\"\ncrawl:\n  max_depth: 1\n  url_exclude_patterns:\n    - \"valid_string\"\n    - 12345\n    - \"another_string\"\ncapture:\n  concurrency: 1\noutput_dir: /out\n\"\"\"\n    config_file.write_text(config_content)\n    \n    with pytest.raises(Exception) as exc_info:\n        load_config(str(config_file))\n    \n    error_msg = str(exc_info.value).lower()\n    assert \"validation\" in error_msg or \"type\" in error_msg or \"str\" in error_msg\n\n\ndef test_load_config_pydantic_validation_nested_error(tmp_path):\n    \"\"\"Error case: Nested struct validation fails (AuthCredential within AuthConfig).\"\"\"\n    config_file = tmp_path / \"nested_error.yaml\"\n    config_content = \"\"\"\nauth:\n  method: bearer\n  credentials:\n    - name: cred1\n      method: invalid_cred_method\n      cookie_name: \"\"\n      cookie_value: \"\"\n      bearer_token: \"\"\n      header_name: \"\"\n      header_value: \"\"\ncrawl:\n  max_depth: 1\ncapture:\n  concurrency: 1\noutput_dir: /out\n\"\"\"\n    config_file.write_text(config_content)\n    \n    with pytest.raises(Exception) as exc_info:\n        load_config(str(config_file))\n    \n    error_msg = str(exc_info.value).lower()\n    assert \"validation\" in error_msg or \"credentials\" in error_msg or \"method\" in error_msg\n\n\ndef test_load_config_file_read_permission_denied(tmp_path):\n    \"\"\"Error case: File exists but cannot be read due to permissions.\"\"\"\n    config_file = tmp_path / \"no_permission.yaml\"\n    config_file.write_text(\"auth:\\n  method: none\\ncrawl:\\n  max_depth: 1\\ncapture:\\n  concurrency: 1\\noutput_dir: /out\")\n    \n    # Remove read permissions\n    os.chmod(config_file, 0o000)\n    \n    try:\n        with pytest.raises(Exception) as exc_info:\n            load_config(str(config_file))\n        \n        error_msg = str(exc_info.value).lower()\n        assert \"permission\" in error_msg or \"read\" in error_msg or \"access\" in error_msg\n    finally:\n        # Restore permissions for cleanup\n        os.chmod(config_file, 0o644)\n\n\ndef test_load_config_file_encoding_error(tmp_path):\n    \"\"\"Error case: File has encoding issues (invalid UTF-8).\"\"\"\n    config_file = tmp_path / \"bad_encoding.yaml\"\n    # Write invalid UTF-8 bytes\n    with open(config_file, 'wb') as f:\n        f.write(b\"auth:\\n  method: \\xff\\xfe invalid utf8\\n\")\n    \n    with pytest.raises(Exception) as exc_info:\n        load_config(str(config_file))\n    \n    # Should raise file_read_error or similar\n    assert exc_info.value is not None\n\n\ndef test_load_config_credentials_not_leaked_in_error(tmp_path):\n    \"\"\"Error case: Validation error does not leak credential values.\"\"\"\n    config_file = tmp_path / \"config_with_creds.yaml\"\n    secret_token = \"SUPER_SECRET_TOKEN_12345\"\n    secret_cookie = \"SECRET_COOKIE_VALUE_67890\"\n    \n    config_content = f\"\"\"\nauth:\n  method: bearer\n  bearer_token: {secret_token}\n  cookie_value: {secret_cookie}\n  credentials:\n    - name: cred1\n      method: invalid_method_xyz\n      cookie_name: \"\"\n      cookie_value: \"\"\n      bearer_token: \"\"\n      header_name: \"\"\n      header_value: \"\"\ncrawl:\n  max_depth: 1\ncapture:\n  concurrency: 1\noutput_dir: /out\n\"\"\"\n    config_file.write_text(config_content)\n    \n    with pytest.raises(Exception) as exc_info:\n        load_config(str(config_file))\n    \n    error_msg = str(exc_info.value)\n    # Verify secrets are not in error message\n    assert secret_token not in error_msg\n    assert secret_cookie not in error_msg\n\n\n# ============================================================================\n# INVARIANT TESTS\n# ============================================================================\n\n\ndef test_load_config_invariant_search_paths_order(tmp_path, monkeypatch):\n    \"\"\"Invariant: Search paths are checked in exact order: ./webprobe.yaml then ~/.webprobe/webprobe.yaml.\"\"\"\n    # Setup both configs with different values\n    fake_home = tmp_path / \"fake_home\"\n    fake_home.mkdir()\n    webprobe_dir = fake_home / \".webprobe\"\n    webprobe_dir.mkdir()\n    home_config = webprobe_dir / \"webprobe.yaml\"\n    home_config.write_text(\"auth:\\n  method: header\\ncrawl:\\n  max_depth: 999\\ncapture:\\n  concurrency: 1\\noutput_dir: /home\")\n    \n    work_dir = tmp_path / \"work\"\n    work_dir.mkdir()\n    local_config = work_dir / \"webprobe.yaml\"\n    local_config.write_text(\"auth:\\n  method: cookie\\ncrawl:\\n  max_depth: 111\\ncapture:\\n  concurrency: 1\\noutput_dir: /local\")\n    \n    monkeypatch.chdir(work_dir)\n    monkeypatch.setattr(Path, \"home\", lambda: fake_home)\n    \n    result = load_config(None)\n    \n    # Should load from local (first in search order)\n    assert result.crawl.max_depth == 111\n    assert result.output_dir == \"/local\"\n\n\ndef test_load_config_invariant_immutable_defaults(tmp_path, monkeypatch):\n    \"\"\"Invariant: Default values are immutable or use Field(default_factory=...).\"\"\"\n    monkeypatch.chdir(tmp_path)\n    fake_home = tmp_path / \"fake_home\"\n    fake_home.mkdir()\n    monkeypatch.setattr(Path, \"home\", lambda: fake_home)\n    \n    # Load defaults twice\n    result1 = load_config(None)\n    result2 = load_config(None)\n    \n    # Modify one instance\n    result1.crawl.url_exclude_patterns.append(\"test_pattern\")\n    \n    # Verify the other is unaffected\n    assert \"test_pattern\" not in result2.crawl.url_exclude_patterns\n\n\ndef test_load_config_invariant_pydantic_v2(tmp_path, monkeypatch):\n    \"\"\"Invariant: All models use BaseModel from pydantic v2.\"\"\"\n    monkeypatch.chdir(tmp_path)\n    fake_home = tmp_path / \"fake_home\"\n    fake_home.mkdir()\n    monkeypatch.setattr(Path, \"home\", lambda: fake_home)\n    \n    result = load_config(None)\n    \n    # Check that result uses pydantic v2 API\n    # Pydantic v2 has model_dump() method, v1 has dict()\n    assert hasattr(result, 'model_dump') or hasattr(result, 'dict')\n    \n    # Better check: Pydantic v2 BaseModel has model_fields\n    assert hasattr(WebprobeConfig, 'model_fields') or hasattr(WebprobeConfig, '__fields__')\n\n\ndef test_load_config_invariant_idempotent_loading(tmp_path):\n    \"\"\"Invariant: Loading same config file twice gives equivalent results.\"\"\"\n    config_file = tmp_path / \"config.yaml\"\n    config_content = \"\"\"\nauth:\n  method: bearer\n  bearer_token: token123\n  credentials:\n    - name: cred1\n      method: cookie\n      cookie_name: auth\n      cookie_value: val1\n      bearer_token: \"\"\n      header_name: \"\"\n      header_value: \"\"\ncrawl:\n  max_depth: 5\n  max_nodes: 50\n  url_exclude_patterns:\n    - \"pattern1\"\n    - \"pattern2\"\ncapture:\n  concurrency: 3\n  screenshot: true\noutput_dir: /output\n\"\"\"\n    config_file.write_text(config_content)\n    \n    result1 = load_config(str(config_file))\n    result2 = load_config(str(config_file))\n    \n    # Compare key fields\n    assert result1.auth.method == result2.auth.method\n    assert result1.auth.bearer_token == result2.auth.bearer_token\n    assert result1.crawl.max_depth == result2.crawl.max_depth\n    assert result1.crawl.max_nodes == result2.crawl.max_nodes\n    assert result1.crawl.url_exclude_patterns == result2.crawl.url_exclude_patterns\n    assert result1.capture.concurrency == result2.capture.concurrency\n    assert result1.output_dir == result2.output_dir\n    assert len(result1.auth.credentials) == len(result2.auth.credentials)\n\n\n# ============================================================================\n# ADDITIONAL INTEGRATION TESTS\n# ============================================================================\n\n\ndef test_load_config_yaml_with_comments(tmp_path):\n    \"\"\"Integration: YAML file with comments should parse correctly.\"\"\"\n    config_file = tmp_path / \"config_with_comments.yaml\"\n    config_content = \"\"\"\n# This is a comment\nauth:\n  method: none  # inline comment\n  # another comment\ncrawl:\n  max_depth: 3  # max crawl depth\ncapture:\n  concurrency: 2\noutput_dir: /out\n\"\"\"\n    config_file.write_text(config_content)\n    \n    result = load_config(str(config_file))\n    \n    assert isinstance(result, WebprobeConfig)\n    assert result.crawl.max_depth == 3\n\n\ndef test_load_config_multiple_credentials(tmp_path):\n    \"\"\"Integration: Load config with multiple credentials in list.\"\"\"\n    config_file = tmp_path / \"multi_creds.yaml\"\n    config_content = \"\"\"\nauth:\n  method: bearer\n  credentials:\n    - name: cred1\n      method: cookie\n      cookie_name: auth1\n      cookie_value: val1\n      bearer_token: \"\"\n      header_name: \"\"\n      header_value: \"\"\n    - name: cred2\n      method: bearer\n      cookie_name: \"\"\n      cookie_value: \"\"\n      bearer_token: token2\n      header_name: \"\"\n      header_value: \"\"\n    - name: cred3\n      method: header\n      cookie_name: \"\"\n      cookie_value: \"\"\n      bearer_token: \"\"\n      header_name: X-Custom\n      header_value: custom_val\ncrawl:\n  max_depth: 1\ncapture:\n  concurrency: 1\noutput_dir: /out\n\"\"\"\n    config_file.write_text(config_content)\n    \n    result = load_config(str(config_file))\n    \n    assert len(result.auth.credentials) == 3\n    assert result.auth.credentials[0].name == \"cred1\"\n    assert result.auth.credentials[0].method == \"cookie\"\n    assert result.auth.credentials[1].name == \"cred2\"\n    assert result.auth.credentials[1].method == \"bearer\"\n    assert result.auth.credentials[2].name == \"cred3\"\n    assert result.auth.credentials[2].method == \"header\"\n\n\ndef test_load_config_all_boolean_values(tmp_path):\n    \"\"\"Integration: Test various boolean representations in YAML.\"\"\"\n    config_file = tmp_path / \"booleans.yaml\"\n    config_content = \"\"\"\ncrawl:\n  max_depth: 1\n  respect_robots: true\n  follow_external: false\ncapture:\n  concurrency: 1\n  screenshot: yes\noutput_dir: /out\n\"\"\"\n    config_file.write_text(config_content)\n    \n    result = load_config(str(config_file))\n    \n    assert result.crawl.respect_robots is True\n    assert result.crawl.follow_external is False\n    # YAML should convert 'yes' to True\n    assert result.capture.screenshot is True\n\n\ndef test_load_config_numeric_boundaries(tmp_path):\n    \"\"\"Integration: Test various numeric boundary values.\"\"\"\n    config_file = tmp_path / \"numeric_boundaries.yaml\"\n    config_content = \"\"\"\ncrawl:\n  max_depth: 1\n  max_nodes: 1\n  request_delay_ms: 0\ncapture:\n  concurrency: 1\n  timeout_ms: 1\n  viewport_width: 1\n  viewport_height: 1\noutput_dir: /out\n\"\"\"\n    config_file.write_text(config_content)\n    \n    result = load_config(str(config_file))\n    \n    assert result.crawl.request_delay_ms == 0\n    assert result.capture.timeout_ms == 1\n    assert result.capture.viewport_width == 1\n    assert result.capture.viewport_height == 1\n"
+}

@@ -1,0 +1,172 @@
+{
+  "component_id": "src_webprobe_reporter",
+  "name": "Webprobe Reporter",
+  "description": "Phase 4 report generation module that produces JSON and HTML output files from webprobe Run data. Generates comprehensive HTML reports with embedded CSS styling using Jinja2 templates, displaying site graph metrics, page details, security findings, broken links, auth violations, timing outliers, and exploration costs. Also exports raw JSON reports of the complete run data.",
+  "version": 1,
+  "types": [
+    {
+      "name": "HTML_TEMPLATE",
+      "kind": "primitive",
+      "fields": [],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "Jinja2 Template instance containing the full HTML report structure with embedded CSS. Uses GitHub dark theme styling and renders run metadata, analysis metrics, phase timing, page details, security findings, broken links, auth violations, and timing outliers.",
+      "owner_component": ""
+    }
+  ],
+  "functions": [
+    {
+      "name": "generate_report",
+      "description": "Phase 4: Generate JSON and/or HTML reports from a webprobe Run. Writes report.json (full run data dump) and/or report.html (styled visual report) to the specified run directory. Returns a PhaseStatus tracking execution timing and completion status.",
+      "inputs": [
+        {
+          "name": "run",
+          "type_ref": "Run",
+          "required": true,
+          "default": "",
+          "description": "The complete webprobe Run object containing graph, analysis, phases, and metadata to be reported",
+          "validators": []
+        },
+        {
+          "name": "run_dir",
+          "type_ref": "Path",
+          "required": true,
+          "default": "",
+          "description": "Directory path where report files will be written (report.json and/or report.html)",
+          "validators": []
+        },
+        {
+          "name": "formats",
+          "type_ref": "list[str] | None",
+          "required": false,
+          "default": "None",
+          "description": "List of output formats to generate. Supports 'json' and 'html'. Defaults to both if None.",
+          "validators": []
+        }
+      ],
+      "output_type": "PhaseStatus",
+      "error_cases": [
+        {
+          "name": "FileWriteError",
+          "condition": "run_dir does not exist or is not writable",
+          "error_type": "OSError | PermissionError",
+          "error_data": {}
+        },
+        {
+          "name": "SerializationError",
+          "condition": "run.model_dump_json() fails due to non-serializable data",
+          "error_type": "TypeError | ValueError",
+          "error_data": {}
+        },
+        {
+          "name": "TemplateRenderError",
+          "condition": "HTML_TEMPLATE.render() fails due to missing attributes in run object or template syntax issues",
+          "error_type": "jinja2.TemplateError",
+          "error_data": {}
+        },
+        {
+          "name": "ImportError",
+          "condition": "webprobe.__version__ cannot be imported when generating HTML",
+          "error_type": "ImportError",
+          "error_data": {}
+        }
+      ],
+      "preconditions": [
+        "run_dir must be a valid Path object",
+        "run must be a valid Run instance with populated graph",
+        "formats if provided must contain only 'json' and/or 'html' strings"
+      ],
+      "postconditions": [
+        "Returns PhaseStatus with phase='report', status='completed', and duration_ms populated",
+        "If 'json' in formats: report.json file written to run_dir containing run.model_dump_json(indent=2)",
+        "If 'html' in formats: report.html file written to run_dir with rendered HTML template",
+        "PhaseStatus.started_at and completed_at are set to ISO format UTC timestamps",
+        "PhaseStatus.duration_ms contains elapsed time in milliseconds"
+      ],
+      "idempotent": true,
+      "is_async": false,
+      "side_effects": [
+        "Writes report.json to filesystem if 'json' in formats",
+        "Writes report.html to filesystem if 'html' in formats",
+        "Imports webprobe.__version__ dynamically when HTML format is requested"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "writes_file",
+          "target": "run_dir/report.json",
+          "description": "JSON dump of complete Run data with 2-space indentation"
+        },
+        {
+          "kind": "writes_file",
+          "target": "run_dir/report.html",
+          "description": "Rendered HTML report from Jinja2 template with analysis visualization"
+        }
+      ],
+      "performance_budget": null
+    }
+  ],
+  "dependencies": [
+    "json",
+    "time",
+    "datetime",
+    "pathlib",
+    "jinja2",
+    "webprobe.models"
+  ],
+  "dependency_contracts": {
+    "webprobe.models": [
+      "Run",
+      "PhaseStatus"
+    ],
+    "jinja2": [
+      "Template"
+    ],
+    "pathlib": [
+      "Path"
+    ],
+    "datetime": [
+      "datetime",
+      "timezone"
+    ],
+    "time": [
+      "monotonic"
+    ],
+    "json": []
+  },
+  "invariants": [
+    "HTML_TEMPLATE is a module-level constant Template instance initialized once",
+    "Default formats are ['json', 'html'] when formats parameter is None",
+    "PhaseStatus.phase is always set to 'report'",
+    "PhaseStatus.status transitions from 'running' to 'completed' on success",
+    "Time measurements use time.monotonic() for duration and datetime.now(timezone.utc) for timestamps",
+    "HTML template expects specific Run model structure with graph.nodes, analysis, phases, and explore_cost attributes",
+    "Nodes in HTML are sorted by node.id for consistent output ordering"
+  ],
+  "requires": [],
+  "processing_register": "",
+  "data_access": {
+    "reads": [
+      "filesystem"
+    ],
+    "writes": [
+      "filesystem"
+    ],
+    "rationale": "Reads from webprobe.__version__ module attribute and writes JSON/HTML report files to run_dir",
+    "side_effects": [
+      {
+        "type": "file_write",
+        "classification": "output_artifact",
+        "fields": [
+          "report.json",
+          "report.html"
+        ],
+        "rationale": "Primary output phase that persists webprobe run results to disk for user consumption"
+      }
+    ]
+  },
+  "authority": {
+    "domains": [],
+    "rationale": null
+  }
+}

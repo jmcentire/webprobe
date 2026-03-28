@@ -1,0 +1,413 @@
+{
+  "component_id": "src_webprobe_config",
+  "name": "Webprobe Configuration Loader",
+  "description": "Configuration loading module that reads YAML files from standard search paths and validates them using Pydantic v2 models. Provides structured configuration for authentication, crawling, and capture behavior with fallback to defaults.",
+  "version": 1,
+  "types": [
+    {
+      "name": "AuthCredential",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "name",
+          "type_ref": "str",
+          "required": false,
+          "default": "\"default\"",
+          "description": "Credential identifier",
+          "validators": []
+        },
+        {
+          "name": "method",
+          "type_ref": "Literal['cookie', 'bearer', 'header']",
+          "required": false,
+          "default": "\"cookie\"",
+          "description": "Authentication method type",
+          "validators": []
+        },
+        {
+          "name": "cookie_name",
+          "type_ref": "str",
+          "required": false,
+          "default": "\"\"",
+          "description": "Cookie name for cookie-based auth",
+          "validators": []
+        },
+        {
+          "name": "cookie_value",
+          "type_ref": "str",
+          "required": false,
+          "default": "\"\"",
+          "description": "Cookie value for cookie-based auth",
+          "validators": []
+        },
+        {
+          "name": "bearer_token",
+          "type_ref": "str",
+          "required": false,
+          "default": "\"\"",
+          "description": "Bearer token for bearer auth",
+          "validators": []
+        },
+        {
+          "name": "header_name",
+          "type_ref": "str",
+          "required": false,
+          "default": "\"\"",
+          "description": "Header name for header-based auth",
+          "validators": []
+        },
+        {
+          "name": "header_value",
+          "type_ref": "str",
+          "required": false,
+          "default": "\"\"",
+          "description": "Header value for header-based auth",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "A single named credential for auth testing",
+      "owner_component": "src_webprobe_config"
+    },
+    {
+      "name": "AuthConfig",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "method",
+          "type_ref": "Literal['cookie', 'bearer', 'header', 'none']",
+          "required": false,
+          "default": "\"none\"",
+          "description": "Primary authentication method",
+          "validators": []
+        },
+        {
+          "name": "cookie_name",
+          "type_ref": "str",
+          "required": false,
+          "default": "\"\"",
+          "description": "Cookie name for cookie-based auth",
+          "validators": []
+        },
+        {
+          "name": "cookie_value",
+          "type_ref": "str",
+          "required": false,
+          "default": "\"\"",
+          "description": "Cookie value for cookie-based auth",
+          "validators": []
+        },
+        {
+          "name": "bearer_token",
+          "type_ref": "str",
+          "required": false,
+          "default": "\"\"",
+          "description": "Bearer token for bearer auth",
+          "validators": []
+        },
+        {
+          "name": "header_name",
+          "type_ref": "str",
+          "required": false,
+          "default": "\"\"",
+          "description": "Header name for header-based auth",
+          "validators": []
+        },
+        {
+          "name": "header_value",
+          "type_ref": "str",
+          "required": false,
+          "default": "\"\"",
+          "description": "Header value for header-based auth",
+          "validators": []
+        },
+        {
+          "name": "login_url",
+          "type_ref": "str",
+          "required": false,
+          "default": "\"/login\"",
+          "description": "URL path for login endpoint",
+          "validators": []
+        },
+        {
+          "name": "auth_indicator",
+          "type_ref": "str",
+          "required": false,
+          "default": "\"\"",
+          "description": "String to detect successful authentication",
+          "validators": []
+        },
+        {
+          "name": "credentials",
+          "type_ref": "list[AuthCredential]",
+          "required": false,
+          "default": "[]",
+          "description": "List of credentials for multi-credential testing",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "Authentication injection settings",
+      "owner_component": "src_webprobe_config"
+    },
+    {
+      "name": "CrawlConfig",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "max_depth",
+          "type_ref": "int",
+          "required": false,
+          "default": "10",
+          "description": "Maximum crawl depth from seed URL",
+          "validators": []
+        },
+        {
+          "name": "max_nodes",
+          "type_ref": "int",
+          "required": false,
+          "default": "500",
+          "description": "Maximum number of nodes to crawl",
+          "validators": []
+        },
+        {
+          "name": "respect_robots",
+          "type_ref": "bool",
+          "required": false,
+          "default": "True",
+          "description": "Whether to respect robots.txt",
+          "validators": []
+        },
+        {
+          "name": "follow_external",
+          "type_ref": "bool",
+          "required": false,
+          "default": "False",
+          "description": "Whether to follow external links",
+          "validators": []
+        },
+        {
+          "name": "url_exclude_patterns",
+          "type_ref": "list[str]",
+          "required": false,
+          "default": "[]",
+          "description": "URL patterns to exclude from crawling",
+          "validators": []
+        },
+        {
+          "name": "request_delay_ms",
+          "type_ref": "int",
+          "required": false,
+          "default": "100",
+          "description": "Delay between requests in milliseconds",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "Crawl behavior settings",
+      "owner_component": "src_webprobe_config"
+    },
+    {
+      "name": "CaptureConfig",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "concurrency",
+          "type_ref": "int",
+          "required": false,
+          "default": "10",
+          "description": "Number of concurrent capture operations",
+          "validators": []
+        },
+        {
+          "name": "timeout_ms",
+          "type_ref": "int",
+          "required": false,
+          "default": "30000",
+          "description": "Timeout for capture operations in milliseconds",
+          "validators": []
+        },
+        {
+          "name": "screenshot",
+          "type_ref": "bool",
+          "required": false,
+          "default": "True",
+          "description": "Whether to capture screenshots",
+          "validators": []
+        },
+        {
+          "name": "viewport_width",
+          "type_ref": "int",
+          "required": false,
+          "default": "1280",
+          "description": "Browser viewport width in pixels",
+          "validators": []
+        },
+        {
+          "name": "viewport_height",
+          "type_ref": "int",
+          "required": false,
+          "default": "720",
+          "description": "Browser viewport height in pixels",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "Capture behavior settings for browser-based operations",
+      "owner_component": "src_webprobe_config"
+    },
+    {
+      "name": "WebprobeConfig",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "auth",
+          "type_ref": "AuthConfig",
+          "required": false,
+          "default": "AuthConfig()",
+          "description": "Authentication configuration",
+          "validators": []
+        },
+        {
+          "name": "crawl",
+          "type_ref": "CrawlConfig",
+          "required": false,
+          "default": "CrawlConfig()",
+          "description": "Crawling behavior configuration",
+          "validators": []
+        },
+        {
+          "name": "capture",
+          "type_ref": "CaptureConfig",
+          "required": false,
+          "default": "CaptureConfig()",
+          "description": "Capture behavior configuration",
+          "validators": []
+        },
+        {
+          "name": "output_dir",
+          "type_ref": "str",
+          "required": false,
+          "default": "\"./webprobe-runs\"",
+          "description": "Directory for output files",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "Top-level configuration container for all webprobe settings",
+      "owner_component": "src_webprobe_config"
+    }
+  ],
+  "functions": [
+    {
+      "name": "load_config",
+      "description": "Load configuration from an explicit path, default search paths (./webprobe.yaml, ~/.webprobe/webprobe.yaml), or return defaults if no config file exists.",
+      "inputs": [
+        {
+          "name": "path",
+          "type_ref": "str | Path | None",
+          "required": false,
+          "default": "None",
+          "description": "Optional explicit path to config file. If None, searches standard locations.",
+          "validators": []
+        }
+      ],
+      "output_type": "WebprobeConfig",
+      "error_cases": [
+        {
+          "name": "explicit_path_not_found",
+          "condition": "path is not None and Path(path).exists() returns False",
+          "error_type": "FileNotFoundError",
+          "error_data": {
+            "message": "Config not found: {p}"
+          }
+        },
+        {
+          "name": "yaml_parsing_error",
+          "condition": "YAML file contains invalid syntax",
+          "error_type": "yaml.YAMLError",
+          "error_data": {}
+        },
+        {
+          "name": "pydantic_validation_error",
+          "condition": "YAML structure does not match WebprobeConfig schema",
+          "error_type": "pydantic.ValidationError",
+          "error_data": {}
+        },
+        {
+          "name": "file_read_error",
+          "condition": "File exists but cannot be read (permissions, encoding issues)",
+          "error_type": "IOError",
+          "error_data": {}
+        }
+      ],
+      "preconditions": [
+        "If path is provided and not None, it will be converted to a Path object"
+      ],
+      "postconditions": [
+        "Returns a valid WebprobeConfig instance",
+        "If no config files found, returns WebprobeConfig with all default values",
+        "If config file found, YAML is parsed and validated against Pydantic models"
+      ],
+      "idempotent": true,
+      "is_async": false,
+      "side_effects": [
+        "Reads from filesystem"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "reads_file",
+          "target": "Path(path) if provided, otherwise ./webprobe.yaml or ~/.webprobe/webprobe.yaml",
+          "description": "Reads YAML configuration file from filesystem"
+        }
+      ],
+      "performance_budget": null
+    }
+  ],
+  "dependencies": [
+    "pathlib",
+    "typing",
+    "yaml",
+    "pydantic"
+  ],
+  "dependency_contracts": {},
+  "invariants": [
+    "_SEARCH_PATHS = [Path('webprobe.yaml'), Path.home() / '.webprobe' / 'webprobe.yaml'] - Fixed search order for config files",
+    "All Pydantic models use BaseModel from pydantic v2",
+    "Default values are immutable or use Field(default_factory=...) for mutable collections"
+  ],
+  "requires": [],
+  "processing_register": "",
+  "data_access": {
+    "reads": [
+      "filesystem"
+    ],
+    "writes": [],
+    "rationale": "Reads configuration files from filesystem for application settings",
+    "side_effects": [
+      {
+        "type": "file_read",
+        "classification": "configuration",
+        "fields": [
+          "path",
+          "yaml_content"
+        ],
+        "rationale": "Reads YAML configuration files from standard search paths or explicit path"
+      }
+    ]
+  },
+  "authority": {
+    "domains": [],
+    "rationale": null
+  }
+}

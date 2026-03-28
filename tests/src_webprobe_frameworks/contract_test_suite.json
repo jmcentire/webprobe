@@ -1,0 +1,570 @@
+{
+  "component_id": "src_webprobe_frameworks",
+  "contract_version": 1,
+  "test_cases": [
+    {
+      "id": "test_path_to_route_basic_file",
+      "description": "Convert a simple file path to a route",
+      "function": "_path_to_route",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "filepath": "pages/about.astro",
+        "pages_dir": "pages",
+        "strip_extensions": "('.astro',)"
+      },
+      "input_description": "A basic file under pages directory",
+      "expected_output_description": "Returns '/about' route",
+      "expected_error": "",
+      "assertions": [
+        "result == '/about'",
+        "result.startswith('/')"
+      ]
+    },
+    {
+      "id": "test_path_to_route_nested_path",
+      "description": "Convert a nested file path to a route",
+      "function": "_path_to_route",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "filepath": "pages/blog/post.md",
+        "pages_dir": "pages",
+        "strip_extensions": "('.md',)"
+      },
+      "input_description": "Nested file structure",
+      "expected_output_description": "Returns '/blog/post' route",
+      "expected_error": "",
+      "assertions": [
+        "result == '/blog/post'",
+        "result.startswith('/')"
+      ]
+    },
+    {
+      "id": "test_path_to_route_index_file",
+      "description": "Index files should map to directory root",
+      "function": "_path_to_route",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "filepath": "pages/index.astro",
+        "pages_dir": "pages",
+        "strip_extensions": "('.astro',)"
+      },
+      "input_description": "File named index.astro",
+      "expected_output_description": "Returns '/' for index file",
+      "expected_error": "",
+      "assertions": [
+        "result == '/'",
+        "result.startswith('/')"
+      ]
+    },
+    {
+      "id": "test_path_to_route_nested_index",
+      "description": "Nested index files map to their directory",
+      "function": "_path_to_route",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "filepath": "pages/blog/index.md",
+        "pages_dir": "pages",
+        "strip_extensions": "('.md',)"
+      },
+      "input_description": "Nested index file",
+      "expected_output_description": "Returns '/blog' for nested index",
+      "expected_error": "",
+      "assertions": [
+        "result == '/blog'",
+        "result.startswith('/')"
+      ]
+    },
+    {
+      "id": "test_path_to_route_dynamic_segment",
+      "description": "Dynamic route segments [param] convert to :param",
+      "function": "_path_to_route",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "filepath": "pages/users/[id].astro",
+        "pages_dir": "pages",
+        "strip_extensions": "('.astro',)"
+      },
+      "input_description": "File with [id] dynamic segment",
+      "expected_output_description": "Returns '/users/:id' route",
+      "expected_error": "",
+      "assertions": [
+        "result == '/users/:id'",
+        "':id' in result"
+      ]
+    },
+    {
+      "id": "test_path_to_route_catch_all_segment",
+      "description": "Catch-all segments [...rest] convert to *rest",
+      "function": "_path_to_route",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "filepath": "pages/blog/[...slug].astro",
+        "pages_dir": "pages",
+        "strip_extensions": "('.astro',)"
+      },
+      "input_description": "File with [...slug] catch-all segment",
+      "expected_output_description": "Returns '/blog/*slug' route",
+      "expected_error": "",
+      "assertions": [
+        "result == '/blog/*slug'",
+        "'*slug' in result"
+      ]
+    },
+    {
+      "id": "test_path_to_route_multiple_extensions",
+      "description": "Strip any of multiple extensions",
+      "function": "_path_to_route",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "filepath": "pages/about.md",
+        "pages_dir": "pages",
+        "strip_extensions": "('.astro', '.md', '.mdx')"
+      },
+      "input_description": "Multiple extensions in strip_extensions tuple",
+      "expected_output_description": "Returns '/about' with .md stripped",
+      "expected_error": "",
+      "assertions": [
+        "result == '/about'",
+        "'.md' not in result"
+      ]
+    },
+    {
+      "id": "test_path_to_route_outside_pages_dir",
+      "description": "Raises ValueError when filepath not under pages_dir",
+      "function": "_path_to_route",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "filepath": "other/file.astro",
+        "pages_dir": "pages",
+        "strip_extensions": "('.astro',)"
+      },
+      "input_description": "File path outside pages directory",
+      "expected_output_description": "",
+      "expected_error": "ValueError",
+      "assertions": [
+        "ValueError is raised"
+      ]
+    },
+    {
+      "id": "test_detect_astro_basic_structure",
+      "description": "Detect routes from basic Astro project",
+      "function": "detect_astro",
+      "category": "happy_path",
+      "setup_description": "Create temp directory with src/pages/*.astro files",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Astro project with src/pages containing .astro files",
+      "expected_output_description": "Returns sorted list of routes",
+      "expected_error": "",
+      "assertions": [
+        "isinstance(result, list)",
+        "all(r.startswith('/') for r in result)",
+        "result == sorted(result)"
+      ]
+    },
+    {
+      "id": "test_detect_astro_all_extensions",
+      "description": "Detect .astro, .md, .mdx, .html files",
+      "function": "detect_astro",
+      "category": "happy_path",
+      "setup_description": "Create files with different Astro extensions",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Mix of Astro file extensions",
+      "expected_output_description": "All file types detected and converted to routes",
+      "expected_error": "",
+      "assertions": [
+        "isinstance(result, list)",
+        "len(result) > 0"
+      ]
+    },
+    {
+      "id": "test_detect_astro_no_pages_dir",
+      "description": "Returns empty list when pages directory missing",
+      "function": "detect_astro",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Project root without src/pages",
+      "expected_output_description": "Returns empty list",
+      "expected_error": "",
+      "assertions": [
+        "result == []",
+        "isinstance(result, list)"
+      ]
+    },
+    {
+      "id": "test_detect_astro_monorepo_pattern",
+      "description": "Detect Astro routes from web/src/pages in monorepo",
+      "function": "detect_astro",
+      "category": "edge_case",
+      "setup_description": "Create web/src/pages directory with files",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Monorepo with web/src/pages structure",
+      "expected_output_description": "Routes detected from monorepo structure",
+      "expected_error": "",
+      "assertions": [
+        "isinstance(result, list)",
+        "all(r.startswith('/') for r in result)"
+      ]
+    },
+    {
+      "id": "test_detect_astro_deduplication",
+      "description": "Routes are deduplicated via set conversion",
+      "function": "detect_astro",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Multiple files that map to same route",
+      "expected_output_description": "Duplicates removed from result",
+      "expected_error": "",
+      "assertions": [
+        "len(result) == len(set(result))"
+      ]
+    },
+    {
+      "id": "test_detect_nextjs_app_router",
+      "description": "Detect routes from Next.js App Router",
+      "function": "detect_nextjs",
+      "category": "happy_path",
+      "setup_description": "Create app directory with page.tsx files",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Next.js project with app/**/page.tsx files",
+      "expected_output_description": "Returns routes from App Router",
+      "expected_error": "",
+      "assertions": [
+        "isinstance(result, list)",
+        "all(r.startswith('/') for r in result)",
+        "result == sorted(result)"
+      ]
+    },
+    {
+      "id": "test_detect_nextjs_pages_router",
+      "description": "Detect routes from Next.js Pages Router",
+      "function": "detect_nextjs",
+      "category": "happy_path",
+      "setup_description": "Create pages directory with tsx/jsx files",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Next.js project with pages/**/*.tsx files",
+      "expected_output_description": "Returns routes from Pages Router",
+      "expected_error": "",
+      "assertions": [
+        "isinstance(result, list)",
+        "all(r.startswith('/') for r in result)"
+      ]
+    },
+    {
+      "id": "test_detect_nextjs_excludes_underscore_files",
+      "description": "Files starting with underscore in pages/ are excluded",
+      "function": "detect_nextjs",
+      "category": "edge_case",
+      "setup_description": "Create pages/_app.tsx which should be excluded",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Pages router with _app.tsx and _document.tsx",
+      "expected_output_description": "Underscore files not in routes",
+      "expected_error": "",
+      "assertions": [
+        "all('_' not in r.split('/')[-1] for r in result if r != '/')"
+      ]
+    },
+    {
+      "id": "test_detect_nextjs_no_directories",
+      "description": "Returns empty list when neither app/ nor pages/ exist",
+      "function": "detect_nextjs",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Project root without app or pages directories",
+      "expected_output_description": "Returns empty list",
+      "expected_error": "",
+      "assertions": [
+        "result == []",
+        "isinstance(result, list)"
+      ]
+    },
+    {
+      "id": "test_detect_nextjs_all_extensions",
+      "description": "Detect all Next.js extensions: .tsx, .jsx, .ts, .js",
+      "function": "detect_nextjs",
+      "category": "happy_path",
+      "setup_description": "Create files with different Next.js extensions",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Mix of Next.js file extensions",
+      "expected_output_description": "All extensions detected",
+      "expected_error": "",
+      "assertions": [
+        "isinstance(result, list)",
+        "len(result) >= 0"
+      ]
+    },
+    {
+      "id": "test_detect_nextjs_deduplication",
+      "description": "Routes are deduplicated via set conversion",
+      "function": "detect_nextjs",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Multiple files mapping to same route",
+      "expected_output_description": "Duplicates removed",
+      "expected_error": "",
+      "assertions": [
+        "len(result) == len(set(result))"
+      ]
+    },
+    {
+      "id": "test_detect_sveltekit_basic",
+      "description": "Detect routes from SvelteKit project",
+      "function": "detect_sveltekit",
+      "category": "happy_path",
+      "setup_description": "Create src/routes with +page.svelte files",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "SvelteKit project with src/routes/+page.svelte files",
+      "expected_output_description": "Returns routes from SvelteKit",
+      "expected_error": "",
+      "assertions": [
+        "isinstance(result, list)",
+        "all(r.startswith('/') for r in result)",
+        "result == sorted(result)"
+      ]
+    },
+    {
+      "id": "test_detect_sveltekit_nested_routes",
+      "description": "Detect nested SvelteKit routes",
+      "function": "detect_sveltekit",
+      "category": "happy_path",
+      "setup_description": "Create nested directories with +page.svelte",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Nested route structure with +page.svelte",
+      "expected_output_description": "Nested routes detected",
+      "expected_error": "",
+      "assertions": [
+        "isinstance(result, list)",
+        "all(r.startswith('/') for r in result)"
+      ]
+    },
+    {
+      "id": "test_detect_sveltekit_no_routes_dir",
+      "description": "Returns empty list when src/routes doesn't exist",
+      "function": "detect_sveltekit",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Project without src/routes directory",
+      "expected_output_description": "Returns empty list",
+      "expected_error": "",
+      "assertions": [
+        "result == []",
+        "isinstance(result, list)"
+      ]
+    },
+    {
+      "id": "test_detect_sveltekit_deduplication",
+      "description": "Routes are deduplicated via set conversion",
+      "function": "detect_sveltekit",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Routes that might duplicate",
+      "expected_output_description": "Duplicates removed",
+      "expected_error": "",
+      "assertions": [
+        "len(result) == len(set(result))"
+      ]
+    },
+    {
+      "id": "test_detect_framework_astro",
+      "description": "Detect Astro framework from astro.config.*",
+      "function": "detect_framework",
+      "category": "happy_path",
+      "setup_description": "Create astro.config.mjs file",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Project with astro.config.mjs",
+      "expected_output_description": "Returns ('astro', routes)",
+      "expected_error": "",
+      "assertions": [
+        "framework == 'astro'",
+        "isinstance(routes, list)"
+      ]
+    },
+    {
+      "id": "test_detect_framework_nextjs",
+      "description": "Detect Next.js framework from next.config.*",
+      "function": "detect_framework",
+      "category": "happy_path",
+      "setup_description": "Create next.config.js file",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Project with next.config.js",
+      "expected_output_description": "Returns ('nextjs', routes)",
+      "expected_error": "",
+      "assertions": [
+        "framework == 'nextjs'",
+        "isinstance(routes, list)"
+      ]
+    },
+    {
+      "id": "test_detect_framework_sveltekit",
+      "description": "Detect SvelteKit framework from svelte.config.*",
+      "function": "detect_framework",
+      "category": "happy_path",
+      "setup_description": "Create svelte.config.js file",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Project with svelte.config.js",
+      "expected_output_description": "Returns ('sveltekit', routes)",
+      "expected_error": "",
+      "assertions": [
+        "framework == 'sveltekit'",
+        "isinstance(routes, list)"
+      ]
+    },
+    {
+      "id": "test_detect_framework_none",
+      "description": "Returns (None, []) when no framework detected",
+      "function": "detect_framework",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Empty project without config files",
+      "expected_output_description": "Returns (None, [])",
+      "expected_error": "",
+      "assertions": [
+        "framework is None",
+        "routes == []"
+      ]
+    },
+    {
+      "id": "test_detect_framework_detection_order",
+      "description": "Framework detection order: Astro -> Next.js -> SvelteKit",
+      "function": "detect_framework",
+      "category": "edge_case",
+      "setup_description": "Create both astro.config.mjs and next.config.js",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Project with multiple framework configs",
+      "expected_output_description": "Astro detected first due to order",
+      "expected_error": "",
+      "assertions": [
+        "framework == 'astro'"
+      ]
+    },
+    {
+      "id": "test_detect_framework_monorepo_astro",
+      "description": "Detect Astro from web/astro.config.* in monorepo",
+      "function": "detect_framework",
+      "category": "edge_case",
+      "setup_description": "Create web/astro.config.mjs",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Monorepo with web/astro.config.mjs",
+      "expected_output_description": "Astro detected in monorepo",
+      "expected_error": "",
+      "assertions": [
+        "framework == 'astro'",
+        "isinstance(routes, list)"
+      ]
+    },
+    {
+      "id": "test_invariant_all_routes_start_with_slash",
+      "description": "All routes from all detectors start with '/'",
+      "function": "detect_astro",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Various file structures",
+      "expected_output_description": "All routes start with /",
+      "expected_error": "",
+      "assertions": [
+        "all(r.startswith('/') for r in result)"
+      ]
+    },
+    {
+      "id": "test_invariant_routes_sorted",
+      "description": "All route lists are sorted",
+      "function": "detect_nextjs",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Multiple routes",
+      "expected_output_description": "Routes are sorted",
+      "expected_error": "",
+      "assertions": [
+        "result == sorted(result)"
+      ]
+    },
+    {
+      "id": "test_path_to_route_dynamic_folder",
+      "description": "Dynamic segments in folder names",
+      "function": "_path_to_route",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "filepath": "pages/blog/[category]/post.astro",
+        "pages_dir": "pages",
+        "strip_extensions": "('.astro',)"
+      },
+      "input_description": "Folder with dynamic segment [category]/post.astro",
+      "expected_output_description": "Returns '/blog/:category/post'",
+      "expected_error": "",
+      "assertions": [
+        "result == '/blog/:category/post'",
+        "':category' in result"
+      ]
+    },
+    {
+      "id": "test_path_to_route_no_extension_to_strip",
+      "description": "File with extension not in strip_extensions",
+      "function": "_path_to_route",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "filepath": "pages/about.html",
+        "pages_dir": "pages",
+        "strip_extensions": "('.astro',)"
+      },
+      "input_description": "File with .html when only .astro is stripped",
+      "expected_output_description": "Extension not stripped if not in list",
+      "expected_error": "",
+      "assertions": [
+        "result.startswith('/')"
+      ]
+    }
+  ],
+  "test_language": "python",
+  "generated_code": "\"\"\"\nContract-based test suite for src_webprobe_frameworks component.\n\nThis test suite verifies the behavior of framework route detection functions\naccording to their contract specifications. Tests cover:\n- Path to route conversion with dynamic segments and extensions\n- Framework-specific route detection (Astro, Next.js, SvelteKit)\n- Framework auto-detection and configuration file scanning\n- Contract invariants (routes start with '/', sorted, deduplicated)\n- Error cases (ValueError for paths outside pages directory)\n\"\"\"\n\nimport pytest\nfrom pathlib import Path\nfrom unittest.mock import Mock, patch, MagicMock\nimport tempfile\nimport shutil\nfrom typing import List, Tuple\n\n# Import the module under test\nfrom src.webprobe.frameworks import (\n    _path_to_route,\n    detect_astro,\n    detect_nextjs,\n    detect_sveltekit,\n    detect_framework,\n)\n\n\n# ============================================================================\n# Fixtures\n# ============================================================================\n\n@pytest.fixture\ndef temp_project_root(tmp_path):\n    \"\"\"Create a temporary project root directory.\"\"\"\n    return tmp_path\n\n\n@pytest.fixture\ndef astro_project(tmp_path):\n    \"\"\"Create a minimal Astro project structure.\"\"\"\n    src_pages = tmp_path / \"src\" / \"pages\"\n    src_pages.mkdir(parents=True)\n    \n    # Create sample files\n    (src_pages / \"index.astro\").write_text(\"\")\n    (src_pages / \"about.astro\").write_text(\"\")\n    (src_pages / \"blog\").mkdir()\n    (src_pages / \"blog\" / \"post.md\").write_text(\"\")\n    \n    return tmp_path\n\n\n@pytest.fixture\ndef nextjs_project(tmp_path):\n    \"\"\"Create a minimal Next.js project structure.\"\"\"\n    app_dir = tmp_path / \"app\"\n    app_dir.mkdir()\n    \n    (app_dir / \"page.tsx\").write_text(\"\")\n    (app_dir / \"about\").mkdir()\n    (app_dir / \"about\" / \"page.tsx\").write_text(\"\")\n    \n    return tmp_path\n\n\n@pytest.fixture\ndef sveltekit_project(tmp_path):\n    \"\"\"Create a minimal SvelteKit project structure.\"\"\"\n    routes = tmp_path / \"src\" / \"routes\"\n    routes.mkdir(parents=True)\n    \n    (routes / \"+page.svelte\").write_text(\"\")\n    (routes / \"about\").mkdir()\n    (routes / \"about\" / \"+page.svelte\").write_text(\"\")\n    \n    return tmp_path\n\n\n# ============================================================================\n# Tests for _path_to_route\n# ============================================================================\n\ndef test_path_to_route_basic_file():\n    \"\"\"Convert a simple file path to a route.\"\"\"\n    filepath = Path(\"pages/about.astro\")\n    pages_dir = Path(\"pages\")\n    strip_extensions = ('.astro',)\n    \n    result = _path_to_route(filepath, pages_dir, strip_extensions)\n    \n    assert result == '/about'\n    assert result.startswith('/')\n\n\ndef test_path_to_route_nested_path():\n    \"\"\"Convert a nested file path to a route.\"\"\"\n    filepath = Path(\"pages/blog/post.md\")\n    pages_dir = Path(\"pages\")\n    strip_extensions = ('.md',)\n    \n    result = _path_to_route(filepath, pages_dir, strip_extensions)\n    \n    assert result == '/blog/post'\n    assert result.startswith('/')\n\n\ndef test_path_to_route_index_file():\n    \"\"\"Index files should map to directory root.\"\"\"\n    filepath = Path(\"pages/index.astro\")\n    pages_dir = Path(\"pages\")\n    strip_extensions = ('.astro',)\n    \n    result = _path_to_route(filepath, pages_dir, strip_extensions)\n    \n    assert result == '/'\n    assert result.startswith('/')\n\n\ndef test_path_to_route_nested_index():\n    \"\"\"Nested index files map to their directory.\"\"\"\n    filepath = Path(\"pages/blog/index.md\")\n    pages_dir = Path(\"pages\")\n    strip_extensions = ('.md',)\n    \n    result = _path_to_route(filepath, pages_dir, strip_extensions)\n    \n    assert result == '/blog'\n    assert result.startswith('/')\n\n\ndef test_path_to_route_dynamic_segment():\n    \"\"\"Dynamic route segments [param] convert to :param.\"\"\"\n    filepath = Path(\"pages/users/[id].astro\")\n    pages_dir = Path(\"pages\")\n    strip_extensions = ('.astro',)\n    \n    result = _path_to_route(filepath, pages_dir, strip_extensions)\n    \n    assert result == '/users/:id'\n    assert ':id' in result\n\n\ndef test_path_to_route_catch_all_segment():\n    \"\"\"Catch-all segments [...rest] convert to *rest.\"\"\"\n    filepath = Path(\"pages/blog/[...slug].astro\")\n    pages_dir = Path(\"pages\")\n    strip_extensions = ('.astro',)\n    \n    result = _path_to_route(filepath, pages_dir, strip_extensions)\n    \n    assert result == '/blog/*slug'\n    assert '*slug' in result\n\n\ndef test_path_to_route_multiple_extensions():\n    \"\"\"Strip any of multiple extensions.\"\"\"\n    filepath = Path(\"pages/about.md\")\n    pages_dir = Path(\"pages\")\n    strip_extensions = ('.astro', '.md', '.mdx')\n    \n    result = _path_to_route(filepath, pages_dir, strip_extensions)\n    \n    assert result == '/about'\n    assert '.md' not in result\n\n\ndef test_path_to_route_outside_pages_dir():\n    \"\"\"Raises ValueError when filepath not under pages_dir.\"\"\"\n    filepath = Path(\"other/file.astro\")\n    pages_dir = Path(\"pages\")\n    strip_extensions = ('.astro',)\n    \n    with pytest.raises(ValueError):\n        _path_to_route(filepath, pages_dir, strip_extensions)\n\n\ndef test_path_to_route_dynamic_folder():\n    \"\"\"Dynamic segments in folder names.\"\"\"\n    filepath = Path(\"pages/blog/[category]/post.astro\")\n    pages_dir = Path(\"pages\")\n    strip_extensions = ('.astro',)\n    \n    result = _path_to_route(filepath, pages_dir, strip_extensions)\n    \n    assert result == '/blog/:category/post'\n    assert ':category' in result\n\n\ndef test_path_to_route_no_extension_to_strip():\n    \"\"\"File with extension not in strip_extensions.\"\"\"\n    filepath = Path(\"pages/about.html\")\n    pages_dir = Path(\"pages\")\n    strip_extensions = ('.astro',)\n    \n    result = _path_to_route(filepath, pages_dir, strip_extensions)\n    \n    assert result.startswith('/')\n\n\n# ============================================================================\n# Tests for detect_astro\n# ============================================================================\n\ndef test_detect_astro_basic_structure(tmp_path):\n    \"\"\"Detect routes from basic Astro project.\"\"\"\n    src_pages = tmp_path / \"src\" / \"pages\"\n    src_pages.mkdir(parents=True)\n    \n    (src_pages / \"index.astro\").write_text(\"\")\n    (src_pages / \"about.astro\").write_text(\"\")\n    \n    result = detect_astro(tmp_path)\n    \n    assert isinstance(result, list)\n    assert all(r.startswith('/') for r in result)\n    assert result == sorted(result)\n\n\ndef test_detect_astro_all_extensions(tmp_path):\n    \"\"\"Detect .astro, .md, .mdx, .html files.\"\"\"\n    src_pages = tmp_path / \"src\" / \"pages\"\n    src_pages.mkdir(parents=True)\n    \n    (src_pages / \"page1.astro\").write_text(\"\")\n    (src_pages / \"page2.md\").write_text(\"\")\n    (src_pages / \"page3.mdx\").write_text(\"\")\n    (src_pages / \"page4.html\").write_text(\"\")\n    \n    result = detect_astro(tmp_path)\n    \n    assert isinstance(result, list)\n    assert len(result) > 0\n\n\ndef test_detect_astro_no_pages_dir(tmp_path):\n    \"\"\"Returns empty list when pages directory missing.\"\"\"\n    result = detect_astro(tmp_path)\n    \n    assert result == []\n    assert isinstance(result, list)\n\n\ndef test_detect_astro_monorepo_pattern(tmp_path):\n    \"\"\"Detect Astro routes from web/src/pages in monorepo.\"\"\"\n    web_pages = tmp_path / \"web\" / \"src\" / \"pages\"\n    web_pages.mkdir(parents=True)\n    \n    (web_pages / \"index.astro\").write_text(\"\")\n    (web_pages / \"about.astro\").write_text(\"\")\n    \n    result = detect_astro(tmp_path)\n    \n    assert isinstance(result, list)\n    assert all(r.startswith('/') for r in result)\n\n\ndef test_detect_astro_deduplication(tmp_path):\n    \"\"\"Routes are deduplicated via set conversion.\"\"\"\n    src_pages = tmp_path / \"src\" / \"pages\"\n    src_pages.mkdir(parents=True)\n    \n    (src_pages / \"index.astro\").write_text(\"\")\n    (src_pages / \"about.astro\").write_text(\"\")\n    \n    result = detect_astro(tmp_path)\n    \n    assert len(result) == len(set(result))\n\n\n# ============================================================================\n# Tests for detect_nextjs\n# ============================================================================\n\ndef test_detect_nextjs_app_router(tmp_path):\n    \"\"\"Detect routes from Next.js App Router.\"\"\"\n    app_dir = tmp_path / \"app\"\n    app_dir.mkdir()\n    \n    (app_dir / \"page.tsx\").write_text(\"\")\n    blog_dir = app_dir / \"blog\"\n    blog_dir.mkdir()\n    (blog_dir / \"page.tsx\").write_text(\"\")\n    \n    result = detect_nextjs(tmp_path)\n    \n    assert isinstance(result, list)\n    assert all(r.startswith('/') for r in result)\n    assert result == sorted(result)\n\n\ndef test_detect_nextjs_pages_router(tmp_path):\n    \"\"\"Detect routes from Next.js Pages Router.\"\"\"\n    pages_dir = tmp_path / \"pages\"\n    pages_dir.mkdir()\n    \n    (pages_dir / \"index.tsx\").write_text(\"\")\n    (pages_dir / \"about.tsx\").write_text(\"\")\n    \n    result = detect_nextjs(tmp_path)\n    \n    assert isinstance(result, list)\n    assert all(r.startswith('/') for r in result)\n\n\ndef test_detect_nextjs_excludes_underscore_files(tmp_path):\n    \"\"\"Files starting with underscore in pages/ are excluded.\"\"\"\n    pages_dir = tmp_path / \"pages\"\n    pages_dir.mkdir()\n    \n    (pages_dir / \"_app.tsx\").write_text(\"\")\n    (pages_dir / \"_document.tsx\").write_text(\"\")\n    (pages_dir / \"index.tsx\").write_text(\"\")\n    \n    result = detect_nextjs(tmp_path)\n    \n    # Underscore files should not appear (except as part of root route)\n    assert all('_' not in r.split('/')[-1] for r in result if r != '/')\n\n\ndef test_detect_nextjs_no_directories(tmp_path):\n    \"\"\"Returns empty list when neither app/ nor pages/ exist.\"\"\"\n    result = detect_nextjs(tmp_path)\n    \n    assert result == []\n    assert isinstance(result, list)\n\n\ndef test_detect_nextjs_all_extensions(tmp_path):\n    \"\"\"Detect all Next.js extensions: .tsx, .jsx, .ts, .js.\"\"\"\n    pages_dir = tmp_path / \"pages\"\n    pages_dir.mkdir()\n    \n    (pages_dir / \"page1.tsx\").write_text(\"\")\n    (pages_dir / \"page2.jsx\").write_text(\"\")\n    (pages_dir / \"page3.ts\").write_text(\"\")\n    (pages_dir / \"page4.js\").write_text(\"\")\n    \n    result = detect_nextjs(tmp_path)\n    \n    assert isinstance(result, list)\n    assert len(result) >= 0\n\n\ndef test_detect_nextjs_deduplication(tmp_path):\n    \"\"\"Routes are deduplicated via set conversion.\"\"\"\n    app_dir = tmp_path / \"app\"\n    app_dir.mkdir()\n    \n    (app_dir / \"page.tsx\").write_text(\"\")\n    \n    result = detect_nextjs(tmp_path)\n    \n    assert len(result) == len(set(result))\n\n\n# ============================================================================\n# Tests for detect_sveltekit\n# ============================================================================\n\ndef test_detect_sveltekit_basic(tmp_path):\n    \"\"\"Detect routes from SvelteKit project.\"\"\"\n    routes = tmp_path / \"src\" / \"routes\"\n    routes.mkdir(parents=True)\n    \n    (routes / \"+page.svelte\").write_text(\"\")\n    about_dir = routes / \"about\"\n    about_dir.mkdir()\n    (about_dir / \"+page.svelte\").write_text(\"\")\n    \n    result = detect_sveltekit(tmp_path)\n    \n    assert isinstance(result, list)\n    assert all(r.startswith('/') for r in result)\n    assert result == sorted(result)\n\n\ndef test_detect_sveltekit_nested_routes(tmp_path):\n    \"\"\"Detect nested SvelteKit routes.\"\"\"\n    routes = tmp_path / \"src\" / \"routes\"\n    routes.mkdir(parents=True)\n    \n    (routes / \"+page.svelte\").write_text(\"\")\n    \n    blog_dir = routes / \"blog\"\n    blog_dir.mkdir()\n    (blog_dir / \"+page.svelte\").write_text(\"\")\n    \n    post_dir = blog_dir / \"post\"\n    post_dir.mkdir()\n    (post_dir / \"+page.svelte\").write_text(\"\")\n    \n    result = detect_sveltekit(tmp_path)\n    \n    assert isinstance(result, list)\n    assert all(r.startswith('/') for r in result)\n\n\ndef test_detect_sveltekit_no_routes_dir(tmp_path):\n    \"\"\"Returns empty list when src/routes doesn't exist.\"\"\"\n    result = detect_sveltekit(tmp_path)\n    \n    assert result == []\n    assert isinstance(result, list)\n\n\ndef test_detect_sveltekit_deduplication(tmp_path):\n    \"\"\"Routes are deduplicated via set conversion.\"\"\"\n    routes = tmp_path / \"src\" / \"routes\"\n    routes.mkdir(parents=True)\n    \n    (routes / \"+page.svelte\").write_text(\"\")\n    \n    result = detect_sveltekit(tmp_path)\n    \n    assert len(result) == len(set(result))\n\n\n# ============================================================================\n# Tests for detect_framework\n# ============================================================================\n\ndef test_detect_framework_astro(tmp_path):\n    \"\"\"Detect Astro framework from astro.config.*.\"\"\"\n    (tmp_path / \"astro.config.mjs\").write_text(\"\")\n    \n    src_pages = tmp_path / \"src\" / \"pages\"\n    src_pages.mkdir(parents=True)\n    (src_pages / \"index.astro\").write_text(\"\")\n    \n    framework, routes = detect_framework(tmp_path)\n    \n    assert framework == 'astro'\n    assert isinstance(routes, list)\n\n\ndef test_detect_framework_nextjs(tmp_path):\n    \"\"\"Detect Next.js framework from next.config.*.\"\"\"\n    (tmp_path / \"next.config.js\").write_text(\"\")\n    \n    app_dir = tmp_path / \"app\"\n    app_dir.mkdir()\n    (app_dir / \"page.tsx\").write_text(\"\")\n    \n    framework, routes = detect_framework(tmp_path)\n    \n    assert framework == 'nextjs'\n    assert isinstance(routes, list)\n\n\ndef test_detect_framework_sveltekit(tmp_path):\n    \"\"\"Detect SvelteKit framework from svelte.config.*.\"\"\"\n    (tmp_path / \"svelte.config.js\").write_text(\"\")\n    \n    routes_dir = tmp_path / \"src\" / \"routes\"\n    routes_dir.mkdir(parents=True)\n    (routes_dir / \"+page.svelte\").write_text(\"\")\n    \n    framework, routes = detect_framework(tmp_path)\n    \n    assert framework == 'sveltekit'\n    assert isinstance(routes, list)\n\n\ndef test_detect_framework_none(tmp_path):\n    \"\"\"Returns (None, []) when no framework detected.\"\"\"\n    framework, routes = detect_framework(tmp_path)\n    \n    assert framework is None\n    assert routes == []\n\n\ndef test_detect_framework_detection_order(tmp_path):\n    \"\"\"Framework detection order: Astro -> Next.js -> SvelteKit.\"\"\"\n    # Create both Astro and Next.js config files\n    (tmp_path / \"astro.config.mjs\").write_text(\"\")\n    (tmp_path / \"next.config.js\").write_text(\"\")\n    \n    src_pages = tmp_path / \"src\" / \"pages\"\n    src_pages.mkdir(parents=True)\n    (src_pages / \"index.astro\").write_text(\"\")\n    \n    framework, routes = detect_framework(tmp_path)\n    \n    # Astro should be detected first\n    assert framework == 'astro'\n\n\ndef test_detect_framework_monorepo_astro(tmp_path):\n    \"\"\"Detect Astro from web/astro.config.* in monorepo.\"\"\"\n    web_dir = tmp_path / \"web\"\n    web_dir.mkdir()\n    (web_dir / \"astro.config.mjs\").write_text(\"\")\n    \n    web_pages = web_dir / \"src\" / \"pages\"\n    web_pages.mkdir(parents=True)\n    (web_pages / \"index.astro\").write_text(\"\")\n    \n    framework, routes = detect_framework(tmp_path)\n    \n    assert framework == 'astro'\n    assert isinstance(routes, list)\n\n\n# ============================================================================\n# Invariant Tests\n# ============================================================================\n\ndef test_invariant_all_routes_start_with_slash(tmp_path):\n    \"\"\"All routes from all detectors start with '/'.\"\"\"\n    src_pages = tmp_path / \"src\" / \"pages\"\n    src_pages.mkdir(parents=True)\n    \n    (src_pages / \"index.astro\").write_text(\"\")\n    (src_pages / \"about.astro\").write_text(\"\")\n    blog_dir = src_pages / \"blog\"\n    blog_dir.mkdir()\n    (blog_dir / \"post.md\").write_text(\"\")\n    \n    result = detect_astro(tmp_path)\n    \n    assert all(r.startswith('/') for r in result)\n\n\ndef test_invariant_routes_sorted(tmp_path):\n    \"\"\"All route lists are sorted.\"\"\"\n    app_dir = tmp_path / \"app\"\n    app_dir.mkdir()\n    \n    (app_dir / \"page.tsx\").write_text(\"\")\n    \n    zzz_dir = app_dir / \"zzz\"\n    zzz_dir.mkdir()\n    (zzz_dir / \"page.tsx\").write_text(\"\")\n    \n    aaa_dir = app_dir / \"aaa\"\n    aaa_dir.mkdir()\n    (aaa_dir / \"page.tsx\").write_text(\"\")\n    \n    result = detect_nextjs(tmp_path)\n    \n    assert result == sorted(result)\n\n\n# ============================================================================\n# Additional Edge Case Tests\n# ============================================================================\n\ndef test_path_to_route_with_absolute_paths(tmp_path):\n    \"\"\"Test _path_to_route with absolute paths.\"\"\"\n    pages_dir = tmp_path / \"pages\"\n    pages_dir.mkdir()\n    \n    filepath = pages_dir / \"about.astro\"\n    filepath.write_text(\"\")\n    \n    result = _path_to_route(filepath, pages_dir, ('.astro',))\n    \n    assert result.startswith('/')\n\n\ndef test_detect_astro_with_nested_dynamic_routes(tmp_path):\n    \"\"\"Test Astro detection with nested dynamic routes.\"\"\"\n    src_pages = tmp_path / \"src\" / \"pages\"\n    src_pages.mkdir(parents=True)\n    \n    blog_dir = src_pages / \"blog\"\n    blog_dir.mkdir()\n    \n    (blog_dir / \"[slug].astro\").write_text(\"\")\n    \n    result = detect_astro(tmp_path)\n    \n    assert isinstance(result, list)\n    assert all(r.startswith('/') for r in result)\n\n\ndef test_detect_nextjs_with_dynamic_routes(tmp_path):\n    \"\"\"Test Next.js detection with dynamic routes.\"\"\"\n    pages_dir = tmp_path / \"pages\"\n    pages_dir.mkdir()\n    \n    users_dir = pages_dir / \"users\"\n    users_dir.mkdir()\n    (users_dir / \"[id].tsx\").write_text(\"\")\n    \n    result = detect_nextjs(tmp_path)\n    \n    assert isinstance(result, list)\n    assert all(r.startswith('/') for r in result)\n\n\ndef test_detect_sveltekit_with_dynamic_routes(tmp_path):\n    \"\"\"Test SvelteKit detection with dynamic routes.\"\"\"\n    routes = tmp_path / \"src\" / \"routes\"\n    routes.mkdir(parents=True)\n    \n    blog_dir = routes / \"blog\" / \"[slug]\"\n    blog_dir.mkdir(parents=True)\n    (blog_dir / \"+page.svelte\").write_text(\"\")\n    \n    result = detect_sveltekit(tmp_path)\n    \n    assert isinstance(result, list)\n    assert all(r.startswith('/') for r in result)\n\n\ndef test_detect_framework_with_multiple_config_variants(tmp_path):\n    \"\"\"Test framework detection with different config file extensions.\"\"\"\n    # Test with .mjs extension\n    (tmp_path / \"astro.config.mjs\").write_text(\"\")\n    \n    src_pages = tmp_path / \"src\" / \"pages\"\n    src_pages.mkdir(parents=True)\n    (src_pages / \"index.astro\").write_text(\"\")\n    \n    framework, routes = detect_framework(tmp_path)\n    \n    assert framework == 'astro'\n\n\ndef test_path_to_route_multiple_dynamic_segments(tmp_path):\n    \"\"\"Test path with multiple dynamic segments.\"\"\"\n    filepath = Path(\"pages/blog/[year]/[month]/[slug].astro\")\n    pages_dir = Path(\"pages\")\n    strip_extensions = ('.astro',)\n    \n    result = _path_to_route(filepath, pages_dir, strip_extensions)\n    \n    assert result.startswith('/')\n    assert ':year' in result\n    assert ':month' in result\n    assert ':slug' in result\n"
+}

@@ -1,0 +1,230 @@
+{
+  "component_id": "src_webprobe_mask",
+  "name": "Webprobe Mask System",
+  "description": "Mask system for suppressing known or expected security findings by matching URL patterns, title patterns, and categories against configurable rules loaded from YAML files.",
+  "version": 1,
+  "types": [
+    {
+      "name": "MaskRule",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "url_pattern",
+          "type_ref": "str",
+          "required": false,
+          "default": ".*",
+          "description": "Regex pattern matched against finding URL",
+          "validators": []
+        },
+        {
+          "name": "title_pattern",
+          "type_ref": "str",
+          "required": false,
+          "default": ".*",
+          "description": "Regex pattern matched against finding title",
+          "validators": []
+        },
+        {
+          "name": "category",
+          "type_ref": "str",
+          "required": false,
+          "default": "",
+          "description": "If set, must match finding category exactly",
+          "validators": []
+        },
+        {
+          "name": "reason",
+          "type_ref": "str",
+          "required": false,
+          "default": "",
+          "description": "Documentation explaining why this finding is suppressed",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "A single suppression rule with patterns and category matching",
+      "owner_component": ""
+    },
+    {
+      "name": "MaskConfig",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "rules",
+          "type_ref": "list[MaskRule]",
+          "required": false,
+          "default": "[]",
+          "description": "List of mask rules to apply",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "Collection of suppression rules loaded from YAML configuration",
+      "owner_component": ""
+    }
+  ],
+  "functions": [
+    {
+      "name": "load_mask",
+      "description": "Load mask configuration from a YAML file. Searches default locations if path is None. Returns empty MaskConfig if file doesn't exist or path is invalid.",
+      "inputs": [
+        {
+          "name": "path",
+          "type_ref": "str | Path | None",
+          "required": false,
+          "default": "None",
+          "description": "Path to YAML mask file; None to search default locations",
+          "validators": []
+        }
+      ],
+      "output_type": "MaskConfig",
+      "error_cases": [
+        {
+          "name": "yaml_parse_error",
+          "condition": "YAML file contains invalid syntax",
+          "error_type": "yaml.YAMLError",
+          "error_data": {}
+        },
+        {
+          "name": "pydantic_validation_error",
+          "condition": "YAML structure doesn't match MaskConfig schema",
+          "error_type": "pydantic.ValidationError",
+          "error_data": {}
+        },
+        {
+          "name": "file_read_error",
+          "condition": "File exists but cannot be read (permissions, encoding issues)",
+          "error_type": "OSError",
+          "error_data": {}
+        }
+      ],
+      "preconditions": [],
+      "postconditions": [
+        "Returns valid MaskConfig instance (never None)",
+        "If path is None and no default files exist, returns empty MaskConfig with empty rules list",
+        "If specified path doesn't exist, returns empty MaskConfig with empty rules list",
+        "If file exists and is valid YAML, returns MaskConfig with parsed rules"
+      ],
+      "idempotent": true,
+      "is_async": false,
+      "side_effects": [
+        "Reads from filesystem"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "reads_file",
+          "target": "YAML configuration file at specified or default paths",
+          "description": "Checks existence and reads content of webprobe-mask.yaml, .webprobe/mask.yaml, or specified path"
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "apply_mask",
+      "description": "Apply mask rules to a list of security findings, splitting them into kept and suppressed lists. Matches findings against rules using regex patterns for URL and title, and exact match for category.",
+      "inputs": [
+        {
+          "name": "findings",
+          "type_ref": "list[SecurityFinding]",
+          "required": true,
+          "default": "",
+          "description": "List of security findings to filter",
+          "validators": []
+        },
+        {
+          "name": "mask",
+          "type_ref": "MaskConfig",
+          "required": true,
+          "default": "",
+          "description": "Mask configuration containing suppression rules",
+          "validators": []
+        }
+      ],
+      "output_type": "tuple[list[SecurityFinding], list[SecurityFinding]]",
+      "error_cases": [
+        {
+          "name": "regex_error",
+          "condition": "url_pattern or title_pattern contains invalid regex syntax",
+          "error_type": "re.error",
+          "error_data": {}
+        },
+        {
+          "name": "attribute_error",
+          "condition": "SecurityFinding missing required attributes (url, title, category)",
+          "error_type": "AttributeError",
+          "error_data": {}
+        }
+      ],
+      "preconditions": [
+        "findings is a list (may be empty)",
+        "mask is a valid MaskConfig instance",
+        "Each finding has url (optional), title (required), and category attributes"
+      ],
+      "postconditions": [
+        "Returns tuple of (kept_findings, suppressed_findings)",
+        "kept_findings + suppressed_findings contains all original findings (no loss)",
+        "No finding appears in both kept and suppressed lists (mutually exclusive)",
+        "If mask.rules is empty, returns (findings, [])",
+        "A finding is suppressed if ANY rule matches all conditions (url_pattern AND title_pattern AND category)",
+        "If finding.url is None, url_pattern check is treated as True (match)"
+      ],
+      "idempotent": true,
+      "is_async": false,
+      "side_effects": [],
+      "structured_side_effects": [
+        {
+          "kind": "none",
+          "target": "",
+          "description": ""
+        }
+      ],
+      "performance_budget": null
+    }
+  ],
+  "dependencies": [
+    "re",
+    "pathlib",
+    "yaml",
+    "pydantic",
+    "webprobe.models"
+  ],
+  "dependency_contracts": {},
+  "invariants": [
+    "Default mask file search paths are ['webprobe-mask.yaml', '.webprobe/mask.yaml'] in order",
+    "MaskRule default url_pattern and title_pattern is '.*' (matches everything)",
+    "MaskRule with empty category string matches any category",
+    "apply_mask preserves all findings across (kept, suppressed) partitions",
+    "First matching rule suppresses a finding (rules are evaluated in order)"
+  ],
+  "requires": [],
+  "processing_register": "",
+  "data_access": {
+    "reads": [
+      "filesystem"
+    ],
+    "writes": [],
+    "rationale": "Module reads mask configuration files from filesystem, no database or network access",
+    "side_effects": [
+      {
+        "type": "file_read",
+        "classification": "configuration",
+        "fields": [
+          "path",
+          "default_paths"
+        ],
+        "rationale": "Loads YAML mask rules from local configuration files"
+      }
+    ]
+  },
+  "authority": {
+    "domains": [
+      "mask_configuration",
+      "finding_suppression"
+    ],
+    "rationale": "This module owns the logic for loading mask rules and applying suppression patterns to security findings"
+  }
+}

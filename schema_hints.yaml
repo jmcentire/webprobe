@@ -1,0 +1,39 @@
+storage_backends:
+  - type: filesystem
+    purpose: "Run artifacts (JSON reports, screenshots, config snapshots)"
+    path: "./webprobe-runs/{run_id}/"
+    format: json
+    fields:
+      - name: run_id
+        classification: PUBLIC
+        annotations: [immutable]
+      - name: url
+        classification: PUBLIC
+      - name: schema_version
+        classification: PUBLIC
+        annotations: [immutable]
+      - name: config_snapshot
+        classification: PUBLIC
+        annotations:
+          - "Must strip auth.cookie_value, auth.bearer_token, auth.header_value before writing"
+
+  - type: filesystem
+    purpose: "Mask configuration"
+    path: "./webprobe-mask.yaml"
+    format: yaml
+    fields:
+      - name: rules
+        classification: PUBLIC
+
+  - type: memory
+    purpose: "In-process site graph during run"
+    format: pydantic
+    fields:
+      - name: nodes
+        classification: PUBLIC
+      - name: edges
+        classification: PUBLIC
+      - name: captures
+        classification: PUBLIC
+        annotations:
+          - "response_headers may contain Set-Cookie — do not log raw in reports"

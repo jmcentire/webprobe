@@ -1,0 +1,890 @@
+{
+  "component_id": "src_webprobe_cli",
+  "name": "Webprobe CLI Entry Point",
+  "description": "CLI interface for webprobe, a generic site state-graph auditor. Provides commands for running security audits on websites through multiple phases: mapping site structure, capturing metrics, analyzing for vulnerabilities, and generating reports. Supports optional LLM-driven exploration for intelligent security testing. Built with Click for command-line interface and asyncio for concurrent operations.",
+  "version": 1,
+  "types": [],
+  "functions": [
+    {
+      "name": "_now_iso",
+      "description": "Returns current UTC timestamp in ISO 8601 format",
+      "inputs": [],
+      "output_type": "str",
+      "error_cases": [],
+      "preconditions": [],
+      "postconditions": [
+        "Returns ISO 8601 formatted string with timezone UTC"
+      ],
+      "idempotent": false,
+      "is_async": false,
+      "side_effects": [
+        "reads_file"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "none",
+          "target": "",
+          "description": ""
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "main",
+      "description": "Click group entry point for webprobe CLI. Loads config and initializes context.",
+      "inputs": [
+        {
+          "name": "ctx",
+          "type_ref": "click.Context",
+          "required": true,
+          "default": "",
+          "description": "Click context object for passing data between commands",
+          "validators": []
+        },
+        {
+          "name": "config_path",
+          "type_ref": "str | None",
+          "required": false,
+          "default": "",
+          "description": "Optional path to webprobe.yaml config file",
+          "validators": []
+        }
+      ],
+      "output_type": "None",
+      "error_cases": [
+        {
+          "name": "config_load_error",
+          "condition": "Config file is malformed or unreadable",
+          "error_type": "yaml.YAMLError | FileNotFoundError | IOError",
+          "error_data": {}
+        }
+      ],
+      "preconditions": [],
+      "postconditions": [
+        "ctx.obj['config'] is populated with WebprobeConfig instance"
+      ],
+      "idempotent": false,
+      "is_async": false,
+      "side_effects": [
+        "Loads config from file if config_path provided",
+        "Mutates ctx.obj dictionary"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "reads_file",
+          "target": "config file",
+          "description": "Loads webprobe.yaml if path provided"
+        },
+        {
+          "kind": "mutates_state",
+          "target": "ctx.obj",
+          "description": "Populates context object with config"
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "run",
+      "description": "Runs all webprobe phases: map site structure, capture metrics, analyze for issues, generate report. Optionally runs LLM-driven exploration with --explore flag.",
+      "inputs": [
+        {
+          "name": "ctx",
+          "type_ref": "click.Context",
+          "required": true,
+          "default": "",
+          "description": "Click context containing loaded config",
+          "validators": []
+        },
+        {
+          "name": "url",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Target URL to audit",
+          "validators": []
+        },
+        {
+          "name": "project_root",
+          "type_ref": "str | None",
+          "required": false,
+          "default": "",
+          "description": "Optional project root for framework route detection",
+          "validators": []
+        },
+        {
+          "name": "output_dir",
+          "type_ref": "str | None",
+          "required": false,
+          "default": "",
+          "description": "Optional output directory override",
+          "validators": []
+        },
+        {
+          "name": "concurrency",
+          "type_ref": "int | None",
+          "required": false,
+          "default": "",
+          "description": "Optional concurrency override for capture phase",
+          "validators": []
+        },
+        {
+          "name": "explore",
+          "type_ref": "bool",
+          "required": true,
+          "default": "False",
+          "description": "Whether to run Phase 5 LLM exploration",
+          "validators": []
+        },
+        {
+          "name": "llm_provider",
+          "type_ref": "str",
+          "required": true,
+          "default": "anthropic",
+          "description": "LLM provider for exploration (anthropic|openai|gemini|apprentice)",
+          "validators": []
+        },
+        {
+          "name": "llm_model",
+          "type_ref": "str | None",
+          "required": false,
+          "default": "",
+          "description": "Optional LLM model override",
+          "validators": []
+        },
+        {
+          "name": "agents",
+          "type_ref": "int",
+          "required": true,
+          "default": "5",
+          "description": "Number of concurrent exploration agents",
+          "validators": []
+        },
+        {
+          "name": "mask_path",
+          "type_ref": "str | None",
+          "required": false,
+          "default": "",
+          "description": "Optional path to mask YAML for suppressing known findings",
+          "validators": []
+        }
+      ],
+      "output_type": "None",
+      "error_cases": [
+        {
+          "name": "network_error",
+          "condition": "Target URL unreachable or network failure",
+          "error_type": "aiohttp.ClientError | playwright errors",
+          "error_data": {}
+        },
+        {
+          "name": "filesystem_error",
+          "condition": "Cannot create output directory or write files",
+          "error_type": "OSError | PermissionError",
+          "error_data": {}
+        },
+        {
+          "name": "llm_api_error",
+          "condition": "LLM API call fails when --explore enabled",
+          "error_type": "API-specific exceptions",
+          "error_data": {}
+        }
+      ],
+      "preconditions": [
+        "ctx.obj['config'] must be populated by main()"
+      ],
+      "postconditions": [
+        "Run directory created with graph.json, analysis.json, report.html, report.json",
+        "All phases completed and logged to console",
+        "Config snapshot saved to run_dir/webprobe.yaml"
+      ],
+      "idempotent": false,
+      "is_async": false,
+      "side_effects": [
+        "Creates run directory structure",
+        "Writes graph.json, analysis.json, report files",
+        "Makes HTTP/HTTPS requests to target URL",
+        "Prints status to console via click.echo",
+        "May make LLM API calls if --explore enabled",
+        "May prompt user for confirmation if agents > 20"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "writes_file",
+          "target": "run_dir/*",
+          "description": "Creates output directory and writes multiple files"
+        },
+        {
+          "kind": "network_call",
+          "target": "target URL and LLM APIs",
+          "description": "HTTP requests to audit target and optional LLM calls"
+        },
+        {
+          "kind": "logging",
+          "target": "stdout",
+          "description": "Progress output via click.echo"
+        },
+        {
+          "kind": "mutates_state",
+          "target": "config.capture.concurrency",
+          "description": "Modifies config if concurrency override provided"
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "explore_cmd",
+      "description": "Phase 5 only: Runs LLM-driven exploration on an existing run directory, adds findings to analysis, and regenerates report.",
+      "inputs": [
+        {
+          "name": "ctx",
+          "type_ref": "click.Context",
+          "required": true,
+          "default": "",
+          "description": "Click context containing config",
+          "validators": []
+        },
+        {
+          "name": "run_dir",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Path to existing run directory",
+          "validators": []
+        },
+        {
+          "name": "provider",
+          "type_ref": "str",
+          "required": true,
+          "default": "anthropic",
+          "description": "LLM provider (anthropic|openai|gemini|apprentice)",
+          "validators": []
+        },
+        {
+          "name": "model",
+          "type_ref": "str | None",
+          "required": false,
+          "default": "",
+          "description": "Optional LLM model override",
+          "validators": []
+        },
+        {
+          "name": "agents",
+          "type_ref": "int",
+          "required": true,
+          "default": "5",
+          "description": "Number of concurrent agents",
+          "validators": []
+        },
+        {
+          "name": "mask_path",
+          "type_ref": "str | None",
+          "required": false,
+          "default": "",
+          "description": "Optional mask YAML path",
+          "validators": []
+        }
+      ],
+      "output_type": "None",
+      "error_cases": [
+        {
+          "name": "run_load_error",
+          "condition": "run_dir doesn't contain valid run data",
+          "error_type": "FileNotFoundError | json.JSONDecodeError | ValidationError",
+          "error_data": {}
+        },
+        {
+          "name": "llm_api_error",
+          "condition": "LLM API calls fail",
+          "error_type": "API-specific exceptions",
+          "error_data": {}
+        }
+      ],
+      "preconditions": [
+        "run_dir must exist and contain valid run data",
+        "ctx.obj['config'] populated"
+      ],
+      "postconditions": [
+        "Exploration findings added to run analysis",
+        "Report regenerated with new findings",
+        "Cost summary logged to console"
+      ],
+      "idempotent": false,
+      "is_async": false,
+      "side_effects": [
+        "Makes LLM API calls",
+        "Writes updated report files",
+        "Prompts user for confirmation if agents > 20",
+        "Prints status to console"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "network_call",
+          "target": "LLM APIs",
+          "description": "Multiple LLM API calls for exploration"
+        },
+        {
+          "kind": "writes_file",
+          "target": "run_dir/report.*",
+          "description": "Regenerates report files"
+        },
+        {
+          "kind": "logging",
+          "target": "stdout",
+          "description": "Progress and cost output"
+        },
+        {
+          "kind": "mutates_state",
+          "target": "run_obj",
+          "description": "Modifies run object with findings"
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "map_cmd",
+      "description": "Phase 1 only: Maps site structure and builds graph, saves to graph.json.",
+      "inputs": [
+        {
+          "name": "ctx",
+          "type_ref": "click.Context",
+          "required": true,
+          "default": "",
+          "description": "Click context with config",
+          "validators": []
+        },
+        {
+          "name": "url",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Target URL to map",
+          "validators": []
+        },
+        {
+          "name": "project_root",
+          "type_ref": "str | None",
+          "required": false,
+          "default": "",
+          "description": "Optional project root for framework detection",
+          "validators": []
+        },
+        {
+          "name": "output_dir",
+          "type_ref": "str | None",
+          "required": false,
+          "default": "",
+          "description": "Optional output directory override",
+          "validators": []
+        }
+      ],
+      "output_type": "None",
+      "error_cases": [
+        {
+          "name": "network_error",
+          "condition": "Cannot reach target URL",
+          "error_type": "aiohttp.ClientError",
+          "error_data": {}
+        },
+        {
+          "name": "filesystem_error",
+          "condition": "Cannot create directory or write file",
+          "error_type": "OSError | PermissionError",
+          "error_data": {}
+        }
+      ],
+      "preconditions": [
+        "ctx.obj['config'] populated"
+      ],
+      "postconditions": [
+        "Run directory created",
+        "graph.json written with site structure",
+        "Summary printed to console"
+      ],
+      "idempotent": false,
+      "is_async": false,
+      "side_effects": [
+        "Creates run directory",
+        "Makes HTTP requests to crawl site",
+        "Writes graph.json",
+        "Prints to console"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "network_call",
+          "target": "target URL",
+          "description": "HTTP requests for site mapping"
+        },
+        {
+          "kind": "writes_file",
+          "target": "run_dir/graph.json",
+          "description": "Saves site graph"
+        },
+        {
+          "kind": "logging",
+          "target": "stdout",
+          "description": "Progress output"
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "capture",
+      "description": "Phase 2 only: Captures metrics for an existing graph in run directory.",
+      "inputs": [
+        {
+          "name": "ctx",
+          "type_ref": "click.Context",
+          "required": true,
+          "default": "",
+          "description": "Click context with config",
+          "validators": []
+        },
+        {
+          "name": "run_dir",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Path to existing run directory with graph.json",
+          "validators": []
+        }
+      ],
+      "output_type": "None",
+      "error_cases": [
+        {
+          "name": "missing_graph",
+          "condition": "graph.json not found in run_dir",
+          "error_type": "FileNotFoundError",
+          "error_data": {
+            "exit_code": "1"
+          }
+        },
+        {
+          "name": "invalid_graph",
+          "condition": "graph.json contains invalid data",
+          "error_type": "json.JSONDecodeError | ValidationError",
+          "error_data": {}
+        },
+        {
+          "name": "network_error",
+          "condition": "Cannot reach URLs for capture",
+          "error_type": "playwright errors",
+          "error_data": {}
+        }
+      ],
+      "preconditions": [
+        "run_dir exists and contains graph.json",
+        "ctx.obj['config'] populated"
+      ],
+      "postconditions": [
+        "Graph nodes populated with captured metrics",
+        "Updated graph saved",
+        "Duration logged to console"
+      ],
+      "idempotent": false,
+      "is_async": false,
+      "side_effects": [
+        "Reads graph.json",
+        "Makes network requests with Playwright",
+        "Writes updated graph",
+        "Prints to console",
+        "Exits with code 1 if graph.json missing"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "reads_file",
+          "target": "run_dir/graph.json",
+          "description": "Loads existing graph"
+        },
+        {
+          "kind": "network_call",
+          "target": "URLs in graph",
+          "description": "Playwright browser requests"
+        },
+        {
+          "kind": "writes_file",
+          "target": "run_dir/*",
+          "description": "Saves updated graph and metrics"
+        },
+        {
+          "kind": "logging",
+          "target": "stdout",
+          "description": "Progress output"
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "analyze_cmd",
+      "description": "Phase 3 only: Analyzes existing run for security issues, broken links, auth violations, timing outliers.",
+      "inputs": [
+        {
+          "name": "run_dir",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Path to existing run directory",
+          "validators": []
+        }
+      ],
+      "output_type": "None",
+      "error_cases": [
+        {
+          "name": "load_error",
+          "condition": "Cannot load run data from directory",
+          "error_type": "FileNotFoundError | json.JSONDecodeError | ValidationError",
+          "error_data": {}
+        }
+      ],
+      "preconditions": [
+        "run_dir exists with valid run data"
+      ],
+      "postconditions": [
+        "analysis.json written with findings",
+        "Summary printed to console"
+      ],
+      "idempotent": false,
+      "is_async": false,
+      "side_effects": [
+        "Reads run data from run_dir",
+        "Writes analysis.json",
+        "Prints to console"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "reads_file",
+          "target": "run_dir/*",
+          "description": "Loads run data"
+        },
+        {
+          "kind": "writes_file",
+          "target": "run_dir/analysis.json",
+          "description": "Saves analysis results"
+        },
+        {
+          "kind": "logging",
+          "target": "stdout",
+          "description": "Summary output"
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "report",
+      "description": "Phase 4 only: Generates report (HTML, JSON, or both) from existing run.",
+      "inputs": [
+        {
+          "name": "run_dir",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Path to existing run directory",
+          "validators": []
+        },
+        {
+          "name": "fmt",
+          "type_ref": "str",
+          "required": true,
+          "default": "both",
+          "description": "Output format: json, html, or both",
+          "validators": []
+        }
+      ],
+      "output_type": "None",
+      "error_cases": [
+        {
+          "name": "load_error",
+          "condition": "Cannot load run data",
+          "error_type": "FileNotFoundError | json.JSONDecodeError | ValidationError",
+          "error_data": {}
+        },
+        {
+          "name": "write_error",
+          "condition": "Cannot write report files",
+          "error_type": "OSError | PermissionError",
+          "error_data": {}
+        }
+      ],
+      "preconditions": [
+        "run_dir exists with valid run data"
+      ],
+      "postconditions": [
+        "Report files generated in specified format(s)",
+        "Duration logged to console"
+      ],
+      "idempotent": false,
+      "is_async": false,
+      "side_effects": [
+        "Reads run data",
+        "Writes report.html and/or report.json",
+        "Prints to console"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "reads_file",
+          "target": "run_dir/*",
+          "description": "Loads run data"
+        },
+        {
+          "kind": "writes_file",
+          "target": "run_dir/report.*",
+          "description": "Generates report files"
+        },
+        {
+          "kind": "logging",
+          "target": "stdout",
+          "description": "Completion message"
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "diff",
+      "description": "Compares two runs and outputs differences, optionally writing to file.",
+      "inputs": [
+        {
+          "name": "run_a",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Path to first run directory",
+          "validators": []
+        },
+        {
+          "name": "run_b",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Path to second run directory",
+          "validators": []
+        },
+        {
+          "name": "output",
+          "type_ref": "str | None",
+          "required": false,
+          "default": "",
+          "description": "Optional path to write diff JSON",
+          "validators": []
+        }
+      ],
+      "output_type": "None",
+      "error_cases": [
+        {
+          "name": "load_error",
+          "condition": "Cannot load one or both runs",
+          "error_type": "FileNotFoundError | json.JSONDecodeError | ValidationError",
+          "error_data": {}
+        },
+        {
+          "name": "write_error",
+          "condition": "Cannot write output file",
+          "error_type": "OSError | PermissionError",
+          "error_data": {}
+        }
+      ],
+      "preconditions": [
+        "Both run_a and run_b exist with valid run data"
+      ],
+      "postconditions": [
+        "Diff result printed to console or written to file",
+        "If output specified, file written and path confirmed"
+      ],
+      "idempotent": false,
+      "is_async": false,
+      "side_effects": [
+        "Reads both run directories",
+        "Optionally writes diff JSON",
+        "Prints to console"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "reads_file",
+          "target": "run_a and run_b",
+          "description": "Loads both runs"
+        },
+        {
+          "kind": "writes_file",
+          "target": "output path",
+          "description": "Writes diff if output specified"
+        },
+        {
+          "kind": "logging",
+          "target": "stdout",
+          "description": "Diff output or confirmation"
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "status",
+      "description": "Shows summary of a run including metadata, graph size, phase status, and analysis counts.",
+      "inputs": [
+        {
+          "name": "run_dir",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Path to run directory",
+          "validators": []
+        }
+      ],
+      "output_type": "None",
+      "error_cases": [
+        {
+          "name": "load_error",
+          "condition": "Cannot load run data",
+          "error_type": "FileNotFoundError | json.JSONDecodeError | ValidationError",
+          "error_data": {}
+        }
+      ],
+      "preconditions": [
+        "run_dir exists with valid run data"
+      ],
+      "postconditions": [
+        "Summary printed to console"
+      ],
+      "idempotent": false,
+      "is_async": false,
+      "side_effects": [
+        "Reads run data",
+        "Prints to console"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "reads_file",
+          "target": "run_dir/*",
+          "description": "Loads run data"
+        },
+        {
+          "kind": "logging",
+          "target": "stdout",
+          "description": "Status output"
+        }
+      ],
+      "performance_budget": null
+    }
+  ],
+  "dependencies": [
+    "asyncio",
+    "json",
+    "sys",
+    "datetime",
+    "pathlib",
+    "click",
+    "yaml",
+    "webprobe.config",
+    "webprobe.models",
+    "webprobe.mapper",
+    "webprobe.capturer",
+    "webprobe.analyzer",
+    "webprobe.reporter",
+    "webprobe.frameworks",
+    "webprobe.explorer",
+    "webprobe.differ"
+  ],
+  "dependency_contracts": {
+    "click": [
+      "Context",
+      "group",
+      "command",
+      "argument",
+      "option",
+      "echo",
+      "confirm",
+      "Path",
+      "Choice"
+    ],
+    "webprobe.config": [
+      "load_config",
+      "WebprobeConfig"
+    ],
+    "webprobe.models": [
+      "Run",
+      "SiteGraph",
+      "CostSummary"
+    ],
+    "webprobe.mapper": [
+      "map_site"
+    ],
+    "webprobe.capturer": [
+      "capture_site"
+    ],
+    "webprobe.analyzer": [
+      "analyze"
+    ],
+    "webprobe.reporter": [
+      "generate_report"
+    ],
+    "webprobe.frameworks": [
+      "detect_framework"
+    ],
+    "webprobe.explorer": [
+      "ExploreConfig",
+      "explore_site"
+    ],
+    "webprobe.differ": [
+      "load_run",
+      "diff_runs"
+    ]
+  },
+  "invariants": [
+    "All CLI commands operate on immutable run directories identified by run_id",
+    "Output directories follow pattern: {output_dir}/{run_id}/",
+    "Graph is persisted as graph.json before subsequent phases",
+    "Config snapshots are saved to run_dir/webprobe.yaml",
+    "Async operations use asyncio.run() for execution",
+    "LLM exploration warns if agents > 20 and requires confirmation",
+    "Phase ordering: 1=map, 2=capture, 3=analyze, 4=report, 5=explore (optional)"
+  ],
+  "requires": [],
+  "processing_register": "",
+  "data_access": {
+    "reads": [
+      "filesystem_run_directories",
+      "config_files"
+    ],
+    "writes": [
+      "filesystem_run_output",
+      "console_stdout",
+      "console_stderr"
+    ],
+    "rationale": "CLI orchestrates all webprobe operations including file I/O, network calls, and user interaction",
+    "side_effects": [
+      {
+        "type": "network_request",
+        "classification": "external",
+        "fields": [
+          "target_url",
+          "llm_api_endpoints"
+        ],
+        "rationale": "Makes HTTP requests to audit targets and LLM APIs"
+      },
+      {
+        "type": "file_io",
+        "classification": "internal",
+        "fields": [
+          "graph.json",
+          "analysis.json",
+          "report.html",
+          "report.json",
+          "webprobe.yaml"
+        ],
+        "rationale": "Persists run artifacts to disk"
+      },
+      {
+        "type": "user_interaction",
+        "classification": "external",
+        "fields": [
+          "confirmation_prompts"
+        ],
+        "rationale": "Prompts user for confirmation when agents > 20"
+      }
+    ]
+  },
+  "authority": {
+    "domains": [
+      "cli",
+      "command_orchestration"
+    ],
+    "rationale": "Owns CLI command definitions and orchestration of webprobe phases"
+  }
+}

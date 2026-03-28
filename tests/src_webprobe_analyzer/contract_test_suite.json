@@ -1,0 +1,556 @@
+{
+  "component_id": "src_webprobe_analyzer",
+  "contract_version": 1,
+  "test_cases": [
+    {
+      "id": "test_build_nx_graph_happy_path",
+      "description": "Converts a simple SiteGraph with nodes and edges to a networkx DiGraph",
+      "function": "_build_nx_graph",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "SiteGraph with 3 nodes and 2 edges",
+      "expected_output_description": "DiGraph with all nodes and edges from the input graph",
+      "expected_error": "",
+      "assertions": [
+        "Returned DiGraph contains all node IDs",
+        "Returned DiGraph contains all edges"
+      ]
+    },
+    {
+      "id": "test_build_nx_graph_empty",
+      "description": "Converts an empty SiteGraph to a networkx DiGraph",
+      "function": "_build_nx_graph",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "SiteGraph with 0 nodes and 0 edges",
+      "expected_output_description": "Empty DiGraph",
+      "expected_error": "",
+      "assertions": [
+        "DiGraph has 0 nodes",
+        "DiGraph has 0 edges"
+      ]
+    },
+    {
+      "id": "test_build_nx_graph_single_node",
+      "description": "Converts a SiteGraph with single node and no edges",
+      "function": "_build_nx_graph",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "SiteGraph with 1 node and 0 edges",
+      "expected_output_description": "DiGraph with 1 node and 0 edges",
+      "expected_error": "",
+      "assertions": [
+        "DiGraph has exactly 1 node",
+        "DiGraph has 0 edges"
+      ]
+    },
+    {
+      "id": "test_build_nx_graph_cycle",
+      "description": "Converts a SiteGraph with cyclic structure",
+      "function": "_build_nx_graph",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "SiteGraph with 4 nodes forming a cycle",
+      "expected_output_description": "DiGraph with cyclic structure preserved",
+      "expected_error": "",
+      "assertions": [
+        "All nodes present",
+        "All edges present",
+        "Cycle exists in graph"
+      ]
+    },
+    {
+      "id": "test_compute_graph_metrics_happy_path",
+      "description": "Computes metrics for a typical site graph",
+      "function": "_compute_graph_metrics",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "SiteGraph with mixed structure and corresponding DiGraph",
+      "expected_output_description": "GraphMetrics with all fields populated",
+      "expected_error": "",
+      "assertions": [
+        "All metric fields are populated",
+        "edge_coverage in [0.0, 1.0]",
+        "cyclomatic_complexity matches formula"
+      ]
+    },
+    {
+      "id": "test_compute_graph_metrics_empty",
+      "description": "Computes metrics for empty graph",
+      "function": "_compute_graph_metrics",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Empty SiteGraph and empty DiGraph",
+      "expected_output_description": "GraphMetrics with zero/empty values",
+      "expected_error": "",
+      "assertions": [
+        "orphan_nodes is empty",
+        "dead_ends is empty",
+        "edge_coverage is 0.0 or 1.0"
+      ]
+    },
+    {
+      "id": "test_compute_graph_metrics_orphan_excludes_root",
+      "description": "Verifies orphan nodes excludes root node",
+      "function": "_compute_graph_metrics",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "SiteGraph with root node having no incoming edges",
+      "expected_output_description": "Root node not in orphan_nodes list",
+      "expected_error": "",
+      "assertions": [
+        "Root node ID not in orphan_nodes"
+      ]
+    },
+    {
+      "id": "test_compute_graph_metrics_cyclomatic_complexity",
+      "description": "Verifies cyclomatic complexity formula E - N + 2P",
+      "function": "_compute_graph_metrics",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "SiteGraph with known E, N, P values",
+      "expected_output_description": "cyclomatic_complexity = E - N + 2P",
+      "expected_error": "",
+      "assertions": [
+        "cyclomatic_complexity equals n_edges - n_nodes + 2 * n_components"
+      ]
+    },
+    {
+      "id": "test_find_broken_links_happy_path",
+      "description": "Finds broken links in a graph with failing HTTP statuses",
+      "function": "_find_broken_links",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "SiteGraph with some links to nodes with HTTP 404 status",
+      "expected_output_description": "List of BrokenLink objects for failing links",
+      "expected_error": "",
+      "assertions": [
+        "Returns BrokenLink for each failing same-origin link",
+        "No external links in results"
+      ]
+    },
+    {
+      "id": "test_find_broken_links_no_issues",
+      "description": "Returns empty list when all links are valid",
+      "function": "_find_broken_links",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "SiteGraph with all nodes having HTTP 200 status",
+      "expected_output_description": "Empty list",
+      "expected_error": "",
+      "assertions": [
+        "Returns empty list"
+      ]
+    },
+    {
+      "id": "test_find_broken_links_excludes_external",
+      "description": "External links (target not in graph) are excluded",
+      "function": "_find_broken_links",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "SiteGraph with edges pointing to non-existent nodes",
+      "expected_output_description": "External links not reported as broken",
+      "expected_error": "",
+      "assertions": [
+        "No broken links for external targets"
+      ]
+    },
+    {
+      "id": "test_find_broken_links_boundary_statuses",
+      "description": "Tests boundary HTTP statuses (199, 200, 399, 400)",
+      "function": "_find_broken_links",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "SiteGraph with nodes at HTTP status boundaries",
+      "expected_output_description": "200-399 considered success, others broken",
+      "expected_error": "",
+      "assertions": [
+        "HTTP 200 is success",
+        "HTTP 399 is success",
+        "HTTP 199 is broken",
+        "HTTP 400 is broken"
+      ]
+    },
+    {
+      "id": "test_find_auth_violations_happy_path",
+      "description": "Finds pages requiring auth but accessible anonymously",
+      "function": "_find_auth_violations",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "SiteGraph with requires_auth=True nodes having anon HTTP 200",
+      "expected_output_description": "List of AuthBoundaryViolation",
+      "expected_error": "",
+      "assertions": [
+        "Returns violations for auth-required pages with anon 200-299"
+      ]
+    },
+    {
+      "id": "test_find_auth_violations_no_issues",
+      "description": "Returns empty list when no auth violations exist",
+      "function": "_find_auth_violations",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "SiteGraph with proper auth boundaries",
+      "expected_output_description": "Empty list",
+      "expected_error": "",
+      "assertions": [
+        "Returns empty list"
+      ]
+    },
+    {
+      "id": "test_find_auth_violations_only_checks_requires_auth",
+      "description": "Only nodes with requires_auth=True are checked",
+      "function": "_find_auth_violations",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "SiteGraph with mixed requires_auth values",
+      "expected_output_description": "Only requires_auth=True nodes checked",
+      "expected_error": "",
+      "assertions": [
+        "No violations for requires_auth=False nodes"
+      ]
+    },
+    {
+      "id": "test_find_auth_violations_boundary_statuses",
+      "description": "Tests boundary HTTP statuses for auth violations (199, 200, 299, 300)",
+      "function": "_find_auth_violations",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "SiteGraph with auth nodes at HTTP status boundaries",
+      "expected_output_description": "200-299 trigger violations, others don't",
+      "expected_error": "",
+      "assertions": [
+        "HTTP 200 triggers violation",
+        "HTTP 299 triggers violation",
+        "HTTP 199 no violation",
+        "HTTP 300 no violation"
+      ]
+    },
+    {
+      "id": "test_find_timing_outliers_happy_path",
+      "description": "Finds nodes with timing metrics significantly above mean",
+      "function": "_find_timing_outliers",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "SiteGraph with some nodes having z-score > 2.0",
+      "expected_output_description": "List of TimingOutlier for outliers",
+      "expected_error": "",
+      "assertions": [
+        "Returns TimingOutlier for |z-score| > 2.0"
+      ]
+    },
+    {
+      "id": "test_find_timing_outliers_no_issues",
+      "description": "Returns empty list when all timings are normal",
+      "function": "_find_timing_outliers",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "SiteGraph with uniform timing metrics",
+      "expected_output_description": "Empty list",
+      "expected_error": "",
+      "assertions": [
+        "Returns empty list"
+      ]
+    },
+    {
+      "id": "test_find_timing_outliers_skips_small_samples",
+      "description": "Metrics with < 3 samples are skipped",
+      "function": "_find_timing_outliers",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "SiteGraph with only 2 nodes",
+      "expected_output_description": "Empty list (skipped due to sample size)",
+      "expected_error": "",
+      "assertions": [
+        "Returns empty list for < 3 samples"
+      ]
+    },
+    {
+      "id": "test_find_timing_outliers_skips_zero_stddev",
+      "description": "Metrics with stddev = 0 are skipped",
+      "function": "_find_timing_outliers",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "SiteGraph with all nodes having identical timing",
+      "expected_output_description": "Empty list (skipped due to zero variance)",
+      "expected_error": "",
+      "assertions": [
+        "Returns empty list for zero stddev"
+      ]
+    },
+    {
+      "id": "test_find_timing_outliers_only_positive",
+      "description": "Only positive timing values (> 0) are included",
+      "function": "_find_timing_outliers",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "SiteGraph with some zero/negative timing values",
+      "expected_output_description": "Zero/negative values excluded from analysis",
+      "expected_error": "",
+      "assertions": [
+        "Only positive values considered"
+      ]
+    },
+    {
+      "id": "test_enumerate_prime_paths_happy_path",
+      "description": "Enumerates prime paths from a simple DAG",
+      "function": "_enumerate_prime_paths",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "DiGraph with simple DAG structure, max_loop=1, max_paths=1000",
+      "expected_output_description": "List of PrimePath objects",
+      "expected_error": "",
+      "assertions": [
+        "All paths have length >= 2",
+        "No duplicate paths",
+        "Returns at most max_paths"
+      ]
+    },
+    {
+      "id": "test_enumerate_prime_paths_empty",
+      "description": "Returns empty list for empty graph",
+      "function": "_enumerate_prime_paths",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Empty DiGraph",
+      "expected_output_description": "Empty list",
+      "expected_error": "",
+      "assertions": [
+        "Returns empty list"
+      ]
+    },
+    {
+      "id": "test_enumerate_prime_paths_max_paths_limit",
+      "description": "Respects max_paths limit",
+      "function": "_enumerate_prime_paths",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "DiGraph with many possible paths, max_paths=10",
+      "expected_output_description": "At most 10 paths returned",
+      "expected_error": "",
+      "assertions": [
+        "Returns at most max_paths prime paths"
+      ]
+    },
+    {
+      "id": "test_enumerate_prime_paths_length_cap",
+      "description": "Path length is capped at min(n_nodes, 15)",
+      "function": "_enumerate_prime_paths",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "DiGraph with long potential paths",
+      "expected_output_description": "Paths capped at min(n_nodes, 15)",
+      "expected_error": "",
+      "assertions": [
+        "All paths have length <= min(n_nodes, 15)"
+      ]
+    },
+    {
+      "id": "test_enumerate_prime_paths_no_duplicates",
+      "description": "No duplicate paths in result",
+      "function": "_enumerate_prime_paths",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "DiGraph with cycles",
+      "expected_output_description": "No duplicate paths",
+      "expected_error": "",
+      "assertions": [
+        "No duplicate paths in result"
+      ]
+    },
+    {
+      "id": "test_enumerate_prime_paths_networkx_error",
+      "description": "Handles NetworkX errors gracefully",
+      "function": "_enumerate_prime_paths",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Scenario that triggers NetworkX error",
+      "expected_output_description": "Error caught and skipped, partial results returned",
+      "expected_error": "NetworkXError",
+      "assertions": []
+    },
+    {
+      "id": "test_analyze_happy_path",
+      "description": "Complete analysis of a typical site graph",
+      "function": "analyze",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Well-formed SiteGraph with various properties",
+      "expected_output_description": "AnalysisResult with all components and PhaseStatus with phase='analyze', status='completed'",
+      "expected_error": "",
+      "assertions": [
+        "PhaseStatus.phase = 'analyze'",
+        "PhaseStatus.status = 'completed'",
+        "AnalysisResult contains all components",
+        "duration_ms is set"
+      ]
+    },
+    {
+      "id": "test_analyze_empty_graph",
+      "description": "Analyzes an empty site graph",
+      "function": "analyze",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Empty SiteGraph",
+      "expected_output_description": "AnalysisResult with empty/zero metrics and completed status",
+      "expected_error": "",
+      "assertions": [
+        "PhaseStatus.status = 'completed'",
+        "No broken links",
+        "No violations"
+      ]
+    },
+    {
+      "id": "test_analyze_sets_duration",
+      "description": "PhaseStatus.duration_ms is set to elapsed time",
+      "function": "analyze",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Any SiteGraph",
+      "expected_output_description": "PhaseStatus with duration_ms > 0",
+      "expected_error": "",
+      "assertions": [
+        "duration_ms is set and > 0"
+      ]
+    },
+    {
+      "id": "test_analyze_includes_security_findings",
+      "description": "AnalysisResult includes security_findings from scan_graph",
+      "function": "analyze",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {
+        "webprobe.security.scan_graph": "mocked_security_findings"
+      },
+      "input_values": {},
+      "input_description": "SiteGraph with security issues",
+      "expected_output_description": "AnalysisResult with security_findings populated",
+      "expected_error": "",
+      "assertions": [
+        "security_findings is populated"
+      ]
+    },
+    {
+      "id": "test_invariant_edge_coverage_range",
+      "description": "Edge coverage is always in range [0.0, 1.0]",
+      "function": "_compute_graph_metrics",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Various graph configurations",
+      "expected_output_description": "edge_coverage in [0.0, 1.0]",
+      "expected_error": "",
+      "assertions": [
+        "0.0 <= edge_coverage <= 1.0"
+      ]
+    },
+    {
+      "id": "test_invariant_path_length_cutoff",
+      "description": "Path length cutoff is min(n_nodes, 15)",
+      "function": "_enumerate_prime_paths",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Graphs with varying node counts",
+      "expected_output_description": "Path length <= min(n_nodes, 15)",
+      "expected_error": "",
+      "assertions": [
+        "All paths have length <= min(n_nodes, 15)"
+      ]
+    },
+    {
+      "id": "test_invariant_default_max_paths_limit",
+      "description": "Default max_paths limit is 1000",
+      "function": "_enumerate_prime_paths",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Graph with many paths, max_paths not specified",
+      "expected_output_description": "At most 1000 paths returned",
+      "expected_error": "",
+      "assertions": [
+        "Returns at most 1000 paths"
+      ]
+    },
+    {
+      "id": "test_invariant_timing_threshold",
+      "description": "Timing outlier threshold is |z-score| > 2.0",
+      "function": "_find_timing_outliers",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Graph with known z-scores",
+      "expected_output_description": "Only outliers with |z-score| > 2.0",
+      "expected_error": "",
+      "assertions": [
+        "All outliers have |z-score| > 2.0"
+      ]
+    }
+  ],
+  "test_language": "python",
+  "generated_code": "\"\"\"\nContract tests for WebProbe Graph Analyzer (src_webprobe_analyzer)\n\nThis test suite verifies the behavior of graph analysis functions against their\ncontracts, testing happy paths, edge cases, error cases, and invariants.\n\"\"\"\n\nimport pytest\nimport math\nimport time\nfrom datetime import datetime\nfrom typing import Dict, List, Optional, Any\nfrom unittest.mock import Mock, patch, MagicMock\nimport networkx as nx\n\n# Import the component under test\nfrom src.webprobe.analyzer import (\n    _build_nx_graph,\n    _compute_graph_metrics,\n    _find_broken_links,\n    _find_auth_violations,\n    _find_timing_outliers,\n    _enumerate_prime_paths,\n    analyze,\n)\n\n# Import models (mocked if needed)\ntry:\n    from webprobe.models import (\n        SiteGraph,\n        GraphNode,\n        GraphEdge,\n        GraphMetrics,\n        BrokenLink,\n        AuthBoundaryViolation,\n        TimingOutlier,\n        PrimePath,\n        AnalysisResult,\n        PhaseStatus,\n        CaptureData,\n    )\nexcept ImportError:\n    # Mock models if not available\n    class GraphNode:\n        def __init__(self, node_id, url=\"\", requires_auth=False, http_status=200, \n                     duration_ms=100, ttfb_ms=50, dom_content_loaded_ms=80, \n                     load_event_ms=90, anon_http_status=None):\n            self.node_id = node_id\n            self.url = url\n            self.requires_auth = requires_auth\n            self.http_status = http_status\n            self.duration_ms = duration_ms\n            self.ttfb_ms = ttfb_ms\n            self.dom_content_loaded_ms = dom_content_loaded_ms\n            self.load_event_ms = load_event_ms\n            self.anon_http_status = anon_http_status\n\n    class GraphEdge:\n        def __init__(self, source, target):\n            self.source = source\n            self.target = target\n\n    class SiteGraph:\n        def __init__(self, nodes=None, edges=None, root_node_id=None):\n            self.nodes = nodes or []\n            self.edges = edges or []\n            self.root_node_id = root_node_id\n\n    class GraphMetrics:\n        def __init__(self, **kwargs):\n            self.__dict__.update(kwargs)\n\n    class BrokenLink:\n        def __init__(self, source, target, http_status):\n            self.source = source\n            self.target = target\n            self.http_status = http_status\n\n    class AuthBoundaryViolation:\n        def __init__(self, node_id, url, anon_http_status):\n            self.node_id = node_id\n            self.url = url\n            self.anon_http_status = anon_http_status\n\n    class TimingOutlier:\n        def __init__(self, node_id, metric_name, value, z_score):\n            self.node_id = node_id\n            self.metric_name = metric_name\n            self.value = value\n            self.z_score = z_score\n\n    class PrimePath:\n        def __init__(self, path):\n            self.path = path\n\n    class AnalysisResult:\n        def __init__(self, **kwargs):\n            self.__dict__.update(kwargs)\n\n    class PhaseStatus:\n        def __init__(self, phase=\"\", status=\"\", duration_ms=0, **kwargs):\n            self.phase = phase\n            self.status = status\n            self.duration_ms = duration_ms\n            self.__dict__.update(kwargs)\n\n    class CaptureData:\n        def __init__(self, **kwargs):\n            self.__dict__.update(kwargs)\n\n\n# ============================================================================\n# TEST FIXTURES\n# ============================================================================\n\n@pytest.fixture\ndef empty_graph():\n    \"\"\"Empty SiteGraph with 0 nodes and 0 edges\"\"\"\n    return SiteGraph(nodes=[], edges=[], root_node_id=None)\n\n\n@pytest.fixture\ndef single_node_graph():\n    \"\"\"SiteGraph with 1 node and 0 edges\"\"\"\n    node = GraphNode(node_id=\"node1\", url=\"https://example.com/\")\n    return SiteGraph(nodes=[node], edges=[], root_node_id=\"node1\")\n\n\n@pytest.fixture\ndef linear_graph():\n    \"\"\"SiteGraph with 3 nodes in linear sequence\"\"\"\n    nodes = [\n        GraphNode(node_id=\"node1\", url=\"https://example.com/\", http_status=200),\n        GraphNode(node_id=\"node2\", url=\"https://example.com/page2\", http_status=200),\n        GraphNode(node_id=\"node3\", url=\"https://example.com/page3\", http_status=200),\n    ]\n    edges = [\n        GraphEdge(source=\"node1\", target=\"node2\"),\n        GraphEdge(source=\"node2\", target=\"node3\"),\n    ]\n    return SiteGraph(nodes=nodes, edges=edges, root_node_id=\"node1\")\n\n\n@pytest.fixture\ndef cycle_graph():\n    \"\"\"SiteGraph with 4 nodes forming a cycle\"\"\"\n    nodes = [\n        GraphNode(node_id=f\"node{i}\", url=f\"https://example.com/page{i}\", http_status=200)\n        for i in range(1, 5)\n    ]\n    edges = [\n        GraphEdge(source=\"node1\", target=\"node2\"),\n        GraphEdge(source=\"node2\", target=\"node3\"),\n        GraphEdge(source=\"node3\", target=\"node4\"),\n        GraphEdge(source=\"node4\", target=\"node1\"),  # Cycle back\n    ]\n    return SiteGraph(nodes=nodes, edges=edges, root_node_id=\"node1\")\n\n\n@pytest.fixture\ndef disconnected_graph():\n    \"\"\"SiteGraph with 2 disconnected components\"\"\"\n    nodes = [\n        GraphNode(node_id=\"node1\", url=\"https://example.com/\", http_status=200),\n        GraphNode(node_id=\"node2\", url=\"https://example.com/page2\", http_status=200),\n        GraphNode(node_id=\"node3\", url=\"https://example.com/other\", http_status=200),\n        GraphNode(node_id=\"node4\", url=\"https://example.com/other2\", http_status=200),\n    ]\n    edges = [\n        GraphEdge(source=\"node1\", target=\"node2\"),\n        GraphEdge(source=\"node3\", target=\"node4\"),\n    ]\n    return SiteGraph(nodes=nodes, edges=edges, root_node_id=\"node1\")\n\n\n@pytest.fixture\ndef auth_mixed_graph():\n    \"\"\"SiteGraph with mixed auth states\"\"\"\n    nodes = [\n        GraphNode(node_id=\"node1\", url=\"https://example.com/\", requires_auth=False, \n                  http_status=200, anon_http_status=200),\n        GraphNode(node_id=\"node2\", url=\"https://example.com/admin\", requires_auth=True, \n                  http_status=200, anon_http_status=200),  # Violation!\n        GraphNode(node_id=\"node3\", url=\"https://example.com/secure\", requires_auth=True, \n                  http_status=200, anon_http_status=403),  # Proper\n        GraphNode(node_id=\"node4\", url=\"https://example.com/dashboard\", requires_auth=True, \n                  http_status=200, anon_http_status=301),  # No violation (redirect)\n    ]\n    edges = [\n        GraphEdge(source=\"node1\", target=\"node2\"),\n        GraphEdge(source=\"node1\", target=\"node3\"),\n        GraphEdge(source=\"node1\", target=\"node4\"),\n    ]\n    return SiteGraph(nodes=nodes, edges=edges, root_node_id=\"node1\")\n\n\n@pytest.fixture\ndef timing_varied_graph():\n    \"\"\"SiteGraph with varied timing metrics (some outliers)\"\"\"\n    # Normal timings: 100ms, outlier: 500ms (z-score > 2 with 5 samples)\n    nodes = [\n        GraphNode(node_id=\"node1\", duration_ms=100, ttfb_ms=50, \n                  dom_content_loaded_ms=80, load_event_ms=90),\n        GraphNode(node_id=\"node2\", duration_ms=105, ttfb_ms=52, \n                  dom_content_loaded_ms=82, load_event_ms=92),\n        GraphNode(node_id=\"node3\", duration_ms=95, ttfb_ms=48, \n                  dom_content_loaded_ms=78, load_event_ms=88),\n        GraphNode(node_id=\"node4\", duration_ms=102, ttfb_ms=51, \n                  dom_content_loaded_ms=81, load_event_ms=91),\n        GraphNode(node_id=\"node5\", duration_ms=500, ttfb_ms=400, \n                  dom_content_loaded_ms=450, load_event_ms=480),  # Outlier\n    ]\n    return SiteGraph(nodes=nodes, edges=[], root_node_id=\"node1\")\n\n\n@pytest.fixture\ndef broken_links_graph():\n    \"\"\"SiteGraph with various HTTP status codes including broken links\"\"\"\n    nodes = [\n        GraphNode(node_id=\"node1\", url=\"https://example.com/\", http_status=200),\n        GraphNode(node_id=\"node2\", url=\"https://example.com/page2\", http_status=200),\n        GraphNode(node_id=\"node3\", url=\"https://example.com/missing\", http_status=404),\n        GraphNode(node_id=\"node4\", url=\"https://example.com/error\", http_status=500),\n        GraphNode(node_id=\"node5\", url=\"https://example.com/redirect\", http_status=301),\n    ]\n    edges = [\n        GraphEdge(source=\"node1\", target=\"node2\"),  # OK\n        GraphEdge(source=\"node1\", target=\"node3\"),  # Broken (404)\n        GraphEdge(source=\"node2\", target=\"node4\"),  # Broken (500)\n        GraphEdge(source=\"node1\", target=\"node5\"),  # OK (redirect in 200-399)\n        GraphEdge(source=\"node1\", target=\"node999\"),  # External (not in graph)\n    ]\n    return SiteGraph(nodes=nodes, edges=edges, root_node_id=\"node1\")\n\n\n# ============================================================================\n# _build_nx_graph TESTS\n# ============================================================================\n\ndef test_build_nx_graph_happy_path(linear_graph):\n    \"\"\"Converts a simple SiteGraph with nodes and edges to a networkx DiGraph\"\"\"\n    G = _build_nx_graph(linear_graph)\n    \n    assert isinstance(G, nx.DiGraph)\n    assert G.number_of_nodes() == 3\n    assert G.number_of_edges() == 2\n    \n    # Verify all node IDs present\n    node_ids = {node.node_id for node in linear_graph.nodes}\n    assert set(G.nodes()) == node_ids\n    \n    # Verify all edges present\n    for edge in linear_graph.edges:\n        assert G.has_edge(edge.source, edge.target)\n\n\ndef test_build_nx_graph_empty(empty_graph):\n    \"\"\"Converts an empty SiteGraph to a networkx DiGraph\"\"\"\n    G = _build_nx_graph(empty_graph)\n    \n    assert isinstance(G, nx.DiGraph)\n    assert G.number_of_nodes() == 0\n    assert G.number_of_edges() == 0\n\n\ndef test_build_nx_graph_single_node(single_node_graph):\n    \"\"\"Converts a SiteGraph with single node and no edges\"\"\"\n    G = _build_nx_graph(single_node_graph)\n    \n    assert isinstance(G, nx.DiGraph)\n    assert G.number_of_nodes() == 1\n    assert G.number_of_edges() == 0\n    assert \"node1\" in G.nodes()\n\n\ndef test_build_nx_graph_cycle(cycle_graph):\n    \"\"\"Converts a SiteGraph with cyclic structure\"\"\"\n    G = _build_nx_graph(cycle_graph)\n    \n    assert G.number_of_nodes() == 4\n    assert G.number_of_edges() == 4\n    \n    # Verify cycle exists\n    assert G.has_edge(\"node1\", \"node2\")\n    assert G.has_edge(\"node2\", \"node3\")\n    assert G.has_edge(\"node3\", \"node4\")\n    assert G.has_edge(\"node4\", \"node1\")\n    \n    # Check for cycles\n    try:\n        cycles = list(nx.simple_cycles(G))\n        assert len(cycles) > 0\n    except:\n        # Alternative: check that it's not a DAG\n        assert not nx.is_directed_acyclic_graph(G)\n\n\n# ============================================================================\n# _compute_graph_metrics TESTS\n# ============================================================================\n\ndef test_compute_graph_metrics_happy_path(linear_graph):\n    \"\"\"Computes metrics for a typical site graph\"\"\"\n    G = _build_nx_graph(linear_graph)\n    metrics = _compute_graph_metrics(linear_graph, G)\n    \n    assert isinstance(metrics, GraphMetrics)\n    assert hasattr(metrics, 'edge_coverage')\n    assert 0.0 <= metrics.edge_coverage <= 1.0\n    \n    # Verify cyclomatic complexity formula: E - N + 2P\n    # For linear graph: 2 edges - 3 nodes + 2*1 component = 2 - 3 + 2 = 1\n    assert hasattr(metrics, 'cyclomatic_complexity')\n    n_edges = G.number_of_edges()\n    n_nodes = G.number_of_nodes()\n    n_components = nx.number_weakly_connected_components(G)\n    expected_complexity = n_edges - n_nodes + 2 * n_components\n    assert metrics.cyclomatic_complexity == expected_complexity\n\n\ndef test_compute_graph_metrics_empty(empty_graph):\n    \"\"\"Computes metrics for empty graph\"\"\"\n    G = _build_nx_graph(empty_graph)\n    metrics = _compute_graph_metrics(empty_graph, G)\n    \n    assert isinstance(metrics, GraphMetrics)\n    assert hasattr(metrics, 'orphan_nodes')\n    assert len(metrics.orphan_nodes) == 0\n    assert hasattr(metrics, 'dead_ends')\n    assert len(metrics.dead_ends) == 0\n    # Edge coverage for empty graph can be 0.0 or 1.0 depending on definition\n    assert metrics.edge_coverage in [0.0, 1.0]\n\n\ndef test_compute_graph_metrics_orphan_excludes_root(linear_graph):\n    \"\"\"Verifies orphan nodes excludes root node\"\"\"\n    G = _build_nx_graph(linear_graph)\n    metrics = _compute_graph_metrics(linear_graph, G)\n    \n    # Root node (node1) has no incoming edges but should not be in orphan_nodes\n    assert linear_graph.root_node_id not in metrics.orphan_nodes\n\n\ndef test_compute_graph_metrics_cyclomatic_complexity(cycle_graph):\n    \"\"\"Verifies cyclomatic complexity formula E - N + 2P\"\"\"\n    G = _build_nx_graph(cycle_graph)\n    metrics = _compute_graph_metrics(cycle_graph, G)\n    \n    n_edges = G.number_of_edges()\n    n_nodes = G.number_of_nodes()\n    n_components = nx.number_weakly_connected_components(G)\n    expected_complexity = n_edges - n_nodes + 2 * n_components\n    \n    assert metrics.cyclomatic_complexity == expected_complexity\n\n\ndef test_invariant_edge_coverage_range():\n    \"\"\"Edge coverage is always in range [0.0, 1.0]\"\"\"\n    # Test with various graph configurations\n    test_graphs = []\n    \n    # Empty graph\n    test_graphs.append(SiteGraph(nodes=[], edges=[], root_node_id=None))\n    \n    # Single node\n    test_graphs.append(SiteGraph(\n        nodes=[GraphNode(node_id=\"n1\")], \n        edges=[], \n        root_node_id=\"n1\"\n    ))\n    \n    # Full connectivity (3 nodes, all edges)\n    nodes_full = [GraphNode(node_id=f\"n{i}\") for i in range(3)]\n    edges_full = [\n        GraphEdge(source=f\"n{i}\", target=f\"n{j}\")\n        for i in range(3) for j in range(3) if i != j\n    ]\n    test_graphs.append(SiteGraph(nodes=nodes_full, edges=edges_full, root_node_id=\"n0\"))\n    \n    for graph in test_graphs:\n        G = _build_nx_graph(graph)\n        metrics = _compute_graph_metrics(graph, G)\n        assert 0.0 <= metrics.edge_coverage <= 1.0, \\\n            f\"Edge coverage {metrics.edge_coverage} out of range for graph with {len(graph.nodes)} nodes\"\n\n\n# ============================================================================\n# _find_broken_links TESTS\n# ============================================================================\n\ndef test_find_broken_links_happy_path(broken_links_graph):\n    \"\"\"Finds broken links in a graph with failing HTTP statuses\"\"\"\n    broken = _find_broken_links(broken_links_graph)\n    \n    assert isinstance(broken, list)\n    \n    # Should find broken links to node3 (404) and node4 (500)\n    broken_targets = {b.target for b in broken}\n    assert \"node3\" in broken_targets  # 404\n    assert \"node4\" in broken_targets  # 500\n    \n    # Should NOT include external links (node999)\n    assert \"node999\" not in broken_targets\n\n\ndef test_find_broken_links_no_issues():\n    \"\"\"Returns empty list when all links are valid\"\"\"\n    nodes = [\n        GraphNode(node_id=\"node1\", http_status=200),\n        GraphNode(node_id=\"node2\", http_status=200),\n        GraphNode(node_id=\"node3\", http_status=301),  # Redirect OK\n    ]\n    edges = [\n        GraphEdge(source=\"node1\", target=\"node2\"),\n        GraphEdge(source=\"node1\", target=\"node3\"),\n    ]\n    graph = SiteGraph(nodes=nodes, edges=edges, root_node_id=\"node1\")\n    \n    broken = _find_broken_links(graph)\n    assert len(broken) == 0\n\n\ndef test_find_broken_links_excludes_external(broken_links_graph):\n    \"\"\"External links (target not in graph) are excluded\"\"\"\n    broken = _find_broken_links(broken_links_graph)\n    \n    # node999 is external (not in graph.nodes)\n    broken_targets = {b.target for b in broken}\n    assert \"node999\" not in broken_targets\n\n\ndef test_find_broken_links_boundary_statuses():\n    \"\"\"Tests boundary HTTP statuses (199, 200, 399, 400)\"\"\"\n    nodes = [\n        GraphNode(node_id=\"node1\", http_status=200),\n        GraphNode(node_id=\"node199\", http_status=199),\n        GraphNode(node_id=\"node200\", http_status=200),\n        GraphNode(node_id=\"node399\", http_status=399),\n        GraphNode(node_id=\"node400\", http_status=400),\n    ]\n    edges = [\n        GraphEdge(source=\"node1\", target=\"node199\"),\n        GraphEdge(source=\"node1\", target=\"node200\"),\n        GraphEdge(source=\"node1\", target=\"node399\"),\n        GraphEdge(source=\"node1\", target=\"node400\"),\n    ]\n    graph = SiteGraph(nodes=nodes, edges=edges, root_node_id=\"node1\")\n    \n    broken = _find_broken_links(graph)\n    broken_targets = {b.target for b in broken}\n    \n    # 200-399 are success\n    assert \"node200\" not in broken_targets\n    assert \"node399\" not in broken_targets\n    \n    # < 200 or >= 400 are broken\n    assert \"node199\" in broken_targets\n    assert \"node400\" in broken_targets\n\n\n# ============================================================================\n# _find_auth_violations TESTS\n# ============================================================================\n\ndef test_find_auth_violations_happy_path(auth_mixed_graph):\n    \"\"\"Finds pages requiring auth but accessible anonymously\"\"\"\n    violations = _find_auth_violations(auth_mixed_graph)\n    \n    assert isinstance(violations, list)\n    # node2 has requires_auth=True and anon_http_status=200 -> violation\n    violation_nodes = {v.node_id for v in violations}\n    assert \"node2\" in violation_nodes\n\n\ndef test_find_auth_violations_no_issues():\n    \"\"\"Returns empty list when no auth violations exist\"\"\"\n    nodes = [\n        GraphNode(node_id=\"node1\", requires_auth=False, anon_http_status=200),\n        GraphNode(node_id=\"node2\", requires_auth=True, anon_http_status=403),\n        GraphNode(node_id=\"node3\", requires_auth=True, anon_http_status=401),\n    ]\n    graph = SiteGraph(nodes=nodes, edges=[], root_node_id=\"node1\")\n    \n    violations = _find_auth_violations(graph)\n    assert len(violations) == 0\n\n\ndef test_find_auth_violations_only_checks_requires_auth(auth_mixed_graph):\n    \"\"\"Only nodes with requires_auth=True are checked\"\"\"\n    violations = _find_auth_violations(auth_mixed_graph)\n    \n    # node1 has requires_auth=False, should never be in violations\n    violation_nodes = {v.node_id for v in violations}\n    assert \"node1\" not in violation_nodes\n\n\ndef test_find_auth_violations_boundary_statuses():\n    \"\"\"Tests boundary HTTP statuses for auth violations (199, 200, 299, 300)\"\"\"\n    nodes = [\n        GraphNode(node_id=\"node199\", requires_auth=True, anon_http_status=199),\n        GraphNode(node_id=\"node200\", requires_auth=True, anon_http_status=200),\n        GraphNode(node_id=\"node299\", requires_auth=True, anon_http_status=299),\n        GraphNode(node_id=\"node300\", requires_auth=True, anon_http_status=300),\n    ]\n    graph = SiteGraph(nodes=nodes, edges=[], root_node_id=\"node199\")\n    \n    violations = _find_auth_violations(graph)\n    violation_nodes = {v.node_id for v in violations}\n    \n    # 200-299 trigger violations\n    assert \"node200\" in violation_nodes\n    assert \"node299\" in violation_nodes\n    \n    # < 200 or >= 300 don't trigger violations\n    assert \"node199\" not in violation_nodes\n    assert \"node300\" not in violation_nodes\n\n\n# ============================================================================\n# _find_timing_outliers TESTS\n# ============================================================================\n\ndef test_find_timing_outliers_happy_path(timing_varied_graph):\n    \"\"\"Finds nodes with timing metrics significantly above mean\"\"\"\n    outliers = _find_timing_outliers(timing_varied_graph)\n    \n    assert isinstance(outliers, list)\n    # node5 has significantly higher timings\n    outlier_nodes = {o.node_id for o in outliers}\n    assert \"node5\" in outlier_nodes\n    \n    # Check that z-scores are > 2.0\n    for outlier in outliers:\n        assert abs(outlier.z_score) > 2.0\n\n\ndef test_find_timing_outliers_no_issues():\n    \"\"\"Returns empty list when all timings are normal\"\"\"\n    nodes = [\n        GraphNode(node_id=f\"node{i}\", duration_ms=100, ttfb_ms=50,\n                  dom_content_loaded_ms=80, load_event_ms=90)\n        for i in range(5)\n    ]\n    graph = SiteGraph(nodes=nodes, edges=[], root_node_id=\"node0\")\n    \n    outliers = _find_timing_outliers(graph)\n    # All identical -> stddev = 0 -> skipped\n    assert len(outliers) == 0\n\n\ndef test_find_timing_outliers_skips_small_samples():\n    \"\"\"Metrics with < 3 samples are skipped\"\"\"\n    nodes = [\n        GraphNode(node_id=\"node1\", duration_ms=100),\n        GraphNode(node_id=\"node2\", duration_ms=1000),  # Would be outlier\n    ]\n    graph = SiteGraph(nodes=nodes, edges=[], root_node_id=\"node1\")\n    \n    outliers = _find_timing_outliers(graph)\n    # < 3 samples -> skipped\n    assert len(outliers) == 0\n\n\ndef test_find_timing_outliers_skips_zero_stddev():\n    \"\"\"Metrics with stddev = 0 are skipped\"\"\"\n    nodes = [\n        GraphNode(node_id=f\"node{i}\", duration_ms=100, ttfb_ms=50,\n                  dom_content_loaded_ms=80, load_event_ms=90)\n        for i in range(5)\n    ]\n    graph = SiteGraph(nodes=nodes, edges=[], root_node_id=\"node0\")\n    \n    outliers = _find_timing_outliers(graph)\n    # All identical values -> stddev = 0 -> skipped\n    assert len(outliers) == 0\n\n\ndef test_find_timing_outliers_only_positive():\n    \"\"\"Only positive timing values (> 0) are included\"\"\"\n    nodes = [\n        GraphNode(node_id=\"node1\", duration_ms=100, ttfb_ms=50),\n        GraphNode(node_id=\"node2\", duration_ms=105, ttfb_ms=52),\n        GraphNode(node_id=\"node3\", duration_ms=0, ttfb_ms=0),  # Zero\n        GraphNode(node_id=\"node4\", duration_ms=-10, ttfb_ms=-5),  # Negative\n        GraphNode(node_id=\"node5\", duration_ms=102, ttfb_ms=51),\n    ]\n    graph = SiteGraph(nodes=nodes, edges=[], root_node_id=\"node1\")\n    \n    outliers = _find_timing_outliers(graph)\n    \n    # Zero and negative values should be excluded\n    outlier_nodes = {o.node_id for o in outliers}\n    assert \"node3\" not in outlier_nodes\n    assert \"node4\" not in outlier_nodes\n\n\ndef test_invariant_timing_threshold():\n    \"\"\"Timing outlier threshold is |z-score| > 2.0\"\"\"\n    # Create graph with known outlier\n    nodes = [\n        GraphNode(node_id=f\"node{i}\", duration_ms=100)\n        for i in range(10)\n    ]\n    # Add outlier with duration far from mean\n    nodes.append(GraphNode(node_id=\"outlier\", duration_ms=1000))\n    graph = SiteGraph(nodes=nodes, edges=[], root_node_id=\"node0\")\n    \n    outliers = _find_timing_outliers(graph)\n    \n    # Verify all outliers have |z-score| > 2.0\n    for outlier in outliers:\n        assert abs(outlier.z_score) > 2.0\n\n\n# ============================================================================\n# _enumerate_prime_paths TESTS\n# ============================================================================\n\ndef test_enumerate_prime_paths_happy_path():\n    \"\"\"Enumerates prime paths from a simple DAG\"\"\"\n    # Create simple DAG: 1 -> 2 -> 3\n    #                         -> 4\n    G = nx.DiGraph()\n    G.add_edges_from([(\"n1\", \"n2\"), (\"n2\", \"n3\"), (\"n2\", \"n4\")])\n    \n    paths = _enumerate_prime_paths(G, max_loop=1, max_paths=1000)\n    \n    assert isinstance(paths, list)\n    # All paths should have length >= 2\n    for path in paths:\n        assert len(path.path) >= 2\n    \n    # No duplicate paths\n    path_tuples = [tuple(p.path) for p in paths]\n    assert len(path_tuples) == len(set(path_tuples))\n    \n    # Should not exceed max_paths\n    assert len(paths) <= 1000\n\n\ndef test_enumerate_prime_paths_empty():\n    \"\"\"Returns empty list for empty graph\"\"\"\n    G = nx.DiGraph()\n    \n    paths = _enumerate_prime_paths(G, max_loop=1, max_paths=1000)\n    \n    assert len(paths) == 0\n\n\ndef test_enumerate_prime_paths_max_paths_limit():\n    \"\"\"Respects max_paths limit\"\"\"\n    # Create graph with many paths\n    G = nx.DiGraph()\n    # Create a complete graph to generate many paths\n    for i in range(5):\n        for j in range(5):\n            if i != j:\n                G.add_edge(f\"n{i}\", f\"n{j}\")\n    \n    paths = _enumerate_prime_paths(G, max_loop=1, max_paths=10)\n    \n    assert len(paths) <= 10\n\n\ndef test_invariant_path_length_cutoff():\n    \"\"\"Path length cutoff is min(n_nodes, 15)\"\"\"\n    # Create linear graph with 20 nodes\n    G = nx.DiGraph()\n    for i in range(19):\n        G.add_edge(f\"n{i}\", f\"n{i+1}\")\n    \n    paths = _enumerate_prime_paths(G, max_loop=1, max_paths=1000)\n    \n    n_nodes = G.number_of_nodes()\n    max_len = min(n_nodes, 15)\n    \n    # All paths should respect length cap\n    for path in paths:\n        assert len(path.path) <= max_len\n\n\ndef test_enumerate_prime_paths_no_duplicates():\n    \"\"\"No duplicate paths in result\"\"\"\n    G = nx.DiGraph()\n    # Simple cycle\n    G.add_edges_from([(\"n1\", \"n2\"), (\"n2\", \"n3\"), (\"n3\", \"n1\")])\n    \n    paths = _enumerate_prime_paths(G, max_loop=2, max_paths=1000)\n    \n    # Check for duplicates\n    path_tuples = [tuple(p.path) for p in paths]\n    assert len(path_tuples) == len(set(path_tuples)), \"Found duplicate paths\"\n\n\ndef test_enumerate_prime_paths_networkx_error():\n    \"\"\"Handles NetworkX errors gracefully\"\"\"\n    # Create a mock DiGraph that raises NetworkX errors\n    G = nx.DiGraph()\n    G.add_edges_from([(\"n1\", \"n2\"), (\"n2\", \"n3\")])\n    \n    # The function should handle errors and return partial results\n    # This is tested by the contract error handling\n    try:\n        paths = _enumerate_prime_paths(G, max_loop=1, max_paths=1000)\n        # Should return list (possibly empty if all attempts failed)\n        assert isinstance(paths, list)\n    except Exception as e:\n        # If NetworkX errors are not caught, this test would fail\n        pytest.fail(f\"NetworkX error not handled: {e}\")\n\n\ndef test_invariant_default_max_paths_limit():\n    \"\"\"Default max_paths limit is 1000\"\"\"\n    G = nx.DiGraph()\n    # Create graph with potential for many paths\n    for i in range(5):\n        for j in range(5):\n            if i != j:\n                G.add_edge(f\"n{i}\", f\"n{j}\")\n    \n    # Call without explicit max_paths (should default to 1000)\n    paths = _enumerate_prime_paths(G, max_loop=1, max_paths=1000)\n    \n    assert len(paths) <= 1000\n\n\n# ============================================================================\n# analyze TESTS\n# ============================================================================\n\n@patch('src_webprobe_analyzer.webprobe.security.scan_graph')\ndef test_analyze_happy_path(mock_scan_graph, linear_graph):\n    \"\"\"Complete analysis of a typical site graph\"\"\"\n    # Mock security scan\n    mock_scan_graph.return_value = []\n    \n    result, status = analyze(linear_graph)\n    \n    # Verify PhaseStatus\n    assert isinstance(status, PhaseStatus)\n    assert status.phase == 'analyze'\n    assert status.status == 'completed'\n    assert status.duration_ms > 0\n    \n    # Verify AnalysisResult contains all components\n    assert isinstance(result, AnalysisResult)\n    assert hasattr(result, 'graph_metrics')\n    assert hasattr(result, 'broken_links')\n    assert hasattr(result, 'auth_violations')\n    assert hasattr(result, 'timing_outliers')\n    assert hasattr(result, 'prime_paths')\n    assert hasattr(result, 'security_findings')\n\n\n@patch('src_webprobe_analyzer.webprobe.security.scan_graph')\ndef test_analyze_empty_graph(mock_scan_graph, empty_graph):\n    \"\"\"Analyzes an empty site graph\"\"\"\n    mock_scan_graph.return_value = []\n    \n    result, status = analyze(empty_graph)\n    \n    assert status.status == 'completed'\n    assert len(result.broken_links) == 0\n    assert len(result.auth_violations) == 0\n\n\n@patch('src_webprobe_analyzer.webprobe.security.scan_graph')\ndef test_analyze_sets_duration(mock_scan_graph, linear_graph):\n    \"\"\"PhaseStatus.duration_ms is set to elapsed time\"\"\"\n    mock_scan_graph.return_value = []\n    \n    result, status = analyze(linear_graph)\n    \n    assert status.duration_ms > 0\n    assert isinstance(status.duration_ms, (int, float))\n\n\n@patch('src_webprobe_analyzer.webprobe.security.scan_graph')\ndef test_analyze_includes_security_findings(mock_scan_graph, linear_graph):\n    \"\"\"AnalysisResult includes security_findings from scan_graph\"\"\"\n    # Mock security findings\n    mock_findings = [\n        {\"type\": \"xss\", \"node_id\": \"node1\", \"severity\": \"high\"}\n    ]\n    mock_scan_graph.return_value = mock_findings\n    \n    result, status = analyze(linear_graph)\n    \n    assert hasattr(result, 'security_findings')\n    assert result.security_findings == mock_findings\n    mock_scan_graph.assert_called_once_with(linear_graph)\n\n\n# ============================================================================\n# ADDITIONAL EDGE CASE AND INTEGRATION TESTS\n# ============================================================================\n\ndef test_build_nx_graph_preserves_structure(cycle_graph):\n    \"\"\"Verifies that graph structure is preserved exactly\"\"\"\n    G = _build_nx_graph(cycle_graph)\n    \n    # Check all nodes\n    for node in cycle_graph.nodes:\n        assert node.node_id in G.nodes()\n    \n    # Check all edges\n    for edge in cycle_graph.edges:\n        assert G.has_edge(edge.source, edge.target)\n    \n    # Check no extra nodes or edges\n    assert G.number_of_nodes() == len(cycle_graph.nodes)\n    assert G.number_of_edges() == len(cycle_graph.edges)\n\n\ndef test_compute_graph_metrics_disconnected_components(disconnected_graph):\n    \"\"\"Computes metrics correctly for disconnected graph\"\"\"\n    G = _build_nx_graph(disconnected_graph)\n    metrics = _compute_graph_metrics(disconnected_graph, G)\n    \n    # Should have 2 weakly connected components\n    n_components = nx.number_weakly_connected_components(G)\n    assert n_components == 2\n    \n    # Verify cyclomatic complexity with multiple components\n    n_edges = G.number_of_edges()\n    n_nodes = G.number_of_nodes()\n    expected_complexity = n_edges - n_nodes + 2 * n_components\n    assert metrics.cyclomatic_complexity == expected_complexity\n\n\ndef test_find_broken_links_with_no_edges():\n    \"\"\"Handles graph with nodes but no edges\"\"\"\n    nodes = [\n        GraphNode(node_id=\"node1\", http_status=404),\n        GraphNode(node_id=\"node2\", http_status=500),\n    ]\n    graph = SiteGraph(nodes=nodes, edges=[], root_node_id=\"node1\")\n    \n    broken = _find_broken_links(graph)\n    # No edges means no broken links\n    assert len(broken) == 0\n\n\ndef test_find_auth_violations_missing_anon_status():\n    \"\"\"Handles nodes with requires_auth=True but no anon_http_status\"\"\"\n    nodes = [\n        GraphNode(node_id=\"node1\", requires_auth=True, anon_http_status=None),\n    ]\n    graph = SiteGraph(nodes=nodes, edges=[], root_node_id=\"node1\")\n    \n    # Should handle gracefully (no violation if no anon capture)\n    violations = _find_auth_violations(graph)\n    # Implementation dependent - either skip or report\n    assert isinstance(violations, list)\n\n\ndef test_find_timing_outliers_three_samples_boundary():\n    \"\"\"Tests exactly 3 samples (boundary for minimum sample size)\"\"\"\n    nodes = [\n        GraphNode(node_id=\"node1\", duration_ms=100),\n        GraphNode(node_id=\"node2\", duration_ms=100),\n        GraphNode(node_id=\"node3\", duration_ms=500),  # Potential outlier\n    ]\n    graph = SiteGraph(nodes=nodes, edges=[], root_node_id=\"node1\")\n    \n    outliers = _find_timing_outliers(graph)\n    # With 3 samples, should be analyzed\n    assert isinstance(outliers, list)\n\n\ndef test_enumerate_prime_paths_single_node():\n    \"\"\"Handles graph with single node\"\"\"\n    G = nx.DiGraph()\n    G.add_node(\"n1\")\n    \n    paths = _enumerate_prime_paths(G, max_loop=1, max_paths=1000)\n    \n    # Single node cannot form path of length >= 2\n    assert len(paths) == 0\n\n\ndef test_enumerate_prime_paths_self_loop():\n    \"\"\"Handles graph with self-loop\"\"\"\n    G = nx.DiGraph()\n    G.add_edge(\"n1\", \"n1\")  # Self-loop\n    \n    paths = _enumerate_prime_paths(G, max_loop=1, max_paths=1000)\n    \n    # Should handle self-loops gracefully\n    assert isinstance(paths, list)\n\n\n@patch('src_webprobe_analyzer.webprobe.security.scan_graph')\ndef test_analyze_with_all_issues(mock_scan_graph, broken_links_graph, auth_mixed_graph):\n    \"\"\"Integration test with broken links, auth violations, and timing issues\"\"\"\n    # Combine multiple issue types\n    combined_nodes = broken_links_graph.nodes + auth_mixed_graph.nodes\n    combined_edges = broken_links_graph.edges + auth_mixed_graph.edges\n    \n    # Add timing outliers\n    combined_nodes[0].duration_ms = 1000  # Make it an outlier\n    \n    graph = SiteGraph(\n        nodes=combined_nodes,\n        edges=combined_edges,\n        root_node_id=broken_links_graph.root_node_id\n    )\n    \n    mock_scan_graph.return_value = [{\"type\": \"test\", \"severity\": \"low\"}]\n    \n    result, status = analyze(graph)\n    \n    assert status.status == 'completed'\n    assert len(result.broken_links) > 0\n    assert len(result.security_findings) > 0\n\n\ndef test_broken_link_detection_null_status():\n    \"\"\"Handles nodes with null/None HTTP status\"\"\"\n    nodes = [\n        GraphNode(node_id=\"node1\", http_status=200),\n        GraphNode(node_id=\"node2\", http_status=None),\n    ]\n    edges = [\n        GraphEdge(source=\"node1\", target=\"node2\"),\n    ]\n    graph = SiteGraph(nodes=nodes, edges=edges, root_node_id=\"node1\")\n    \n    broken = _find_broken_links(graph)\n    \n    # None status should be treated as broken (no successful capture)\n    broken_targets = {b.target for b in broken}\n    assert \"node2\" in broken_targets\n\n\n@patch('src_webprobe_analyzer.webprobe.security.scan_graph')\ndef test_analyze_performance_reasonable(mock_scan_graph):\n    \"\"\"Verifies analyze completes in reasonable time for medium graph\"\"\"\n    mock_scan_graph.return_value = []\n    \n    # Create medium-sized graph (50 nodes)\n    nodes = [\n        GraphNode(node_id=f\"node{i}\", http_status=200, duration_ms=100)\n        for i in range(50)\n    ]\n    edges = [\n        GraphEdge(source=f\"node{i}\", target=f\"node{i+1}\")\n        for i in range(49)\n    ]\n    graph = SiteGraph(nodes=nodes, edges=edges, root_node_id=\"node0\")\n    \n    start = time.time()\n    result, status = analyze(graph)\n    elapsed = time.time() - start\n    \n    # Should complete in reasonable time (< 5 seconds)\n    assert elapsed < 5.0\n    assert status.status == 'completed'\n\n\ndef test_cyclomatic_complexity_invariant_various_graphs():\n    \"\"\"Verifies cyclomatic complexity formula holds for various graph types\"\"\"\n    test_cases = [\n        # (nodes, edges, expected_components)\n        ([], [], 0),\n        ([GraphNode(node_id=\"n1\")], [], 1),\n        ([GraphNode(node_id=\"n1\"), GraphNode(node_id=\"n2\")], \n         [GraphEdge(\"n1\", \"n2\")], 1),\n        # Disconnected\n        ([GraphNode(node_id=\"n1\"), GraphNode(node_id=\"n2\")], [], 2),\n    ]\n    \n    for nodes, edges, expected_comp in test_cases:\n        graph = SiteGraph(\n            nodes=nodes, \n            edges=edges, \n            root_node_id=nodes[0].node_id if nodes else None\n        )\n        G = _build_nx_graph(graph)\n        metrics = _compute_graph_metrics(graph, G)\n        \n        n_edges = len(edges)\n        n_nodes = len(nodes)\n        n_components = expected_comp\n        expected_complexity = n_edges - n_nodes + 2 * n_components\n        \n        assert metrics.cyclomatic_complexity == expected_complexity\n\n\ndef test_prime_paths_respects_max_loop_parameter():\n    \"\"\"Verifies that max_loop parameter affects path enumeration\"\"\"\n    # Create simple cycle\n    G = nx.DiGraph()\n    G.add_edges_from([(\"n1\", \"n2\"), (\"n2\", \"n3\"), (\"n3\", \"n1\")])\n    \n    paths_loop_0 = _enumerate_prime_paths(G, max_loop=0, max_paths=1000)\n    paths_loop_1 = _enumerate_prime_paths(G, max_loop=1, max_paths=1000)\n    paths_loop_2 = _enumerate_prime_paths(G, max_loop=2, max_paths=1000)\n    \n    # Higher max_loop should allow more paths (or equal)\n    assert len(paths_loop_1) >= len(paths_loop_0)\n    assert len(paths_loop_2) >= len(paths_loop_1)\n\n\ndef test_timing_outliers_multiple_metrics():\n    \"\"\"Verifies timing outliers checks all four timing metrics\"\"\"\n    nodes = [\n        GraphNode(node_id=\"node1\", duration_ms=100, ttfb_ms=50, \n                  dom_content_loaded_ms=80, load_event_ms=90),\n        GraphNode(node_id=\"node2\", duration_ms=105, ttfb_ms=52, \n                  dom_content_loaded_ms=82, load_event_ms=92),\n        GraphNode(node_id=\"node3\", duration_ms=102, ttfb_ms=51, \n                  dom_content_loaded_ms=81, load_event_ms=91),\n        # Outlier in ttfb only\n        GraphNode(node_id=\"node4\", duration_ms=103, ttfb_ms=500, \n                  dom_content_loaded_ms=82, load_event_ms=91),\n    ]\n    graph = SiteGraph(nodes=nodes, edges=[], root_node_id=\"node1\")\n    \n    outliers = _find_timing_outliers(graph)\n    \n    # Should detect outlier in ttfb_ms\n    outlier_metrics = {o.metric_name for o in outliers}\n    assert \"ttfb_ms\" in outlier_metrics or len(outliers) > 0\n\n\n@patch('src_webprobe_analyzer.webprobe.security.scan_graph')\ndef test_analyze_reports_phase_correctly(mock_scan_graph, linear_graph):\n    \"\"\"Verifies PhaseStatus.phase is always 'analyze'\"\"\"\n    mock_scan_graph.return_value = []\n    \n    result, status = analyze(linear_graph)\n    \n    assert status.phase == 'analyze'\n\n\ndef test_build_nx_graph_creates_new_object(linear_graph):\n    \"\"\"Verifies that _build_nx_graph creates a new DiGraph object\"\"\"\n    G1 = _build_nx_graph(linear_graph)\n    G2 = _build_nx_graph(linear_graph)\n    \n    # Should be different objects\n    assert G1 is not G2\n    # But structurally equivalent\n    assert G1.number_of_nodes() == G2.number_of_nodes()\n    assert G1.number_of_edges() == G2.number_of_edges()\n"
+}

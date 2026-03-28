@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "webprobe"
-version = "0.1.0"
-description = "Generic site state-graph auditor — map, capture, analyze, report"
+version = "0.2.0"
+description = "Generic site state-graph auditor — map, capture, analyze, report, explore"
 requires-python = ">=3.12"
 license = "MIT"
 dependencies = [
@@ -19,6 +19,23 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+explore = [
+    "anthropic>=0.40",
+    "transmogrifier",
+    "Pillow>=10.0",
+]
+openai = [
+    "openai>=1.0",
+]
+gemini = [
+    "google-genai>=1.0",
+]
+apprentice = [
+    "apprentice",
+]
+all-llm = [
+    "webprobe[explore,openai,gemini,apprentice]",
+]
 dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.23",

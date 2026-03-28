@@ -1,0 +1,112 @@
+constraints:
+  - id: C001
+    boundary: schema_stability
+    condition: "Run.schema_version must be bumped when any field is added, removed, or type-changed in Run, SiteGraph, Node, Edge, or AnalysisResult"
+    violation: "Cross-run diffs and aggregation pipelines break silently"
+    severity: must
+    rationale: "Stable schema is the foundation of the trending/aggregation use case"
+    affected_components: [models, differ, reporter]
+
+  - id: C002
+    boundary: no_destructive_actions
+    condition: "LLM exploration agents must never submit real data, click delete/remove/cancel buttons, or trigger irreversible state changes on the target site"
+    violation: "Data loss or unintended side effects on the target site"
+    severity: must
+    rationale: "webprobe is a read-only observer; destructive actions would make it unsafe to run against production"
+    affected_components: [explorer]
+
+  - id: C003
+    boundary: cost_visibility
+    condition: "Every LLM API call must be logged with provider, model, input_tokens, output_tokens, and estimated_cost_usd"
+    violation: "Users cannot predict or audit exploration costs"
+    severity: must
+    rationale: "LLM costs are unbounded without tracking; users must see what they're spending"
+    affected_components: [llm_provider, explorer, reporter]
+
+  - id: C004
+    boundary: concurrency_safeguard
+    condition: "When agent count exceeds concurrency_warn_threshold (default 20), user must confirm before proceeding"
+    violation: "Accidental cost explosion from too many concurrent LLM agents"
+    severity: must
+    rationale: "50 agents * 20 actions * vision calls = hundreds of API calls; user must opt in"
+    affected_components: [cli, explorer]
+
+  - id: C005
+    boundary: graceful_degradation
+    condition: "Individual node capture failures must not abort the entire run; failed nodes are recorded with error details"
+    violation: "One slow page kills the whole run"
+    severity: must
+    rationale: "Real sites have flaky pages; the tool must be resilient"
+    affected_components: [capturer, explorer]
+
+  - id: C006
+    boundary: provider_isolation
+    condition: "LLM provider implementations must be behind the LLMProvider abstraction; no provider-specific code outside llm_provider.py"
+    violation: "Adding a new provider requires changes across multiple files"
+    severity: must
+    rationale: "User configured provider; switching must be a one-line config change"
+    affected_components: [llm_provider]
+
+  - id: C007
+    boundary: transmogrifier_optional
+    condition: "transmogrifier must be an optional dependency; if unavailable, prompts pass through unmodified"
+    violation: "Hard dependency on transmogrifier would break installs without it"
+    severity: must
+    rationale: "Core pipeline must work without optional LLM deps"
+    affected_components: [llm_provider]
+
+  - id: C008
+    boundary: auth_secret_hygiene
+    condition: "Auth credentials (cookies, tokens, headers) must never appear in report.json, report.html, or screenshots"
+    violation: "Credential leakage in reports shared with team or CI logs"
+    severity: must
+    rationale: "Reports are shareable artifacts; secrets must not leak"
+    affected_components: [config, reporter, capturer]
+
+  - id: C009
+    boundary: license_compatibility
+    condition: "All dependencies must be MIT, Apache 2.0, or BSD licensed; webprobe itself is MIT"
+    violation: "GPL or proprietary deps would prevent MIT licensing"
+    severity: must
+    rationale: "User intends to release under MIT and use commercially"
+    affected_components: [all]
+
+  - id: C010
+    boundary: mask_transparency
+    condition: "Masked (suppressed) findings must be tracked and optionally visible in reports, not silently deleted"
+    violation: "Users lose visibility into what was suppressed and why"
+    severity: should
+    rationale: "Suppression without transparency leads to missed real issues"
+    affected_components: [mask, reporter]
+
+  - id: C011
+    boundary: timing_everywhere
+    condition: "Every phase, every HTTP request, and every page load must record timing data"
+    violation: "Performance regression detection becomes impossible"
+    severity: should
+    rationale: "Timing is a first-class metric for cross-run trending"
+    affected_components: [mapper, capturer, explorer, analyzer, reporter]
+
+  - id: C012
+    boundary: visual_wcag_computational
+    condition: "WCAG contrast ratio checks must use proper sRGB linearization, not naive RGB distance"
+    violation: "Inaccurate contrast ratios lead to false positives/negatives"
+    severity: should
+    rationale: "WCAG 2.1 specifies the exact luminance formula; approximations are wrong"
+    affected_components: [visual]
+
+  - id: C013
+    boundary: generic_by_default
+    condition: "The tool must work with any URL as input; framework detection is an optional enhancement, not a requirement"
+    violation: "Tool becomes coupled to specific frameworks"
+    severity: must
+    rationale: "User wants to point it at any site, not just Astro/Next/SvelteKit"
+    affected_components: [mapper, frameworks, cli]
+
+  - id: C014
+    boundary: apprentice_future_integration
+    condition: "Apprentice provider must route through OpenAI-compatible API at localhost:8741; no custom protocol"
+    violation: "Apprentice integration requires special handling"
+    severity: should
+    rationale: "Apprentice exposes standard OpenAI API; staying compatible means zero custom code"
+    affected_components: [llm_provider]

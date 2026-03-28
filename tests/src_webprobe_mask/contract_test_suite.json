@@ -1,0 +1,439 @@
+{
+  "component_id": "src_webprobe_mask",
+  "contract_version": 1,
+  "test_cases": [
+    {
+      "id": "test_load_mask_happy_path_valid_yaml_file",
+      "description": "Load a valid YAML configuration file with multiple mask rules",
+      "function": "load_mask",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "path": "test_mask.yaml"
+      },
+      "input_description": "Path to a valid YAML file containing MaskConfig with multiple rules",
+      "expected_output_description": "Returns MaskConfig with all rules parsed correctly",
+      "expected_error": "",
+      "assertions": [
+        "result is not None",
+        "isinstance(result, MaskConfig)",
+        "len(result.rules) == 2",
+        "result.rules[0].category == 'xss'"
+      ]
+    },
+    {
+      "id": "test_load_mask_happy_path_none_path_with_default",
+      "description": "Load mask from default location when path is None and default file exists",
+      "function": "load_mask",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "path": "None"
+      },
+      "input_description": "None path, default file 'webprobe-mask.yaml' exists",
+      "expected_output_description": "Returns MaskConfig loaded from default path",
+      "expected_error": "",
+      "assertions": [
+        "result is not None",
+        "isinstance(result, MaskConfig)",
+        "len(result.rules) > 0"
+      ]
+    },
+    {
+      "id": "test_load_mask_edge_case_none_path_no_defaults",
+      "description": "Load mask with None path when no default files exist",
+      "function": "load_mask",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "path": "None"
+      },
+      "input_description": "None path, no default files exist",
+      "expected_output_description": "Returns empty MaskConfig with empty rules list",
+      "expected_error": "",
+      "assertions": [
+        "result is not None",
+        "isinstance(result, MaskConfig)",
+        "result.rules == []",
+        "len(result.rules) == 0"
+      ]
+    },
+    {
+      "id": "test_load_mask_edge_case_nonexistent_path",
+      "description": "Load mask with path that doesn't exist",
+      "function": "load_mask",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "path": "/nonexistent/path/mask.yaml"
+      },
+      "input_description": "Path to non-existent file",
+      "expected_output_description": "Returns empty MaskConfig with empty rules list",
+      "expected_error": "",
+      "assertions": [
+        "result is not None",
+        "isinstance(result, MaskConfig)",
+        "result.rules == []"
+      ]
+    },
+    {
+      "id": "test_load_mask_edge_case_empty_yaml_file",
+      "description": "Load mask from empty YAML file",
+      "function": "load_mask",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "path": "empty.yaml"
+      },
+      "input_description": "Path to empty YAML file",
+      "expected_output_description": "Returns empty MaskConfig",
+      "expected_error": "",
+      "assertions": [
+        "result is not None",
+        "isinstance(result, MaskConfig)"
+      ]
+    },
+    {
+      "id": "test_load_mask_edge_case_pathlib_path",
+      "description": "Load mask using pathlib.Path object",
+      "function": "load_mask",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "path": "Path('test_mask.yaml')"
+      },
+      "input_description": "pathlib.Path object pointing to valid YAML",
+      "expected_output_description": "Returns MaskConfig loaded successfully",
+      "expected_error": "",
+      "assertions": [
+        "result is not None",
+        "isinstance(result, MaskConfig)"
+      ]
+    },
+    {
+      "id": "test_load_mask_error_invalid_yaml_syntax",
+      "description": "Load mask from file with invalid YAML syntax",
+      "function": "load_mask",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Path to file with malformed YAML",
+      "expected_output_description": "",
+      "expected_error": "yaml_parse_error",
+      "assertions": [
+        "Exception raised for invalid YAML syntax"
+      ]
+    },
+    {
+      "id": "test_load_mask_error_invalid_schema",
+      "description": "Load mask from YAML with structure that doesn't match MaskConfig schema",
+      "function": "load_mask",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Path to YAML with invalid schema structure",
+      "expected_output_description": "",
+      "expected_error": "pydantic_validation_error",
+      "assertions": [
+        "Exception raised for schema mismatch"
+      ]
+    },
+    {
+      "id": "test_load_mask_error_file_read_permission",
+      "description": "Load mask from file without read permissions",
+      "function": "load_mask",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Path to file that exists but cannot be read",
+      "expected_output_description": "",
+      "expected_error": "file_read_error",
+      "assertions": [
+        "Exception raised for file read error"
+      ]
+    },
+    {
+      "id": "test_apply_mask_happy_path_basic_matching",
+      "description": "Apply mask rules to findings with basic pattern matching",
+      "function": "apply_mask",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "findings": "[finding1, finding2, finding3]",
+        "mask": "MaskConfig with matching rules"
+      },
+      "input_description": "List of findings with mask rules that match some findings",
+      "expected_output_description": "Returns tuple of (kept_findings, suppressed_findings)",
+      "expected_error": "",
+      "assertions": [
+        "isinstance(result, tuple)",
+        "len(result) == 2",
+        "len(result[0]) + len(result[1]) == len(findings)",
+        "len(result[1]) > 0"
+      ]
+    },
+    {
+      "id": "test_apply_mask_happy_path_empty_findings",
+      "description": "Apply mask to empty findings list",
+      "function": "apply_mask",
+      "category": "happy_path",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "findings": "[]",
+        "mask": "MaskConfig with rules"
+      },
+      "input_description": "Empty findings list with valid mask",
+      "expected_output_description": "Returns ([], [])",
+      "expected_error": "",
+      "assertions": [
+        "result == ([], [])",
+        "len(result[0]) == 0",
+        "len(result[1]) == 0"
+      ]
+    },
+    {
+      "id": "test_apply_mask_edge_case_empty_mask_rules",
+      "description": "Apply mask with empty rules list to findings",
+      "function": "apply_mask",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "findings": "[finding1, finding2]",
+        "mask": "MaskConfig(rules=[])"
+      },
+      "input_description": "Findings list with MaskConfig containing no rules",
+      "expected_output_description": "Returns (findings, [])",
+      "expected_error": "",
+      "assertions": [
+        "result[0] == findings",
+        "result[1] == []",
+        "len(result[0]) == len(findings)"
+      ]
+    },
+    {
+      "id": "test_apply_mask_edge_case_finding_with_none_url",
+      "description": "Apply mask to finding with None URL",
+      "function": "apply_mask",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "findings": "[finding with url=None]",
+        "mask": "MaskConfig with url_pattern rule"
+      },
+      "input_description": "Finding with url=None, mask with url_pattern",
+      "expected_output_description": "url_pattern check treated as True (match)",
+      "expected_error": "",
+      "assertions": [
+        "Finding suppressed when other conditions match",
+        "len(result[1]) == 1"
+      ]
+    },
+    {
+      "id": "test_apply_mask_edge_case_default_patterns",
+      "description": "Apply mask rule with default patterns '.*'",
+      "function": "apply_mask",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "findings": "[finding1]",
+        "mask": "MaskConfig with default patterns"
+      },
+      "input_description": "MaskRule with url_pattern='.*' and title_pattern='.*'",
+      "expected_output_description": "Matches everything when category also matches",
+      "expected_error": "",
+      "assertions": [
+        "All findings with matching category suppressed"
+      ]
+    },
+    {
+      "id": "test_apply_mask_edge_case_empty_category_matches_any",
+      "description": "Apply mask rule with empty category string",
+      "function": "apply_mask",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "findings": "[findings with various categories]",
+        "mask": "MaskConfig with empty category rule"
+      },
+      "input_description": "MaskRule with category=''",
+      "expected_output_description": "Matches any category",
+      "expected_error": "",
+      "assertions": [
+        "Findings matched regardless of category"
+      ]
+    },
+    {
+      "id": "test_apply_mask_edge_case_no_overlap_in_partitions",
+      "description": "Verify no finding appears in both kept and suppressed lists",
+      "function": "apply_mask",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {
+        "findings": "[finding1, finding2, finding3]",
+        "mask": "MaskConfig with rules"
+      },
+      "input_description": "Multiple findings with various mask rules",
+      "expected_output_description": "Mutually exclusive partitions",
+      "expected_error": "",
+      "assertions": [
+        "set(result[0]).isdisjoint(set(result[1]))",
+        "No overlap between kept and suppressed"
+      ]
+    },
+    {
+      "id": "test_apply_mask_error_invalid_regex_url_pattern",
+      "description": "Apply mask with invalid regex in url_pattern",
+      "function": "apply_mask",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "MaskRule with malformed url_pattern regex",
+      "expected_output_description": "",
+      "expected_error": "regex_error",
+      "assertions": [
+        "Exception raised for invalid regex in url_pattern"
+      ]
+    },
+    {
+      "id": "test_apply_mask_error_invalid_regex_title_pattern",
+      "description": "Apply mask with invalid regex in title_pattern",
+      "function": "apply_mask",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "MaskRule with malformed title_pattern regex",
+      "expected_output_description": "",
+      "expected_error": "regex_error",
+      "assertions": [
+        "Exception raised for invalid regex in title_pattern"
+      ]
+    },
+    {
+      "id": "test_apply_mask_error_missing_finding_attributes",
+      "description": "Apply mask to finding missing required attributes",
+      "function": "apply_mask",
+      "category": "error_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "SecurityFinding without title or category attribute",
+      "expected_output_description": "",
+      "expected_error": "attribute_error",
+      "assertions": [
+        "Exception raised when finding lacks required attributes"
+      ]
+    },
+    {
+      "id": "test_load_mask_invariant_default_search_paths",
+      "description": "Verify default search paths are checked in correct order",
+      "function": "load_mask",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "None path with multiple default files",
+      "expected_output_description": "Loads from first existing default path in order",
+      "expected_error": "",
+      "assertions": [
+        "First file in ['webprobe-mask.yaml', '.webprobe/mask.yaml'] is loaded"
+      ]
+    },
+    {
+      "id": "test_apply_mask_invariant_partition_completeness",
+      "description": "Verify all findings are preserved across partitions",
+      "function": "apply_mask",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Various findings and mask rules",
+      "expected_output_description": "kept + suppressed contains all original findings",
+      "expected_error": "",
+      "assertions": [
+        "len(kept) + len(suppressed) == len(findings)",
+        "set(kept + suppressed) == set(findings)"
+      ]
+    },
+    {
+      "id": "test_apply_mask_invariant_first_matching_rule",
+      "description": "Verify first matching rule suppresses finding (rules evaluated in order)",
+      "function": "apply_mask",
+      "category": "invariant",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Multiple overlapping rules",
+      "expected_output_description": "Finding suppressed by first matching rule",
+      "expected_error": "",
+      "assertions": [
+        "Order of rules matters",
+        "First match wins"
+      ]
+    },
+    {
+      "id": "test_apply_mask_edge_case_all_conditions_required",
+      "description": "Verify finding suppressed only when ALL conditions match (url AND title AND category)",
+      "function": "apply_mask",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Finding matching some but not all rule conditions",
+      "expected_output_description": "Finding kept if any condition doesn't match",
+      "expected_error": "",
+      "assertions": [
+        "All conditions must match for suppression"
+      ]
+    },
+    {
+      "id": "test_apply_mask_edge_case_regex_special_characters",
+      "description": "Apply mask with regex special characters in patterns",
+      "function": "apply_mask",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "Patterns with dots, asterisks, brackets, etc.",
+      "expected_output_description": "Regex interpreted correctly",
+      "expected_error": "",
+      "assertions": [
+        "Special regex characters handled properly"
+      ]
+    },
+    {
+      "id": "test_load_mask_edge_case_unicode_content",
+      "description": "Load mask from YAML with Unicode content",
+      "function": "load_mask",
+      "category": "edge_case",
+      "setup_description": "",
+      "mock_dependencies": {},
+      "input_values": {},
+      "input_description": "YAML file with Unicode characters in patterns",
+      "expected_output_description": "Returns MaskConfig with Unicode preserved",
+      "expected_error": "",
+      "assertions": [
+        "Unicode characters handled correctly"
+      ]
+    }
+  ],
+  "test_language": "python",
+  "generated_code": "\"\"\"\nContract tests for webprobe mask system.\n\nTests cover load_mask and apply_mask functions with happy paths, edge cases,\nerror cases, and invariants as specified in the contract.\n\"\"\"\n\nimport pytest\nimport tempfile\nimport os\nfrom pathlib import Path\nfrom unittest.mock import Mock, patch, mock_open, MagicMock\nfrom typing import Any\nimport yaml as yaml_lib\nimport re\n\n# Import the module under test\nfrom src.webprobe.mask import load_mask, apply_mask, MaskConfig, MaskRule\n\n\n# =============================================================================\n# Fixtures\n# =============================================================================\n\n@pytest.fixture\ndef sample_mask_rules():\n    \"\"\"Sample mask rules for testing.\"\"\"\n    return [\n        MaskRule(\n            url_pattern=r\".*example\\.com.*\",\n            title_pattern=r\".*XSS.*\",\n            category=\"xss\",\n            reason=\"Test XSS suppression\"\n        ),\n        MaskRule(\n            url_pattern=r\".*test\\.com.*\",\n            title_pattern=r\".*SQL.*\",\n            category=\"sqli\",\n            reason=\"Test SQL injection suppression\"\n        )\n    ]\n\n\n@pytest.fixture\ndef sample_mask_config(sample_mask_rules):\n    \"\"\"Sample MaskConfig for testing.\"\"\"\n    return MaskConfig(rules=sample_mask_rules)\n\n\n@pytest.fixture\ndef sample_security_finding():\n    \"\"\"Create a mock SecurityFinding.\"\"\"\n    finding = Mock()\n    finding.url = \"https://example.com/page\"\n    finding.title = \"Potential XSS vulnerability\"\n    finding.category = \"xss\"\n    return finding\n\n\n@pytest.fixture\ndef sample_findings_list():\n    \"\"\"Create a list of mock SecurityFindings.\"\"\"\n    finding1 = Mock()\n    finding1.url = \"https://example.com/page\"\n    finding1.title = \"Potential XSS vulnerability\"\n    finding1.category = \"xss\"\n    \n    finding2 = Mock()\n    finding2.url = \"https://test.com/login\"\n    finding2.title = \"SQL Injection detected\"\n    finding2.category = \"sqli\"\n    \n    finding3 = Mock()\n    finding3.url = \"https://other.com/api\"\n    finding3.title = \"CSRF vulnerability\"\n    finding3.category = \"csrf\"\n    \n    return [finding1, finding2, finding3]\n\n\n# =============================================================================\n# load_mask tests - Happy Path\n# =============================================================================\n\n@pytest.mark.unit\ndef test_load_mask_happy_path_valid_yaml_file(tmp_path):\n    \"\"\"Load a valid YAML configuration file with multiple mask rules.\"\"\"\n    yaml_content = \"\"\"\nrules:\n  - url_pattern: \".*example\\\\.com.*\"\n    title_pattern: \".*XSS.*\"\n    category: \"xss\"\n    reason: \"Test XSS suppression\"\n  - url_pattern: \".*test\\\\.com.*\"\n    title_pattern: \".*SQL.*\"\n    category: \"sqli\"\n    reason: \"Test SQL suppression\"\n\"\"\"\n    test_file = tmp_path / \"test_mask.yaml\"\n    test_file.write_text(yaml_content)\n    \n    result = load_mask(str(test_file))\n    \n    assert result is not None\n    assert isinstance(result, MaskConfig)\n    assert len(result.rules) == 2\n    assert result.rules[0].category == \"xss\"\n    assert result.rules[1].category == \"sqli\"\n\n\n@pytest.mark.unit\ndef test_load_mask_happy_path_none_path_with_default(tmp_path, monkeypatch):\n    \"\"\"Load mask from default location when path is None and default file exists.\"\"\"\n    yaml_content = \"\"\"\nrules:\n  - url_pattern: \".*\"\n    title_pattern: \".*\"\n    category: \"test\"\n    reason: \"Test rule\"\n\"\"\"\n    # Change to tmp directory and create default file\n    monkeypatch.chdir(tmp_path)\n    default_file = tmp_path / \"webprobe-mask.yaml\"\n    default_file.write_text(yaml_content)\n    \n    result = load_mask(None)\n    \n    assert result is not None\n    assert isinstance(result, MaskConfig)\n    assert len(result.rules) > 0\n\n\n# =============================================================================\n# load_mask tests - Edge Cases\n# =============================================================================\n\n@pytest.mark.unit\ndef test_load_mask_edge_case_none_path_no_defaults(tmp_path, monkeypatch):\n    \"\"\"Load mask with None path when no default files exist.\"\"\"\n    # Change to empty tmp directory\n    monkeypatch.chdir(tmp_path)\n    \n    result = load_mask(None)\n    \n    assert result is not None\n    assert isinstance(result, MaskConfig)\n    assert result.rules == []\n    assert len(result.rules) == 0\n\n\n@pytest.mark.unit\ndef test_load_mask_edge_case_nonexistent_path():\n    \"\"\"Load mask with path that doesn't exist.\"\"\"\n    result = load_mask(\"/nonexistent/path/mask.yaml\")\n    \n    assert result is not None\n    assert isinstance(result, MaskConfig)\n    assert result.rules == []\n\n\n@pytest.mark.unit\ndef test_load_mask_edge_case_empty_yaml_file(tmp_path):\n    \"\"\"Load mask from empty YAML file.\"\"\"\n    empty_file = tmp_path / \"empty.yaml\"\n    empty_file.write_text(\"\")\n    \n    result = load_mask(str(empty_file))\n    \n    assert result is not None\n    assert isinstance(result, MaskConfig)\n\n\n@pytest.mark.unit\ndef test_load_mask_edge_case_pathlib_path(tmp_path):\n    \"\"\"Load mask using pathlib.Path object.\"\"\"\n    yaml_content = \"\"\"\nrules:\n  - url_pattern: \".*\"\n    title_pattern: \".*\"\n    category: \"test\"\n    reason: \"Test\"\n\"\"\"\n    test_file = tmp_path / \"test_mask.yaml\"\n    test_file.write_text(yaml_content)\n    \n    result = load_mask(Path(test_file))\n    \n    assert result is not None\n    assert isinstance(result, MaskConfig)\n\n\n@pytest.mark.unit\ndef test_load_mask_edge_case_unicode_content(tmp_path):\n    \"\"\"Load mask from YAML with Unicode content.\"\"\"\n    yaml_content = \"\"\"\nrules:\n  - url_pattern: \".*测试.*\"\n    title_pattern: \".*テスト.*\"\n    category: \"test\"\n    reason: \"Unicode test: 你好 مرحبا\"\n\"\"\"\n    test_file = tmp_path / \"unicode_mask.yaml\"\n    test_file.write_text(yaml_content, encoding='utf-8')\n    \n    result = load_mask(str(test_file))\n    \n    assert result is not None\n    assert isinstance(result, MaskConfig)\n    assert \"测试\" in result.rules[0].url_pattern\n\n\n# =============================================================================\n# load_mask tests - Error Cases\n# =============================================================================\n\n@pytest.mark.unit\ndef test_load_mask_error_invalid_yaml_syntax(tmp_path):\n    \"\"\"Load mask from file with invalid YAML syntax.\"\"\"\n    invalid_yaml = \"\"\"\nrules:\n  - url_pattern: \"test\"\n    title_pattern: \"test\n    category: broken\n\"\"\"\n    test_file = tmp_path / \"invalid.yaml\"\n    test_file.write_text(invalid_yaml)\n    \n    with pytest.raises(Exception) as exc_info:\n        load_mask(str(test_file))\n    \n    # Check that some YAML-related error was raised\n    assert \"yaml\" in str(type(exc_info.value).__name__).lower() or \"parse\" in str(exc_info.value).lower()\n\n\n@pytest.mark.unit\ndef test_load_mask_error_invalid_schema(tmp_path):\n    \"\"\"Load mask from YAML with structure that doesn't match MaskConfig schema.\"\"\"\n    invalid_schema = \"\"\"\nrules:\n  - invalid_field: \"value\"\n    another_wrong_field: 123\n\"\"\"\n    test_file = tmp_path / \"invalid_schema.yaml\"\n    test_file.write_text(invalid_schema)\n    \n    with pytest.raises(Exception) as exc_info:\n        load_mask(str(test_file))\n    \n    # Check that validation error was raised\n    assert exc_info.value is not None\n\n\n@pytest.mark.unit\ndef test_load_mask_error_file_read_permission(tmp_path):\n    \"\"\"Load mask from file without read permissions.\"\"\"\n    yaml_content = \"\"\"\nrules:\n  - url_pattern: \".*\"\n    title_pattern: \".*\"\n    category: \"test\"\n    reason: \"Test\"\n\"\"\"\n    test_file = tmp_path / \"no_read.yaml\"\n    test_file.write_text(yaml_content)\n    \n    # Remove read permissions\n    os.chmod(test_file, 0o000)\n    \n    try:\n        with pytest.raises(Exception) as exc_info:\n            load_mask(str(test_file))\n        assert exc_info.value is not None\n    finally:\n        # Restore permissions for cleanup\n        os.chmod(test_file, 0o644)\n\n\n# =============================================================================\n# load_mask tests - Invariants\n# =============================================================================\n\n@pytest.mark.unit\ndef test_load_mask_invariant_default_search_paths(tmp_path, monkeypatch):\n    \"\"\"Verify default search paths are checked in correct order.\"\"\"\n    monkeypatch.chdir(tmp_path)\n    \n    # Create second default file\n    subdir = tmp_path / \".webprobe\"\n    subdir.mkdir()\n    second_file = subdir / \"mask.yaml\"\n    second_file.write_text(\"\"\"\nrules:\n  - url_pattern: \"second\"\n    title_pattern: \"second\"\n    category: \"second\"\n    reason: \"Second file\"\n\"\"\")\n    \n    # Create first default file (should be loaded)\n    first_file = tmp_path / \"webprobe-mask.yaml\"\n    first_file.write_text(\"\"\"\nrules:\n  - url_pattern: \"first\"\n    title_pattern: \"first\"\n    category: \"first\"\n    reason: \"First file\"\n\"\"\")\n    \n    result = load_mask(None)\n    \n    # Should load from first default path\n    assert result.rules[0].category == \"first\"\n\n\n# =============================================================================\n# apply_mask tests - Happy Path\n# =============================================================================\n\n@pytest.mark.unit\ndef test_apply_mask_happy_path_basic_matching(sample_findings_list):\n    \"\"\"Apply mask rules to findings with basic pattern matching.\"\"\"\n    mask = MaskConfig(rules=[\n        MaskRule(\n            url_pattern=r\".*example\\.com.*\",\n            title_pattern=r\".*XSS.*\",\n            category=\"xss\",\n            reason=\"Test\"\n        )\n    ])\n    \n    findings = sample_findings_list\n    result = apply_mask(findings, mask)\n    \n    assert isinstance(result, tuple)\n    assert len(result) == 2\n    assert len(result[0]) + len(result[1]) == len(findings)\n    assert len(result[1]) > 0  # At least one finding suppressed\n\n\n@pytest.mark.unit\ndef test_apply_mask_happy_path_empty_findings():\n    \"\"\"Apply mask to empty findings list.\"\"\"\n    mask = MaskConfig(rules=[\n        MaskRule(\n            url_pattern=\".*\",\n            title_pattern=\".*\",\n            category=\"test\",\n            reason=\"Test\"\n        )\n    ])\n    \n    result = apply_mask([], mask)\n    \n    assert result == ([], [])\n    assert len(result[0]) == 0\n    assert len(result[1]) == 0\n\n\n# =============================================================================\n# apply_mask tests - Edge Cases\n# =============================================================================\n\n@pytest.mark.unit\ndef test_apply_mask_edge_case_empty_mask_rules(sample_findings_list):\n    \"\"\"Apply mask with empty rules list to findings.\"\"\"\n    mask = MaskConfig(rules=[])\n    findings = sample_findings_list\n    \n    result = apply_mask(findings, mask)\n    \n    assert result[0] == findings\n    assert result[1] == []\n    assert len(result[0]) == len(findings)\n\n\n@pytest.mark.unit\ndef test_apply_mask_edge_case_finding_with_none_url():\n    \"\"\"Apply mask to finding with None URL.\"\"\"\n    finding = Mock()\n    finding.url = None\n    finding.title = \"Test vulnerability\"\n    finding.category = \"test\"\n    \n    mask = MaskConfig(rules=[\n        MaskRule(\n            url_pattern=r\".*anything.*\",\n            title_pattern=r\".*Test.*\",\n            category=\"test\",\n            reason=\"Test\"\n        )\n    ])\n    \n    result = apply_mask([finding], mask)\n    \n    # url_pattern check treated as True when url is None\n    assert len(result[1]) == 1  # Finding suppressed\n\n\n@pytest.mark.unit\ndef test_apply_mask_edge_case_default_patterns():\n    \"\"\"Apply mask rule with default patterns '.*'.\"\"\"\n    finding = Mock()\n    finding.url = \"https://any-url.com\"\n    finding.title = \"Any title\"\n    finding.category = \"test\"\n    \n    mask = MaskConfig(rules=[\n        MaskRule(\n            url_pattern=r\".*\",\n            title_pattern=r\".*\",\n            category=\"test\",\n            reason=\"Match all\"\n        )\n    ])\n    \n    result = apply_mask([finding], mask)\n    \n    # All findings with matching category suppressed\n    assert len(result[1]) == 1\n\n\n@pytest.mark.unit\ndef test_apply_mask_edge_case_empty_category_matches_any():\n    \"\"\"Apply mask rule with empty category string.\"\"\"\n    finding1 = Mock()\n    finding1.url = \"https://test.com\"\n    finding1.title = \"Test\"\n    finding1.category = \"xss\"\n    \n    finding2 = Mock()\n    finding2.url = \"https://test.com\"\n    finding2.title = \"Test\"\n    finding2.category = \"sqli\"\n    \n    mask = MaskConfig(rules=[\n        MaskRule(\n            url_pattern=r\".*test\\.com.*\",\n            title_pattern=r\".*Test.*\",\n            category=\"\",\n            reason=\"Match any category\"\n        )\n    ])\n    \n    result = apply_mask([finding1, finding2], mask)\n    \n    # Both findings matched regardless of category\n    assert len(result[1]) == 2\n\n\n@pytest.mark.unit\ndef test_apply_mask_edge_case_no_overlap_in_partitions(sample_findings_list):\n    \"\"\"Verify no finding appears in both kept and suppressed lists.\"\"\"\n    mask = MaskConfig(rules=[\n        MaskRule(\n            url_pattern=r\".*example\\.com.*\",\n            title_pattern=r\".*XSS.*\",\n            category=\"xss\",\n            reason=\"Test\"\n        )\n    ])\n    \n    findings = sample_findings_list\n    result = apply_mask(findings, mask)\n    \n    kept, suppressed = result\n    assert set(kept).isdisjoint(set(suppressed))\n\n\n@pytest.mark.unit\ndef test_apply_mask_edge_case_all_conditions_required():\n    \"\"\"Verify finding suppressed only when ALL conditions match.\"\"\"\n    finding = Mock()\n    finding.url = \"https://example.com/page\"\n    finding.title = \"XSS vulnerability\"\n    finding.category = \"xss\"\n    \n    # Rule that matches URL and title but not category\n    mask = MaskConfig(rules=[\n        MaskRule(\n            url_pattern=r\".*example\\.com.*\",\n            title_pattern=r\".*XSS.*\",\n            category=\"sqli\",  # Wrong category\n            reason=\"Test\"\n        )\n    ])\n    \n    result = apply_mask([finding], mask)\n    \n    # Finding kept because category doesn't match\n    assert len(result[0]) == 1\n    assert len(result[1]) == 0\n\n\n@pytest.mark.unit\ndef test_apply_mask_edge_case_regex_special_characters():\n    \"\"\"Apply mask with regex special characters in patterns.\"\"\"\n    finding = Mock()\n    finding.url = \"https://test.com/page?id=123\"\n    finding.title = \"Test [vuln] (critical)\"\n    finding.category = \"test\"\n    \n    mask = MaskConfig(rules=[\n        MaskRule(\n            url_pattern=r\".*test\\.com/page\\?id=\\d+\",\n            title_pattern=r\".*\\[vuln\\].*\",\n            category=\"test\",\n            reason=\"Special chars\"\n        )\n    ])\n    \n    result = apply_mask([finding], mask)\n    \n    # Special regex characters handled properly\n    assert len(result[1]) == 1\n\n\n# =============================================================================\n# apply_mask tests - Error Cases\n# =============================================================================\n\n@pytest.mark.unit\ndef test_apply_mask_error_invalid_regex_url_pattern():\n    \"\"\"Apply mask with invalid regex in url_pattern.\"\"\"\n    finding = Mock()\n    finding.url = \"https://test.com\"\n    finding.title = \"Test\"\n    finding.category = \"test\"\n    \n    mask = MaskConfig(rules=[\n        MaskRule(\n            url_pattern=r\"[invalid(regex\",  # Invalid regex\n            title_pattern=r\".*\",\n            category=\"test\",\n            reason=\"Test\"\n        )\n    ])\n    \n    with pytest.raises(Exception) as exc_info:\n        apply_mask([finding], mask)\n    \n    # Exception raised for invalid regex\n    assert exc_info.value is not None\n\n\n@pytest.mark.unit\ndef test_apply_mask_error_invalid_regex_title_pattern():\n    \"\"\"Apply mask with invalid regex in title_pattern.\"\"\"\n    finding = Mock()\n    finding.url = \"https://test.com\"\n    finding.title = \"Test\"\n    finding.category = \"test\"\n    \n    mask = MaskConfig(rules=[\n        MaskRule(\n            url_pattern=r\".*\",\n            title_pattern=r\"*invalid+regex(\",  # Invalid regex\n            category=\"test\",\n            reason=\"Test\"\n        )\n    ])\n    \n    with pytest.raises(Exception) as exc_info:\n        apply_mask([finding], mask)\n    \n    # Exception raised for invalid regex\n    assert exc_info.value is not None\n\n\n@pytest.mark.unit\ndef test_apply_mask_error_missing_finding_attributes():\n    \"\"\"Apply mask to finding missing required attributes.\"\"\"\n    finding = Mock(spec=['url'])  # Missing title and category\n    finding.url = \"https://test.com\"\n    \n    mask = MaskConfig(rules=[\n        MaskRule(\n            url_pattern=r\".*\",\n            title_pattern=r\".*\",\n            category=\"test\",\n            reason=\"Test\"\n        )\n    ])\n    \n    with pytest.raises(AttributeError):\n        apply_mask([finding], mask)\n\n\n# =============================================================================\n# apply_mask tests - Invariants\n# =============================================================================\n\n@pytest.mark.unit\ndef test_apply_mask_invariant_partition_completeness(sample_findings_list):\n    \"\"\"Verify all findings are preserved across partitions.\"\"\"\n    mask = MaskConfig(rules=[\n        MaskRule(\n            url_pattern=r\".*example\\.com.*\",\n            title_pattern=r\".*XSS.*\",\n            category=\"xss\",\n            reason=\"Test\"\n        )\n    ])\n    \n    findings = sample_findings_list\n    kept, suppressed = apply_mask(findings, mask)\n    \n    # All findings preserved\n    assert len(kept) + len(suppressed) == len(findings)\n    assert set(kept + suppressed) == set(findings)\n\n\n@pytest.mark.unit\ndef test_apply_mask_invariant_first_matching_rule():\n    \"\"\"Verify first matching rule suppresses finding (rules evaluated in order).\"\"\"\n    finding = Mock()\n    finding.url = \"https://test.com\"\n    finding.title = \"Test vulnerability\"\n    finding.category = \"test\"\n    \n    # Multiple overlapping rules\n    mask = MaskConfig(rules=[\n        MaskRule(\n            url_pattern=r\".*test\\.com.*\",\n            title_pattern=r\".*Test.*\",\n            category=\"test\",\n            reason=\"First rule\"\n        ),\n        MaskRule(\n            url_pattern=r\".*test\\.com.*\",\n            title_pattern=r\".*vulnerability.*\",\n            category=\"test\",\n            reason=\"Second rule\"\n        )\n    ])\n    \n    result = apply_mask([finding], mask)\n    \n    # Finding suppressed by first matching rule\n    assert len(result[1]) == 1\n\n\n# =============================================================================\n# Additional comprehensive tests\n# =============================================================================\n\n@pytest.mark.unit\ndef test_load_mask_with_minimal_valid_yaml(tmp_path):\n    \"\"\"Test loading YAML with minimal required fields.\"\"\"\n    yaml_content = \"\"\"\nrules:\n  - url_pattern: \".*\"\n    title_pattern: \".*\"\n    category: \"test\"\n    reason: \"Minimal\"\n\"\"\"\n    test_file = tmp_path / \"minimal.yaml\"\n    test_file.write_text(yaml_content)\n    \n    result = load_mask(str(test_file))\n    \n    assert isinstance(result, MaskConfig)\n    assert len(result.rules) == 1\n\n\n@pytest.mark.unit\ndef test_apply_mask_preserves_finding_order():\n    \"\"\"Verify that findings order is preserved in output.\"\"\"\n    findings = []\n    for i in range(5):\n        f = Mock()\n        f.url = f\"https://test{i}.com\"\n        f.title = f\"Title {i}\"\n        f.category = \"test\"\n        findings.append(f)\n    \n    mask = MaskConfig(rules=[])\n    kept, suppressed = apply_mask(findings, mask)\n    \n    # Order preserved in kept findings\n    assert kept == findings\n\n\n@pytest.mark.unit\ndef test_apply_mask_case_sensitive_patterns():\n    \"\"\"Verify regex patterns are case-sensitive by default.\"\"\"\n    finding = Mock()\n    finding.url = \"https://TEST.COM\"\n    finding.title = \"XSS Vulnerability\"\n    finding.category = \"xss\"\n    \n    mask = MaskConfig(rules=[\n        MaskRule(\n            url_pattern=r\".*test\\.com.*\",  # lowercase\n            title_pattern=r\".*xss.*\",      # lowercase\n            category=\"xss\",\n            reason=\"Case test\"\n        )\n    ])\n    \n    result = apply_mask([finding], mask)\n    \n    # Finding not matched due to case sensitivity\n    assert len(result[0]) == 1  # Kept\n    assert len(result[1]) == 0  # Not suppressed\n\n\n@pytest.mark.unit\ndef test_apply_mask_multiple_rules_different_categories():\n    \"\"\"Test multiple rules matching different categories.\"\"\"\n    finding1 = Mock()\n    finding1.url = \"https://test.com\"\n    finding1.title = \"XSS found\"\n    finding1.category = \"xss\"\n    \n    finding2 = Mock()\n    finding2.url = \"https://test.com\"\n    finding2.title = \"SQL injection found\"\n    finding2.category = \"sqli\"\n    \n    mask = MaskConfig(rules=[\n        MaskRule(\n            url_pattern=r\".*test\\.com.*\",\n            title_pattern=r\".*XSS.*\",\n            category=\"xss\",\n            reason=\"XSS rule\"\n        ),\n        MaskRule(\n            url_pattern=r\".*test\\.com.*\",\n            title_pattern=r\".*SQL.*\",\n            category=\"sqli\",\n            reason=\"SQLi rule\"\n        )\n    ])\n    \n    result = apply_mask([finding1, finding2], mask)\n    \n    # Both findings should be suppressed\n    assert len(result[1]) == 2\n\n\n@pytest.mark.unit\ndef test_load_mask_yaml_with_comments(tmp_path):\n    \"\"\"Test loading YAML file with comments.\"\"\"\n    yaml_content = \"\"\"\n# This is a comment\nrules:\n  # Rule for XSS\n  - url_pattern: \".*example\\\\.com.*\"\n    title_pattern: \".*XSS.*\"\n    category: \"xss\"\n    reason: \"Test\"  # Inline comment\n\"\"\"\n    test_file = tmp_path / \"commented.yaml\"\n    test_file.write_text(yaml_content)\n    \n    result = load_mask(str(test_file))\n    \n    assert isinstance(result, MaskConfig)\n    assert len(result.rules) == 1\n\n\n@pytest.mark.unit\ndef test_apply_mask_with_multiline_patterns():\n    \"\"\"Test patterns with newlines and multiline content.\"\"\"\n    finding = Mock()\n    finding.url = \"https://test.com/page\"\n    finding.title = \"Test vulnerability with\\nmultiple lines\"\n    finding.category = \"test\"\n    \n    mask = MaskConfig(rules=[\n        MaskRule(\n            url_pattern=r\".*test\\.com.*\",\n            title_pattern=r\".*vulnerability.*\",\n            category=\"test\",\n            reason=\"Multiline test\"\n        )\n    ])\n    \n    result = apply_mask([finding], mask)\n    \n    # Should still match\n    assert len(result[1]) == 1\n\n\n@pytest.mark.unit\ndef test_load_mask_returns_new_instance_each_time(tmp_path):\n    \"\"\"Verify each load_mask call returns a new instance.\"\"\"\n    yaml_content = \"\"\"\nrules:\n  - url_pattern: \".*\"\n    title_pattern: \".*\"\n    category: \"test\"\n    reason: \"Test\"\n\"\"\"\n    test_file = tmp_path / \"test.yaml\"\n    test_file.write_text(yaml_content)\n    \n    result1 = load_mask(str(test_file))\n    result2 = load_mask(str(test_file))\n    \n    assert result1 is not result2\n    assert result1.rules == result2.rules\n\n\n@pytest.mark.unit\ndef test_apply_mask_does_not_modify_input_findings():\n    \"\"\"Verify apply_mask doesn't modify the input findings list.\"\"\"\n    findings = []\n    for i in range(3):\n        f = Mock()\n        f.url = f\"https://test{i}.com\"\n        f.title = f\"Title {i}\"\n        f.category = \"test\"\n        findings.append(f)\n    \n    original_findings = findings.copy()\n    \n    mask = MaskConfig(rules=[\n        MaskRule(\n            url_pattern=r\".*test0\\.com.*\",\n            title_pattern=r\".*\",\n            category=\"test\",\n            reason=\"Test\"\n        )\n    ])\n    \n    apply_mask(findings, mask)\n    \n    # Original list unchanged\n    assert findings == original_findings\n\n\n@pytest.mark.unit  \ndef test_apply_mask_empty_string_patterns():\n    \"\"\"Test behavior with empty string patterns.\"\"\"\n    finding = Mock()\n    finding.url = \"https://test.com\"\n    finding.title = \"Test\"\n    finding.category = \"test\"\n    \n    # Empty patterns might be treated differently\n    mask = MaskConfig(rules=[\n        MaskRule(\n            url_pattern=\"\",\n            title_pattern=\"\",\n            category=\"test\",\n            reason=\"Empty patterns\"\n        )\n    ])\n    \n    # Should handle empty patterns gracefully\n    result = apply_mask([finding], mask)\n    assert result is not None\n\n\n@pytest.mark.unit\ndef test_load_mask_large_yaml_file(tmp_path):\n    \"\"\"Test loading a large YAML file with many rules.\"\"\"\n    rules = []\n    for i in range(100):\n        rules.append(f\"\"\"\n  - url_pattern: \".*test{i}\\\\.com.*\"\n    title_pattern: \".*pattern{i}.*\"\n    category: \"cat{i}\"\n    reason: \"Rule {i}\"\n\"\"\")\n    \n    yaml_content = \"rules:\" + \"\".join(rules)\n    test_file = tmp_path / \"large.yaml\"\n    test_file.write_text(yaml_content)\n    \n    result = load_mask(str(test_file))\n    \n    assert len(result.rules) == 100\n\n\n@pytest.mark.unit\ndef test_apply_mask_with_many_findings():\n    \"\"\"Test apply_mask with a large number of findings.\"\"\"\n    findings = []\n    for i in range(100):\n        f = Mock()\n        f.url = f\"https://test{i}.com\"\n        f.title = f\"Title {i}\"\n        f.category = \"test\"\n        findings.append(f)\n    \n    mask = MaskConfig(rules=[\n        MaskRule(\n            url_pattern=r\".*test[0-4]\\.com.*\",\n            title_pattern=r\".*\",\n            category=\"test\",\n            reason=\"Test\"\n        )\n    ])\n    \n    kept, suppressed = apply_mask(findings, mask)\n    \n    assert len(kept) + len(suppressed) == 100\n    assert len(suppressed) == 5  # test0-test4\n\n\n@pytest.mark.unit\ndef test_mask_rule_reason_preserved():\n    \"\"\"Verify MaskRule reason field is preserved.\"\"\"\n    rule = MaskRule(\n        url_pattern=\".*\",\n        title_pattern=\".*\",\n        category=\"test\",\n        reason=\"This is the reason\"\n    )\n    \n    assert rule.reason == \"This is the reason\"\n\n\n@pytest.mark.unit\ndef test_load_mask_alternative_default_path(tmp_path, monkeypatch):\n    \"\"\"Test loading from second default path when first doesn't exist.\"\"\"\n    monkeypatch.chdir(tmp_path)\n    \n    # Only create second default file\n    subdir = tmp_path / \".webprobe\"\n    subdir.mkdir()\n    second_file = subdir / \"mask.yaml\"\n    second_file.write_text(\"\"\"\nrules:\n  - url_pattern: \"second\"\n    title_pattern: \"second\"\n    category: \"second\"\n    reason: \"Second file\"\n\"\"\")\n    \n    result = load_mask(None)\n    \n    assert result.rules[0].category == \"second\"\n"
+}

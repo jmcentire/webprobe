@@ -1,0 +1,1554 @@
+{
+  "component_id": "src_webprobe_llm_provider",
+  "name": "LLM Provider Abstraction",
+  "description": "Multi-provider LLM abstraction with vision support, cost tracking, and transmogrifier integration. Provides unified interface for Claude (Anthropic), OpenAI, Gemini, and Apprentice LLM providers with automatic cost estimation, token tracking, and vision capabilities for image analysis.",
+  "version": 1,
+  "types": [
+    {
+      "name": "LLMCallRecord",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "provider",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Provider name (anthropic, openai, gemini, apprentice)",
+          "validators": []
+        },
+        {
+          "name": "model",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Model identifier",
+          "validators": []
+        },
+        {
+          "name": "input_tokens",
+          "type_ref": "int",
+          "required": false,
+          "default": "0",
+          "description": "Number of input tokens",
+          "validators": []
+        },
+        {
+          "name": "output_tokens",
+          "type_ref": "int",
+          "required": false,
+          "default": "0",
+          "description": "Number of output tokens",
+          "validators": []
+        },
+        {
+          "name": "estimated_cost_usd",
+          "type_ref": "float",
+          "required": false,
+          "default": "0.0",
+          "description": "Estimated cost in USD",
+          "validators": []
+        },
+        {
+          "name": "duration_ms",
+          "type_ref": "float",
+          "required": false,
+          "default": "0.0",
+          "description": "Call duration in milliseconds",
+          "validators": []
+        },
+        {
+          "name": "has_vision",
+          "type_ref": "bool",
+          "required": false,
+          "default": "false",
+          "description": "Whether the call involved vision/image analysis",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "Record of a single LLM API call with cost and usage metrics",
+      "owner_component": ""
+    },
+    {
+      "name": "CostTracker",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "calls",
+          "type_ref": "list[LLMCallRecord]",
+          "required": true,
+          "default": "",
+          "description": "List of recorded API calls",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "Accumulates LLM call records for cost and usage reporting",
+      "owner_component": ""
+    },
+    {
+      "name": "LLMProvider",
+      "kind": "struct",
+      "fields": [
+        {
+          "name": "model",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Model identifier",
+          "validators": []
+        },
+        {
+          "name": "cost_tracker",
+          "type_ref": "CostTracker",
+          "required": true,
+          "default": "",
+          "description": "Cost tracker instance",
+          "validators": []
+        }
+      ],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "Abstract base class for LLM providers with vision and text capabilities",
+      "owner_component": ""
+    },
+    {
+      "name": "AnthropicProvider",
+      "kind": "struct",
+      "fields": [],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "Claude API provider implementation",
+      "owner_component": ""
+    },
+    {
+      "name": "OpenAIProvider",
+      "kind": "struct",
+      "fields": [],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "OpenAI-compatible provider (OpenAI, Azure, local)",
+      "owner_component": ""
+    },
+    {
+      "name": "GeminiProvider",
+      "kind": "struct",
+      "fields": [],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "Google Gemini provider implementation",
+      "owner_component": ""
+    },
+    {
+      "name": "ApprenticeProvider",
+      "kind": "struct",
+      "fields": [],
+      "item_type": "",
+      "variants": [],
+      "inner_types": [],
+      "description": "Apprentice adaptive routing provider (routes between local and frontier models)",
+      "owner_component": ""
+    }
+  ],
+  "functions": [
+    {
+      "name": "_estimate_cost",
+      "description": "Estimates API call cost in USD based on model and token counts. Uses prefix matching against known pricing table, falls back to mid-range pricing for unknown models.",
+      "inputs": [
+        {
+          "name": "model",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Model identifier",
+          "validators": []
+        },
+        {
+          "name": "input_tokens",
+          "type_ref": "int",
+          "required": true,
+          "default": "",
+          "description": "Number of input tokens",
+          "validators": []
+        },
+        {
+          "name": "output_tokens",
+          "type_ref": "int",
+          "required": true,
+          "default": "",
+          "description": "Number of output tokens",
+          "validators": []
+        }
+      ],
+      "output_type": "float",
+      "error_cases": [],
+      "preconditions": [],
+      "postconditions": [
+        "Returns non-negative cost estimate in USD"
+      ],
+      "idempotent": false,
+      "is_async": false,
+      "side_effects": [],
+      "structured_side_effects": [
+        {
+          "kind": "none",
+          "target": "",
+          "description": ""
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "_load_image_b64",
+      "description": "Loads an image file and encodes it as base64 string",
+      "inputs": [
+        {
+          "name": "path",
+          "type_ref": "str | Path",
+          "required": true,
+          "default": "",
+          "description": "Path to image file",
+          "validators": []
+        }
+      ],
+      "output_type": "str",
+      "error_cases": [
+        {
+          "name": "file_not_found",
+          "condition": "Image file does not exist",
+          "error_type": "FileNotFoundError",
+          "error_data": {}
+        },
+        {
+          "name": "permission_error",
+          "condition": "Insufficient permissions to read file",
+          "error_type": "PermissionError",
+          "error_data": {}
+        }
+      ],
+      "preconditions": [],
+      "postconditions": [
+        "Returns base64-encoded image data as string"
+      ],
+      "idempotent": false,
+      "is_async": false,
+      "side_effects": [
+        "Reads file from disk"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "reads_file",
+          "target": "path parameter",
+          "description": ""
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "create_provider",
+      "description": "Factory function that creates an LLM provider instance by name with optional model and cost tracker",
+      "inputs": [
+        {
+          "name": "provider",
+          "type_ref": "str",
+          "required": false,
+          "default": "anthropic",
+          "description": "Provider name: anthropic, openai, gemini, or apprentice",
+          "validators": []
+        },
+        {
+          "name": "model",
+          "type_ref": "str | None",
+          "required": false,
+          "default": "None",
+          "description": "Model identifier; uses provider default if None",
+          "validators": []
+        },
+        {
+          "name": "cost_tracker",
+          "type_ref": "CostTracker | None",
+          "required": false,
+          "default": "None",
+          "description": "Cost tracker instance; creates new if None",
+          "validators": []
+        }
+      ],
+      "output_type": "LLMProvider",
+      "error_cases": [
+        {
+          "name": "unknown_provider",
+          "condition": "provider not in ['anthropic', 'openai', 'gemini', 'apprentice']",
+          "error_type": "ValueError",
+          "error_data": {}
+        }
+      ],
+      "preconditions": [],
+      "postconditions": [
+        "Returns initialized LLMProvider instance"
+      ],
+      "idempotent": false,
+      "is_async": false,
+      "side_effects": [],
+      "structured_side_effects": [
+        {
+          "kind": "none",
+          "target": "",
+          "description": ""
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "transmogrify_prompt",
+      "description": "Normalizes prompt register via transmogrifier if available. Falls back to returning original text if transmogrifier unavailable or errors.",
+      "inputs": [
+        {
+          "name": "text",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Prompt text to normalize",
+          "validators": []
+        },
+        {
+          "name": "model",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Target model identifier",
+          "validators": []
+        }
+      ],
+      "output_type": "str",
+      "error_cases": [],
+      "preconditions": [],
+      "postconditions": [
+        "Returns normalized text or original text on error"
+      ],
+      "idempotent": false,
+      "is_async": true,
+      "side_effects": [
+        "May call transmogrifier.core.Transmogrifier.translate"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "network_call",
+          "target": "transmogrifier service (conditional)",
+          "description": "Only if transmogrifier available"
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "CostTracker.__init__",
+      "description": "Initializes empty cost tracker with no recorded calls",
+      "inputs": [],
+      "output_type": "None",
+      "error_cases": [],
+      "preconditions": [],
+      "postconditions": [
+        "self.calls is empty list"
+      ],
+      "idempotent": false,
+      "is_async": false,
+      "side_effects": [],
+      "structured_side_effects": [
+        {
+          "kind": "mutates_state",
+          "target": "self.calls",
+          "description": ""
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "CostTracker.record",
+      "description": "Records a single LLM API call to the tracker",
+      "inputs": [
+        {
+          "name": "call",
+          "type_ref": "LLMCallRecord",
+          "required": true,
+          "default": "",
+          "description": "Call record to append",
+          "validators": []
+        }
+      ],
+      "output_type": "None",
+      "error_cases": [],
+      "preconditions": [],
+      "postconditions": [
+        "call appended to self.calls"
+      ],
+      "idempotent": false,
+      "is_async": false,
+      "side_effects": [
+        "Mutates self.calls list"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "mutates_state",
+          "target": "self.calls",
+          "description": ""
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "CostTracker.total_cost",
+      "description": "Property that computes total estimated cost across all recorded calls",
+      "inputs": [],
+      "output_type": "float",
+      "error_cases": [],
+      "preconditions": [],
+      "postconditions": [
+        "Returns sum of all estimated_cost_usd values"
+      ],
+      "idempotent": false,
+      "is_async": false,
+      "side_effects": [],
+      "structured_side_effects": [
+        {
+          "kind": "none",
+          "target": "",
+          "description": ""
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "CostTracker.total_input_tokens",
+      "description": "Property that computes total input tokens across all recorded calls",
+      "inputs": [],
+      "output_type": "int",
+      "error_cases": [],
+      "preconditions": [],
+      "postconditions": [
+        "Returns sum of all input_tokens values"
+      ],
+      "idempotent": false,
+      "is_async": false,
+      "side_effects": [],
+      "structured_side_effects": [
+        {
+          "kind": "none",
+          "target": "",
+          "description": ""
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "CostTracker.total_output_tokens",
+      "description": "Property that computes total output tokens across all recorded calls",
+      "inputs": [],
+      "output_type": "int",
+      "error_cases": [],
+      "preconditions": [],
+      "postconditions": [
+        "Returns sum of all output_tokens values"
+      ],
+      "idempotent": false,
+      "is_async": false,
+      "side_effects": [],
+      "structured_side_effects": [
+        {
+          "kind": "none",
+          "target": "",
+          "description": ""
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "CostTracker.summary",
+      "description": "Generates summary dictionary with aggregate statistics across all calls",
+      "inputs": [],
+      "output_type": "dict",
+      "error_cases": [],
+      "preconditions": [],
+      "postconditions": [
+        "Returns dict with keys: total_calls, total_input_tokens, total_output_tokens, total_cost_usd, by_provider"
+      ],
+      "idempotent": false,
+      "is_async": false,
+      "side_effects": [],
+      "structured_side_effects": [
+        {
+          "kind": "none",
+          "target": "",
+          "description": ""
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "CostTracker._by_provider",
+      "description": "Internal method that groups calls by provider and computes per-provider statistics",
+      "inputs": [],
+      "output_type": "dict",
+      "error_cases": [],
+      "preconditions": [],
+      "postconditions": [
+        "Returns dict mapping provider names to dicts with calls, cost_usd, tokens"
+      ],
+      "idempotent": false,
+      "is_async": false,
+      "side_effects": [],
+      "structured_side_effects": [
+        {
+          "kind": "none",
+          "target": "",
+          "description": ""
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "LLMProvider.__init__",
+      "description": "Initializes LLM provider with model identifier and optional cost tracker",
+      "inputs": [
+        {
+          "name": "model",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "Model identifier",
+          "validators": []
+        },
+        {
+          "name": "cost_tracker",
+          "type_ref": "CostTracker | None",
+          "required": false,
+          "default": "None",
+          "description": "Cost tracker; creates new if None",
+          "validators": []
+        }
+      ],
+      "output_type": "None",
+      "error_cases": [],
+      "preconditions": [],
+      "postconditions": [
+        "self.model set to model parameter",
+        "self.cost_tracker set to provided or new CostTracker"
+      ],
+      "idempotent": false,
+      "is_async": false,
+      "side_effects": [],
+      "structured_side_effects": [
+        {
+          "kind": "mutates_state",
+          "target": "self",
+          "description": ""
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "LLMProvider.complete",
+      "description": "Abstract method for text completion. Must be implemented by subclasses.",
+      "inputs": [
+        {
+          "name": "system",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "System prompt",
+          "validators": []
+        },
+        {
+          "name": "messages",
+          "type_ref": "list[dict]",
+          "required": true,
+          "default": "",
+          "description": "Conversation messages with role and content",
+          "validators": []
+        },
+        {
+          "name": "max_tokens",
+          "type_ref": "int",
+          "required": false,
+          "default": "4096",
+          "description": "Maximum tokens to generate",
+          "validators": []
+        }
+      ],
+      "output_type": "str",
+      "error_cases": [],
+      "preconditions": [],
+      "postconditions": [
+        "Returns generated text completion"
+      ],
+      "idempotent": false,
+      "is_async": true,
+      "side_effects": [
+        "Makes API call to LLM provider",
+        "Records call to cost tracker"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "network_call",
+          "target": "LLM API",
+          "description": ""
+        },
+        {
+          "kind": "mutates_state",
+          "target": "cost_tracker",
+          "description": ""
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "LLMProvider.vision",
+      "description": "Abstract method for image analysis with text prompt. Must be implemented by subclasses.",
+      "inputs": [
+        {
+          "name": "system",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "System prompt",
+          "validators": []
+        },
+        {
+          "name": "prompt",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "User prompt about the image",
+          "validators": []
+        },
+        {
+          "name": "image_path",
+          "type_ref": "str | Path",
+          "required": true,
+          "default": "",
+          "description": "Path to image file",
+          "validators": []
+        },
+        {
+          "name": "max_tokens",
+          "type_ref": "int",
+          "required": false,
+          "default": "4096",
+          "description": "Maximum tokens to generate",
+          "validators": []
+        }
+      ],
+      "output_type": "str",
+      "error_cases": [],
+      "preconditions": [],
+      "postconditions": [
+        "Returns generated text analysis of image"
+      ],
+      "idempotent": false,
+      "is_async": true,
+      "side_effects": [
+        "Reads image file",
+        "Makes API call to LLM provider",
+        "Records call to cost tracker"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "reads_file",
+          "target": "image_path",
+          "description": ""
+        },
+        {
+          "kind": "network_call",
+          "target": "LLM API",
+          "description": ""
+        },
+        {
+          "kind": "mutates_state",
+          "target": "cost_tracker",
+          "description": ""
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "LLMProvider._record",
+      "description": "Internal method to record an LLM API call with usage metrics",
+      "inputs": [
+        {
+          "name": "input_tokens",
+          "type_ref": "int",
+          "required": true,
+          "default": "",
+          "description": "Number of input tokens",
+          "validators": []
+        },
+        {
+          "name": "output_tokens",
+          "type_ref": "int",
+          "required": true,
+          "default": "",
+          "description": "Number of output tokens",
+          "validators": []
+        },
+        {
+          "name": "duration_ms",
+          "type_ref": "float",
+          "required": true,
+          "default": "",
+          "description": "Call duration in milliseconds",
+          "validators": []
+        },
+        {
+          "name": "has_vision",
+          "type_ref": "bool",
+          "required": false,
+          "default": "False",
+          "description": "Whether call involved vision",
+          "validators": []
+        }
+      ],
+      "output_type": "None",
+      "error_cases": [],
+      "preconditions": [],
+      "postconditions": [
+        "LLMCallRecord created and added to cost_tracker"
+      ],
+      "idempotent": false,
+      "is_async": false,
+      "side_effects": [
+        "Mutates cost_tracker.calls"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "mutates_state",
+          "target": "self.cost_tracker",
+          "description": ""
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "LLMProvider.provider_name",
+      "description": "Abstract property returning provider name string. Must be implemented by subclasses.",
+      "inputs": [],
+      "output_type": "str",
+      "error_cases": [],
+      "preconditions": [],
+      "postconditions": [
+        "Returns provider identifier string"
+      ],
+      "idempotent": false,
+      "is_async": false,
+      "side_effects": [],
+      "structured_side_effects": [
+        {
+          "kind": "none",
+          "target": "",
+          "description": ""
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "AnthropicProvider.provider_name",
+      "description": "Property returning 'anthropic' as provider identifier",
+      "inputs": [],
+      "output_type": "str",
+      "error_cases": [],
+      "preconditions": [],
+      "postconditions": [
+        "Returns 'anthropic'"
+      ],
+      "idempotent": false,
+      "is_async": false,
+      "side_effects": [],
+      "structured_side_effects": [
+        {
+          "kind": "none",
+          "target": "",
+          "description": ""
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "AnthropicProvider.complete",
+      "description": "Text completion using Claude API via Anthropic SDK",
+      "inputs": [
+        {
+          "name": "system",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "System prompt",
+          "validators": []
+        },
+        {
+          "name": "messages",
+          "type_ref": "list[dict]",
+          "required": true,
+          "default": "",
+          "description": "Conversation messages",
+          "validators": []
+        },
+        {
+          "name": "max_tokens",
+          "type_ref": "int",
+          "required": false,
+          "default": "4096",
+          "description": "Maximum tokens to generate",
+          "validators": []
+        }
+      ],
+      "output_type": "str",
+      "error_cases": [
+        {
+          "name": "api_error",
+          "condition": "Anthropic API returns error",
+          "error_type": "anthropic.APIError",
+          "error_data": {}
+        },
+        {
+          "name": "index_error",
+          "condition": "response.content is empty",
+          "error_type": "IndexError",
+          "error_data": {}
+        }
+      ],
+      "preconditions": [],
+      "postconditions": [
+        "Returns text from response.content[0].text",
+        "Records usage to cost tracker"
+      ],
+      "idempotent": false,
+      "is_async": true,
+      "side_effects": [
+        "Creates AsyncAnthropic client",
+        "Makes API call",
+        "Records metrics"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "network_call",
+          "target": "Anthropic API",
+          "description": ""
+        },
+        {
+          "kind": "mutates_state",
+          "target": "cost_tracker",
+          "description": ""
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "AnthropicProvider.vision",
+      "description": "Image analysis using Claude vision API",
+      "inputs": [
+        {
+          "name": "system",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "System prompt",
+          "validators": []
+        },
+        {
+          "name": "prompt",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "User prompt about image",
+          "validators": []
+        },
+        {
+          "name": "image_path",
+          "type_ref": "str | Path",
+          "required": true,
+          "default": "",
+          "description": "Path to image file",
+          "validators": []
+        },
+        {
+          "name": "max_tokens",
+          "type_ref": "int",
+          "required": false,
+          "default": "4096",
+          "description": "Maximum tokens to generate",
+          "validators": []
+        }
+      ],
+      "output_type": "str",
+      "error_cases": [
+        {
+          "name": "file_error",
+          "condition": "Image file not found or unreadable",
+          "error_type": "FileNotFoundError | PermissionError",
+          "error_data": {}
+        },
+        {
+          "name": "api_error",
+          "condition": "Anthropic API returns error",
+          "error_type": "anthropic.APIError",
+          "error_data": {}
+        },
+        {
+          "name": "index_error",
+          "condition": "response.content is empty",
+          "error_type": "IndexError",
+          "error_data": {}
+        }
+      ],
+      "preconditions": [],
+      "postconditions": [
+        "Returns text from response.content[0].text",
+        "Records usage with has_vision=True"
+      ],
+      "idempotent": false,
+      "is_async": true,
+      "side_effects": [
+        "Reads image file",
+        "Creates AsyncAnthropic client",
+        "Makes API call",
+        "Records metrics"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "reads_file",
+          "target": "image_path",
+          "description": ""
+        },
+        {
+          "kind": "network_call",
+          "target": "Anthropic API",
+          "description": ""
+        },
+        {
+          "kind": "mutates_state",
+          "target": "cost_tracker",
+          "description": ""
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "OpenAIProvider.provider_name",
+      "description": "Property returning 'openai' as provider identifier",
+      "inputs": [],
+      "output_type": "str",
+      "error_cases": [],
+      "preconditions": [],
+      "postconditions": [
+        "Returns 'openai'"
+      ],
+      "idempotent": false,
+      "is_async": false,
+      "side_effects": [],
+      "structured_side_effects": [
+        {
+          "kind": "none",
+          "target": "",
+          "description": ""
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "OpenAIProvider.complete",
+      "description": "Text completion using OpenAI-compatible API",
+      "inputs": [
+        {
+          "name": "system",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "System prompt",
+          "validators": []
+        },
+        {
+          "name": "messages",
+          "type_ref": "list[dict]",
+          "required": true,
+          "default": "",
+          "description": "Conversation messages",
+          "validators": []
+        },
+        {
+          "name": "max_tokens",
+          "type_ref": "int",
+          "required": false,
+          "default": "4096",
+          "description": "Maximum tokens to generate",
+          "validators": []
+        }
+      ],
+      "output_type": "str",
+      "error_cases": [
+        {
+          "name": "api_error",
+          "condition": "OpenAI API returns error",
+          "error_type": "openai.APIError",
+          "error_data": {}
+        }
+      ],
+      "preconditions": [],
+      "postconditions": [
+        "Returns message content or empty string",
+        "Records usage to cost tracker"
+      ],
+      "idempotent": false,
+      "is_async": true,
+      "side_effects": [
+        "Creates AsyncOpenAI client",
+        "Makes API call",
+        "Records metrics"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "network_call",
+          "target": "OpenAI API",
+          "description": ""
+        },
+        {
+          "kind": "mutates_state",
+          "target": "cost_tracker",
+          "description": ""
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "OpenAIProvider.vision",
+      "description": "Image analysis using OpenAI vision API",
+      "inputs": [
+        {
+          "name": "system",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "System prompt",
+          "validators": []
+        },
+        {
+          "name": "prompt",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "User prompt about image",
+          "validators": []
+        },
+        {
+          "name": "image_path",
+          "type_ref": "str | Path",
+          "required": true,
+          "default": "",
+          "description": "Path to image file",
+          "validators": []
+        },
+        {
+          "name": "max_tokens",
+          "type_ref": "int",
+          "required": false,
+          "default": "4096",
+          "description": "Maximum tokens to generate",
+          "validators": []
+        }
+      ],
+      "output_type": "str",
+      "error_cases": [
+        {
+          "name": "file_error",
+          "condition": "Image file not found or unreadable",
+          "error_type": "FileNotFoundError | PermissionError",
+          "error_data": {}
+        },
+        {
+          "name": "api_error",
+          "condition": "OpenAI API returns error",
+          "error_type": "openai.APIError",
+          "error_data": {}
+        }
+      ],
+      "preconditions": [],
+      "postconditions": [
+        "Returns message content or empty string",
+        "Records usage with has_vision=True"
+      ],
+      "idempotent": false,
+      "is_async": true,
+      "side_effects": [
+        "Reads image file",
+        "Creates AsyncOpenAI client",
+        "Makes API call",
+        "Records metrics"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "reads_file",
+          "target": "image_path",
+          "description": ""
+        },
+        {
+          "kind": "network_call",
+          "target": "OpenAI API",
+          "description": ""
+        },
+        {
+          "kind": "mutates_state",
+          "target": "cost_tracker",
+          "description": ""
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "GeminiProvider.provider_name",
+      "description": "Property returning 'gemini' as provider identifier",
+      "inputs": [],
+      "output_type": "str",
+      "error_cases": [],
+      "preconditions": [],
+      "postconditions": [
+        "Returns 'gemini'"
+      ],
+      "idempotent": false,
+      "is_async": false,
+      "side_effects": [],
+      "structured_side_effects": [
+        {
+          "kind": "none",
+          "target": "",
+          "description": ""
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "GeminiProvider.complete",
+      "description": "Text completion using Google Gemini API",
+      "inputs": [
+        {
+          "name": "system",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "System instruction",
+          "validators": []
+        },
+        {
+          "name": "messages",
+          "type_ref": "list[dict]",
+          "required": true,
+          "default": "",
+          "description": "Conversation messages",
+          "validators": []
+        },
+        {
+          "name": "max_tokens",
+          "type_ref": "int",
+          "required": false,
+          "default": "4096",
+          "description": "Maximum output tokens",
+          "validators": []
+        }
+      ],
+      "output_type": "str",
+      "error_cases": [
+        {
+          "name": "api_error",
+          "condition": "Gemini API returns error",
+          "error_type": "google.genai.errors.ClientError",
+          "error_data": {}
+        }
+      ],
+      "preconditions": [],
+      "postconditions": [
+        "Returns response.text or empty string",
+        "Records usage to cost tracker"
+      ],
+      "idempotent": false,
+      "is_async": true,
+      "side_effects": [
+        "Creates genai.Client",
+        "Converts messages to Gemini format",
+        "Makes API call",
+        "Records metrics"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "network_call",
+          "target": "Google Gemini API",
+          "description": ""
+        },
+        {
+          "kind": "mutates_state",
+          "target": "cost_tracker",
+          "description": ""
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "GeminiProvider.vision",
+      "description": "Image analysis using Google Gemini vision API",
+      "inputs": [
+        {
+          "name": "system",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "System instruction",
+          "validators": []
+        },
+        {
+          "name": "prompt",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "User prompt about image",
+          "validators": []
+        },
+        {
+          "name": "image_path",
+          "type_ref": "str | Path",
+          "required": true,
+          "default": "",
+          "description": "Path to image file",
+          "validators": []
+        },
+        {
+          "name": "max_tokens",
+          "type_ref": "int",
+          "required": false,
+          "default": "4096",
+          "description": "Maximum output tokens",
+          "validators": []
+        }
+      ],
+      "output_type": "str",
+      "error_cases": [
+        {
+          "name": "file_error",
+          "condition": "Image file not found or unreadable",
+          "error_type": "FileNotFoundError | PermissionError",
+          "error_data": {}
+        },
+        {
+          "name": "api_error",
+          "condition": "Gemini API returns error",
+          "error_type": "google.genai.errors.ClientError",
+          "error_data": {}
+        }
+      ],
+      "preconditions": [],
+      "postconditions": [
+        "Returns response.text or empty string",
+        "Records usage with has_vision=True"
+      ],
+      "idempotent": false,
+      "is_async": true,
+      "side_effects": [
+        "Reads image file",
+        "Creates genai.Client",
+        "Makes API call",
+        "Records metrics"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "reads_file",
+          "target": "image_path",
+          "description": ""
+        },
+        {
+          "kind": "network_call",
+          "target": "Google Gemini API",
+          "description": ""
+        },
+        {
+          "kind": "mutates_state",
+          "target": "cost_tracker",
+          "description": ""
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "ApprenticeProvider.provider_name",
+      "description": "Property returning 'apprentice' as provider identifier",
+      "inputs": [],
+      "output_type": "str",
+      "error_cases": [],
+      "preconditions": [],
+      "postconditions": [
+        "Returns 'apprentice'"
+      ],
+      "idempotent": false,
+      "is_async": false,
+      "side_effects": [],
+      "structured_side_effects": [
+        {
+          "kind": "none",
+          "target": "",
+          "description": ""
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "ApprenticeProvider.complete",
+      "description": "Text completion using Apprentice adaptive routing via OpenAI-compatible API on localhost:8741",
+      "inputs": [
+        {
+          "name": "system",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "System prompt",
+          "validators": []
+        },
+        {
+          "name": "messages",
+          "type_ref": "list[dict]",
+          "required": true,
+          "default": "",
+          "description": "Conversation messages",
+          "validators": []
+        },
+        {
+          "name": "max_tokens",
+          "type_ref": "int",
+          "required": false,
+          "default": "4096",
+          "description": "Maximum tokens to generate",
+          "validators": []
+        }
+      ],
+      "output_type": "str",
+      "error_cases": [
+        {
+          "name": "connection_error",
+          "condition": "Apprentice service not reachable",
+          "error_type": "openai.APIConnectionError",
+          "error_data": {}
+        },
+        {
+          "name": "api_error",
+          "condition": "Apprentice API returns error",
+          "error_type": "openai.APIError",
+          "error_data": {}
+        }
+      ],
+      "preconditions": [
+        "Apprentice service running on localhost:8741"
+      ],
+      "postconditions": [
+        "Returns message content or empty string",
+        "Records usage to cost tracker"
+      ],
+      "idempotent": false,
+      "is_async": true,
+      "side_effects": [
+        "Creates AsyncOpenAI client with base_url=http://localhost:8741/v1",
+        "Makes API call",
+        "Records metrics"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "network_call",
+          "target": "Apprentice API (localhost:8741)",
+          "description": ""
+        },
+        {
+          "kind": "mutates_state",
+          "target": "cost_tracker",
+          "description": ""
+        }
+      ],
+      "performance_budget": null
+    },
+    {
+      "name": "ApprenticeProvider.vision",
+      "description": "Image analysis using Apprentice API (falls back to frontier model for vision tasks)",
+      "inputs": [
+        {
+          "name": "system",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "System prompt",
+          "validators": []
+        },
+        {
+          "name": "prompt",
+          "type_ref": "str",
+          "required": true,
+          "default": "",
+          "description": "User prompt about image",
+          "validators": []
+        },
+        {
+          "name": "image_path",
+          "type_ref": "str | Path",
+          "required": true,
+          "default": "",
+          "description": "Path to image file",
+          "validators": []
+        },
+        {
+          "name": "max_tokens",
+          "type_ref": "int",
+          "required": false,
+          "default": "4096",
+          "description": "Maximum tokens to generate",
+          "validators": []
+        }
+      ],
+      "output_type": "str",
+      "error_cases": [
+        {
+          "name": "file_error",
+          "condition": "Image file not found or unreadable",
+          "error_type": "FileNotFoundError | PermissionError",
+          "error_data": {}
+        },
+        {
+          "name": "connection_error",
+          "condition": "Apprentice service not reachable",
+          "error_type": "openai.APIConnectionError",
+          "error_data": {}
+        },
+        {
+          "name": "api_error",
+          "condition": "Apprentice API returns error",
+          "error_type": "openai.APIError",
+          "error_data": {}
+        }
+      ],
+      "preconditions": [
+        "Apprentice service running on localhost:8741"
+      ],
+      "postconditions": [
+        "Returns message content or empty string",
+        "Records usage with has_vision=True"
+      ],
+      "idempotent": false,
+      "is_async": true,
+      "side_effects": [
+        "Reads image file",
+        "Creates AsyncOpenAI client with base_url=http://localhost:8741/v1",
+        "Makes API call",
+        "Records metrics"
+      ],
+      "structured_side_effects": [
+        {
+          "kind": "reads_file",
+          "target": "image_path",
+          "description": ""
+        },
+        {
+          "kind": "network_call",
+          "target": "Apprentice API (localhost:8741)",
+          "description": ""
+        },
+        {
+          "kind": "mutates_state",
+          "target": "cost_tracker",
+          "description": ""
+        }
+      ],
+      "performance_budget": null
+    }
+  ],
+  "dependencies": [
+    "base64",
+    "time",
+    "abc",
+    "dataclasses",
+    "pathlib",
+    "typing",
+    "pydantic",
+    "anthropic",
+    "openai",
+    "google.genai",
+    "transmogrifier.core"
+  ],
+  "dependency_contracts": {
+    "anthropic": [
+      "AsyncAnthropic",
+      "messages.create"
+    ],
+    "openai": [
+      "AsyncOpenAI",
+      "chat.completions.create"
+    ],
+    "google.genai": [
+      "Client",
+      "aio.models.generate_content",
+      "types.Part"
+    ],
+    "transmogrifier.core": [
+      "Transmogrifier",
+      "translate"
+    ],
+    "base64": [
+      "standard_b64encode"
+    ],
+    "pathlib": [
+      "Path"
+    ],
+    "time": [
+      "monotonic"
+    ],
+    "pydantic": [
+      "BaseModel",
+      "Field"
+    ]
+  },
+  "invariants": [
+    "_PRICING dictionary contains fixed pricing data for known models (USD per 1M tokens)",
+    "Default provider models: anthropic='claude-sonnet-4-20250514', openai='gpt-4o', gemini='gemini-2.5-flash', apprentice='auto'",
+    "Image media type hardcoded as 'image/png' for all vision calls",
+    "Apprentice base URL is 'http://localhost:8741/v1'",
+    "All token counts and costs are non-negative",
+    "Duration measurements use time.monotonic() and are converted to milliseconds"
+  ],
+  "requires": [],
+  "processing_register": "",
+  "data_access": {
+    "reads": [
+      "filesystem"
+    ],
+    "writes": [],
+    "rationale": "Reads image files from disk for vision API calls",
+    "side_effects": [
+      {
+        "type": "network_call",
+        "classification": "external_api",
+        "fields": [
+          "complete",
+          "vision"
+        ],
+        "rationale": "Makes HTTP requests to LLM provider APIs (Anthropic, OpenAI, Gemini, Apprentice)"
+      },
+      {
+        "type": "file_read",
+        "classification": "local_filesystem",
+        "fields": [
+          "vision",
+          "_load_image_b64"
+        ],
+        "rationale": "Reads image files for vision analysis"
+      }
+    ]
+  },
+  "authority": {
+    "domains": [],
+    "rationale": null
+  }
+}

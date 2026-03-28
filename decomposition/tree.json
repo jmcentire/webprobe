@@ -1,0 +1,235 @@
+{
+  "root_id": "root",
+  "nodes": {
+    "root": {
+      "component_id": "root",
+      "name": "Project Root",
+      "description": "Adopted codebase at /Users/jmcentire/Code/webprobe",
+      "depth": 0,
+      "parent_id": "",
+      "children": [
+        "src"
+      ],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "src": {
+      "component_id": "src",
+      "name": "Src",
+      "description": "Package: src",
+      "depth": 1,
+      "parent_id": "root",
+      "children": [
+        "src_webprobe"
+      ],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "src_webprobe": {
+      "component_id": "src_webprobe",
+      "name": "Webprobe",
+      "description": "Package: src/webprobe",
+      "depth": 2,
+      "parent_id": "src",
+      "children": [
+        "src_webprobe_analyzer",
+        "src_webprobe_auth",
+        "src_webprobe_browser",
+        "src_webprobe_capturer",
+        "src_webprobe_cli",
+        "src_webprobe_config",
+        "src_webprobe_differ",
+        "src_webprobe_explorer",
+        "src_webprobe_frameworks",
+        "src_webprobe_llm_provider",
+        "src_webprobe_mapper",
+        "src_webprobe_mask",
+        "src_webprobe_models",
+        "src_webprobe_reporter",
+        "src_webprobe_security",
+        "src_webprobe_visual"
+      ],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "src_webprobe_analyzer": {
+      "component_id": "src_webprobe_analyzer",
+      "name": "Analyzer",
+      "description": "Module src/webprobe/analyzer.py: _build_nx_graph, _compute_graph_metrics, _find_broken_links, _find_auth_violations, _find_timing_outliers (+2 more)",
+      "depth": 3,
+      "parent_id": "src_webprobe",
+      "children": [],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "src_webprobe_auth": {
+      "component_id": "src_webprobe_auth",
+      "name": "Auth",
+      "description": "Module src/webprobe/auth.py: __init__, has_auth, apply_to_session, apply_to_context, is_auth_redirect (+1 more)",
+      "depth": 3,
+      "parent_id": "src_webprobe",
+      "children": [],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "src_webprobe_browser": {
+      "component_id": "src_webprobe_browser",
+      "name": "Browser",
+      "description": "Module src/webprobe/browser.py: __init__, start, new_context, stop, __aenter__ (+1 more)",
+      "depth": 3,
+      "parent_id": "src_webprobe",
+      "children": [],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "src_webprobe_capturer": {
+      "component_id": "src_webprobe_capturer",
+      "name": "Capturer",
+      "description": "Module src/webprobe/capturer.py: _map_resource_type, _map_console_level, _screenshot_path, _visit_node, capture_site (+2 more)",
+      "depth": 3,
+      "parent_id": "src_webprobe",
+      "children": [],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "src_webprobe_cli": {
+      "component_id": "src_webprobe_cli",
+      "name": "Cli",
+      "description": "Module src/webprobe/cli.py: _now_iso, main, run, explore_cmd, map_cmd (+9 more)",
+      "depth": 3,
+      "parent_id": "src_webprobe",
+      "children": [],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "src_webprobe_config": {
+      "component_id": "src_webprobe_config",
+      "name": "Config",
+      "description": "Module src/webprobe/config.py: load_config",
+      "depth": 3,
+      "parent_id": "src_webprobe",
+      "children": [],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "src_webprobe_differ": {
+      "component_id": "src_webprobe_differ",
+      "name": "Differ",
+      "description": "Module src/webprobe/differ.py: load_run, diff_runs, edge_key, bl_key",
+      "depth": 3,
+      "parent_id": "src_webprobe",
+      "children": [],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "src_webprobe_explorer": {
+      "component_id": "src_webprobe_explorer",
+      "name": "Explorer",
+      "description": "Module src/webprobe/explorer.py: _extract_interactive_elements, _run_agent, explore_site, __init__, on_console",
+      "depth": 3,
+      "parent_id": "src_webprobe",
+      "children": [],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "src_webprobe_frameworks": {
+      "component_id": "src_webprobe_frameworks",
+      "name": "Frameworks",
+      "description": "Module src/webprobe/frameworks.py: _path_to_route, detect_astro, detect_nextjs, detect_sveltekit, detect_framework",
+      "depth": 3,
+      "parent_id": "src_webprobe",
+      "children": [],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "src_webprobe_llm_provider": {
+      "component_id": "src_webprobe_llm_provider",
+      "name": "Llm Provider",
+      "description": "Module src/webprobe/llm_provider.py: _estimate_cost, _load_image_b64, create_provider, transmogrify_prompt, __init__ (+23 more)",
+      "depth": 3,
+      "parent_id": "src_webprobe",
+      "children": [],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "src_webprobe_mapper": {
+      "component_id": "src_webprobe_mapper",
+      "name": "Mapper",
+      "description": "Module src/webprobe/mapper.py: normalize_url, is_same_origin, extract_links, parse_robots_txt, parse_sitemap (+7 more)",
+      "depth": 3,
+      "parent_id": "src_webprobe",
+      "children": [],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "src_webprobe_mask": {
+      "component_id": "src_webprobe_mask",
+      "name": "Mask",
+      "description": "Module src/webprobe/mask.py: load_mask, apply_mask",
+      "depth": 3,
+      "parent_id": "src_webprobe",
+      "children": [],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "src_webprobe_models": {
+      "component_id": "src_webprobe_models",
+      "name": "Models",
+      "description": "Module src/webprobe/models.py: _make_run_id, identity_key",
+      "depth": 3,
+      "parent_id": "src_webprobe",
+      "children": [],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "src_webprobe_reporter": {
+      "component_id": "src_webprobe_reporter",
+      "name": "Reporter",
+      "description": "Module src/webprobe/reporter.py: generate_report",
+      "depth": 3,
+      "parent_id": "src_webprobe",
+      "children": [],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "src_webprobe_security": {
+      "component_id": "src_webprobe_security",
+      "name": "Security",
+      "description": "Module src/webprobe/security.py: check_security_headers, check_cookies, check_mixed_content, check_cors, check_information_disclosure (+4 more)",
+      "depth": 3,
+      "parent_id": "src_webprobe",
+      "children": [],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    },
+    "src_webprobe_visual": {
+      "component_id": "src_webprobe_visual",
+      "name": "Visual",
+      "description": "Module src/webprobe/visual.py: _relative_luminance, contrast_ratio, check_wcag_aa, check_wcag_aaa, _parse_rgb (+4 more)",
+      "depth": 3,
+      "parent_id": "src_webprobe",
+      "children": [],
+      "contract": null,
+      "implementation_status": "pending",
+      "test_results": null
+    }
+  }
+}

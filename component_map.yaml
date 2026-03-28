@@ -1,0 +1,159 @@
+components:
+  - id: models
+    role: "Pydantic v2 data models and stable schema definitions"
+    protocol: "Python import"
+    authority: "schema"
+    data_access: [read, write]
+    dependencies: []
+
+  - id: config
+    role: "YAML configuration loading and validation"
+    protocol: "Python import"
+    authority: "configuration"
+    data_access: [read]
+    dependencies: [models]
+
+  - id: auth
+    role: "Authentication injection for aiohttp and Playwright contexts"
+    protocol: "Python import"
+    authority: "authentication"
+    data_access: [read]
+    dependencies: [config]
+
+  - id: mapper
+    role: "Phase 1: BFS crawl, sitemap/robots.txt parsing, graph construction"
+    protocol: "async Python"
+    authority: "site_discovery"
+    data_access: [read, write]
+    dependencies: [config, auth, models]
+
+  - id: frameworks
+    role: "Optional framework route detection from project root"
+    protocol: "Python import"
+    authority: "route_detection"
+    data_access: [read]
+    dependencies: []
+
+  - id: browser
+    role: "Playwright browser lifecycle and context pool"
+    protocol: "async Python"
+    authority: "browser_management"
+    data_access: []
+    dependencies: [config, auth]
+
+  - id: capturer
+    role: "Phase 2: Playwright page visits, resource interception, timing, screenshots"
+    protocol: "async Python"
+    authority: "page_capture"
+    data_access: [read, write]
+    dependencies: [config, auth, browser, models]
+
+  - id: security
+    role: "Passive security scanning of captured data"
+    protocol: "Python import"
+    authority: "security_analysis"
+    data_access: [read]
+    dependencies: [models]
+
+  - id: analyzer
+    role: "Phase 3: graph metrics, broken links, auth violations, timing outliers, prime paths"
+    protocol: "Python import"
+    authority: "graph_analysis"
+    data_access: [read]
+    dependencies: [models, security]
+
+  - id: llm_provider
+    role: "Multi-provider LLM abstraction with cost tracking and transmogrifier"
+    protocol: "async Python"
+    authority: "llm_orchestration"
+    data_access: [read]
+    dependencies: []
+
+  - id: visual
+    role: "WCAG contrast checking, hidden element detection, LLM vision analysis"
+    protocol: "async Python"
+    authority: "visual_analysis"
+    data_access: [read]
+    dependencies: [llm_provider, models]
+
+  - id: mask
+    role: "Finding suppression via YAML-based rules"
+    protocol: "Python import"
+    authority: "finding_suppression"
+    data_access: [read]
+    dependencies: [models]
+
+  - id: explorer
+    role: "Phase 5: concurrent LLM agents with Playwright browsers"
+    protocol: "async Python"
+    authority: "llm_exploration"
+    data_access: [read, write]
+    dependencies: [config, browser, llm_provider, visual, mask, models]
+
+  - id: reporter
+    role: "Phase 4: JSON and HTML report generation"
+    protocol: "Python import"
+    authority: "reporting"
+    data_access: [read, write]
+    dependencies: [models]
+
+  - id: differ
+    role: "Cross-run comparison and trending"
+    protocol: "Python import"
+    authority: "diff_analysis"
+    data_access: [read]
+    dependencies: [models]
+
+  - id: cli
+    role: "Click CLI entry point wiring all phases"
+    protocol: "Click commands"
+    authority: "user_interface"
+    data_access: [read, write]
+    dependencies: [config, mapper, capturer, analyzer, explorer, reporter, differ, frameworks]
+
+edges:
+  - from: cli
+    to: mapper
+    tier: direct
+  - from: cli
+    to: capturer
+    tier: direct
+  - from: cli
+    to: analyzer
+    tier: direct
+  - from: cli
+    to: explorer
+    tier: direct
+  - from: cli
+    to: reporter
+    tier: direct
+  - from: cli
+    to: differ
+    tier: direct
+  - from: mapper
+    to: auth
+    tier: direct
+  - from: capturer
+    to: browser
+    tier: direct
+  - from: capturer
+    to: auth
+    tier: direct
+  - from: analyzer
+    to: security
+    tier: direct
+  - from: explorer
+    to: llm_provider
+    tier: direct
+  - from: explorer
+    to: visual
+    tier: direct
+  - from: explorer
+    to: mask
+    tier: direct
+  - from: explorer
+    to: browser
+    tier: direct
+  - from: visual
+    to: llm_provider
+    tier: direct
