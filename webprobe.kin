@@ -1,0 +1,31 @@
+name: webprobe
+audience: public
+domains: [web-testing, security, browser-automation, accessibility, site-auditing]
+voice:
+  tone: [precise, thorough, actionable]
+  principles:
+    - Mechanical first, intelligent second
+    - Every finding needs evidence
+    - Timing is a first-class metric
+    - Schema stability enables aggregation
+    - Safe for production — passive checks, no destructive actions
+  anti-patterns:
+    - Reporting external links as broken
+    - Hallucinated findings from LLM exploration
+    - Silent failures that give false confidence
+    - Running without cost visibility
+standards:
+  code_review:
+    - Security headers checked on every page
+    - Auth boundaries verified with anonymous + authenticated passes
+    - All subresources inventoried with status codes
+  documentation:
+    - Report schema versioned for cross-run compatibility
+    - Every phase documented with inputs and outputs
+connects_to:
+  - advocate
+  - transmogrifier
+  - pact
+  - constrain
+  - kindex
+  - apprentice
