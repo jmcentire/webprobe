@@ -159,14 +159,15 @@ async def test_start_happy_path(mock_capture_config, mock_playwright):
     """Test start() successfully launches Playwright and Chromium browser"""
     pool = BrowserPool(mock_capture_config)
     
-    with patch('playwright.async_api.async_playwright', return_value=AsyncMock(__aenter__=AsyncMock(return_value=mock_playwright))):
+    with patch('src.webprobe.browser.async_playwright', return_value=AsyncMock(start=AsyncMock(return_value=mock_playwright))):
         await pool.start()
     
     assert pool._playwright is not None
     assert pool._browser is not None
-    # Verify headless mode
-    if hasattr(pool._browser, 'launch_call'):
-        assert pool._browser.launch_call.get('headless', True) is True
+    # Verify headless mode via the launch call args
+    mock_playwright.chromium.launch.assert_called_once()
+    call_kwargs = mock_playwright.chromium.launch.call_args[1]
+    assert call_kwargs.get('headless') is True
 
 
 @pytest.mark.asyncio
@@ -206,7 +207,7 @@ async def test_new_context_happy_path_with_auth(mock_capture_config, mock_auth_m
     context = await pool.new_context(auth=mock_auth_manager_with_auth, base_url="https://example.com")
     
     assert context is not None
-    mock_auth_manager_with_auth.apply_to_context.assert_called_once_with(mock_context)
+    mock_auth_manager_with_auth.apply_to_context.assert_called_once_with(mock_context, "https://example.com")
 
 
 @pytest.mark.asyncio
@@ -233,7 +234,7 @@ async def test_aenter_happy_path(mock_capture_config, mock_playwright):
     """Test __aenter__() starts browser and returns self"""
     pool = BrowserPool(mock_capture_config)
     
-    with patch('playwright.async_api.async_playwright', return_value=AsyncMock(__aenter__=AsyncMock(return_value=mock_playwright))):
+    with patch('src.webprobe.browser.async_playwright', return_value=AsyncMock(start=AsyncMock(return_value=mock_playwright))):
         result = await pool.__aenter__()
     
     assert result is pool
@@ -264,7 +265,7 @@ async def test_async_context_manager_full_lifecycle(mock_capture_config, mock_pl
     """Test full async context manager lifecycle with async with statement"""
     pool = BrowserPool(mock_capture_config)
     
-    with patch('playwright.async_api.async_playwright', return_value=AsyncMock(__aenter__=AsyncMock(return_value=mock_playwright))):
+    with patch('src.webprobe.browser.async_playwright', return_value=AsyncMock(start=AsyncMock(return_value=mock_playwright))):
         async with pool as p:
             assert p is pool
             assert p._playwright is not None
@@ -382,7 +383,7 @@ async def test_state_transition_start_twice(mock_capture_config, mock_playwright
     """Test calling start() twice in sequence"""
     pool = BrowserPool(mock_capture_config)
     
-    with patch('playwright.async_api.async_playwright', return_value=AsyncMock(__aenter__=AsyncMock(return_value=mock_playwright))):
+    with patch('src.webprobe.browser.async_playwright', return_value=AsyncMock(start=AsyncMock(return_value=mock_playwright))):
         await pool.start()
         first_browser = pool._browser
         
@@ -424,8 +425,8 @@ async def test_new_context_various_base_urls(mock_capture_config):
 async def test_start_playwright_failure(mock_capture_config):
     """Test start() raises PlaywrightStartFailure when Playwright fails to start"""
     pool = BrowserPool(mock_capture_config)
-    
-    with patch('playwright.async_api.async_playwright', side_effect=PlaywrightStartFailure("Failed to start")):
+
+    with patch('src.webprobe.browser.async_playwright', side_effect=PlaywrightStartFailure("Failed to start")):
         with pytest.raises(PlaywrightStartFailure):
             await pool.start()
 
@@ -434,11 +435,13 @@ async def test_start_playwright_failure(mock_capture_config):
 async def test_start_browser_launch_failure(mock_capture_config):
     """Test start() raises BrowserLaunchFailure when Chromium fails to launch"""
     pool = BrowserPool(mock_capture_config)
-    
-    mock_playwright = AsyncMock()
-    mock_playwright.chromium.launch = AsyncMock(side_effect=BrowserLaunchFailure("Failed to launch"))
-    
-    with patch('playwright.async_api.async_playwright', return_value=AsyncMock(__aenter__=AsyncMock(return_value=mock_playwright))):
+
+    mock_pw_instance = AsyncMock()
+    mock_pw_instance.chromium.launch = AsyncMock(side_effect=BrowserLaunchFailure("Failed to launch"))
+    mock_pw_cm = AsyncMock()
+    mock_pw_cm.start = AsyncMock(return_value=mock_pw_instance)
+
+    with patch('src.webprobe.browser.async_playwright', return_value=mock_pw_cm):
         with pytest.raises(BrowserLaunchFailure):
             await pool.start()
 
@@ -520,8 +523,8 @@ async def test_stop_playwright_stop_failure(mock_capture_config):
 async def test_aenter_start_failure(mock_capture_config):
     """Test __aenter__() raises StartFailure when start() fails"""
     pool = BrowserPool(mock_capture_config)
-    
-    with patch('playwright.async_api.async_playwright', side_effect=StartFailure("Start failed")):
+
+    with patch('src.webprobe.browser.async_playwright', side_effect=StartFailure("Start failed")):
         with pytest.raises(StartFailure):
             await pool.__aenter__()
 
@@ -549,7 +552,7 @@ async def test_invariant_browser_requires_playwright(mock_capture_config, mock_p
     """Test invariant: if _browser is not None, then _playwright is not None"""
     pool = BrowserPool(mock_capture_config)
     
-    with patch('playwright.async_api.async_playwright', return_value=AsyncMock(__aenter__=AsyncMock(return_value=mock_playwright))):
+    with patch('src.webprobe.browser.async_playwright', return_value=AsyncMock(start=AsyncMock(return_value=mock_playwright))):
         await pool.start()
     
     # Check invariant
@@ -562,7 +565,7 @@ async def test_invariant_after_start_both_non_none(mock_capture_config, mock_pla
     """Test invariant: after successful start(), both _playwright and _browser are non-None"""
     pool = BrowserPool(mock_capture_config)
     
-    with patch('playwright.async_api.async_playwright', return_value=AsyncMock(__aenter__=AsyncMock(return_value=mock_playwright))):
+    with patch('src.webprobe.browser.async_playwright', return_value=AsyncMock(start=AsyncMock(return_value=mock_playwright))):
         await pool.start()
     
     assert pool._playwright is not None
@@ -630,7 +633,7 @@ async def test_invariant_browser_headless_mode(mock_capture_config, mock_playwri
     """Test invariant: browser is always launched in headless mode"""
     pool = BrowserPool(mock_capture_config)
     
-    with patch('playwright.async_api.async_playwright', return_value=AsyncMock(__aenter__=AsyncMock(return_value=mock_playwright))):
+    with patch('src.webprobe.browser.async_playwright', return_value=AsyncMock(start=AsyncMock(return_value=mock_playwright))):
         await pool.start()
     
     # Verify headless was set to True

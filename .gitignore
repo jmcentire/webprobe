@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+*.egg-info/
+dist/
+build/
+.eggs/
+webprobe-runs/
+.pact/implementations/
+.pact/test-gen/
+.constrain/
+*.png

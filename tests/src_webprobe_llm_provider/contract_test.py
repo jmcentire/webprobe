@@ -13,6 +13,7 @@ Tests cover:
 import pytest
 import asyncio
 import base64
+import sys
 import time
 from pathlib import Path
 from unittest.mock import Mock, AsyncMock, patch, MagicMock, mock_open
@@ -73,15 +74,15 @@ def temp_image_file(tmp_path):
 @pytest.fixture
 def mock_anthropic_client():
     """Mock Anthropic client for testing."""
-    with patch('src_webprobe_llm_provider.anthropic.Anthropic') as mock:
-        client = MagicMock()
+    with patch('anthropic.AsyncAnthropic') as mock:
+        client = AsyncMock()
         mock.return_value = client
-        
+
         # Mock successful response
         response = MagicMock()
         response.content = [MagicMock(text="This is a test response")]
         response.usage = MagicMock(input_tokens=100, output_tokens=50)
-        
+
         client.messages.create = AsyncMock(return_value=response)
         yield client
 
@@ -89,15 +90,15 @@ def mock_anthropic_client():
 @pytest.fixture
 def mock_openai_client():
     """Mock OpenAI client for testing."""
-    with patch('src_webprobe_llm_provider.openai.OpenAI') as mock:
+    with patch('openai.AsyncOpenAI') as mock:
         client = MagicMock()
         mock.return_value = client
-        
+
         # Mock successful response
         response = MagicMock()
         response.choices = [MagicMock(message=MagicMock(content="This is a test response"))]
         response.usage = MagicMock(prompt_tokens=100, completion_tokens=50)
-        
+
         client.chat.completions.create = AsyncMock(return_value=response)
         yield client
 
@@ -105,16 +106,16 @@ def mock_openai_client():
 @pytest.fixture
 def mock_gemini_client():
     """Mock Gemini client for testing."""
-    with patch('src_webprobe_llm_provider.google.genai.Client') as mock:
+    with patch('google.genai.Client') as mock:
         client = MagicMock()
         mock.return_value = client
-        
+
         # Mock successful response
         response = MagicMock()
         response.text = "This is a test response"
         response.usage_metadata = MagicMock(prompt_token_count=100, candidates_token_count=50)
-        
-        client.models.generate_content = AsyncMock(return_value=response)
+
+        client.aio.models.generate_content = AsyncMock(return_value=response)
         yield client
 
 
@@ -248,16 +249,23 @@ def test_create_provider_with_cost_tracker(cost_tracker):
 @pytest.mark.asyncio
 async def test_transmogrify_prompt_success():
     """Test transmogrify_prompt returns normalized text."""
-    with patch('src_webprobe_llm_provider.transmogrifier') as mock_trans:
-        mock_trans.normalize = AsyncMock(return_value="normalized text")
+    mock_trans = MagicMock()
+    mock_result = MagicMock()
+    mock_result.output_text = "normalized text"
+    mock_trans.translate.return_value = mock_result
+    mock_module = MagicMock()
+    mock_module.Transmogrifier.return_value = mock_trans
+    with patch.dict('sys.modules', {'transmogrifier': MagicMock(), 'transmogrifier.core': mock_module}):
         result = await transmogrify_prompt("Test prompt", "gpt-4o")
         assert isinstance(result, str)
+        assert result == "normalized text"
 
 
 @pytest.mark.asyncio
 async def test_transmogrify_prompt_fallback():
     """Test transmogrify returns original text when service unavailable."""
-    with patch('src_webprobe_llm_provider.transmogrifier', None):
+    # transmogrify_prompt catches ImportError and returns original text
+    with patch.dict('sys.modules', {'transmogrifier': None, 'transmogrifier.core': None}):
         result = await transmogrify_prompt("Test prompt", "gpt-4o")
         assert result == "Test prompt"
 
@@ -265,8 +273,9 @@ async def test_transmogrify_prompt_fallback():
 @pytest.mark.asyncio
 async def test_transmogrify_prompt_error_fallback():
     """Test transmogrify returns original text on error."""
-    with patch('src_webprobe_llm_provider.transmogrifier') as mock_trans:
-        mock_trans.normalize = AsyncMock(side_effect=Exception("Service error"))
+    mock_module = MagicMock()
+    mock_module.Transmogrifier.return_value.translate.side_effect = Exception("Service error")
+    with patch.dict('sys.modules', {'transmogrifier': MagicMock(), 'transmogrifier.core': mock_module}):
         result = await transmogrify_prompt("Test prompt", "gpt-4o")
         assert result == "Test prompt"
 
@@ -290,13 +299,13 @@ def test_cost_tracker_record(cost_tracker, sample_call_record):
 
 def test_cost_tracker_total_cost(cost_tracker):
     """Test calculating total cost across multiple calls."""
-    record1 = LLMCallRecord("openai", "gpt-4o", 1000, 500, 0.015, 100.0, False)
-    record2 = LLMCallRecord("anthropic", "claude-sonnet-4", 2000, 1000, 0.030, 200.0, False)
+    record1 = LLMCallRecord(provider="openai", model="gpt-4o", input_tokens=1000, output_tokens=500, estimated_cost_usd=0.015, duration_ms=100.0, has_vision=False)
+    record2 = LLMCallRecord(provider="anthropic", model="claude-sonnet-4", input_tokens=2000, output_tokens=1000, estimated_cost_usd=0.030, duration_ms=200.0, has_vision=False)
     
     cost_tracker.record(record1)
     cost_tracker.record(record2)
     
-    result = cost_tracker.total_cost()
+    result = cost_tracker.total_cost
     assert result > 0
     assert isinstance(result, float)
     assert result == 0.045
@@ -304,40 +313,40 @@ def test_cost_tracker_total_cost(cost_tracker):
 
 def test_cost_tracker_total_cost_empty(cost_tracker):
     """Test total cost is zero for empty tracker."""
-    result = cost_tracker.total_cost()
+    result = cost_tracker.total_cost
     assert result == 0.0
 
 
 def test_cost_tracker_total_input_tokens(cost_tracker):
     """Test calculating total input tokens across calls."""
-    record1 = LLMCallRecord("openai", "gpt-4o", 1000, 500, 0.015, 100.0, False)
-    record2 = LLMCallRecord("anthropic", "claude-sonnet-4", 2000, 1000, 0.030, 200.0, False)
+    record1 = LLMCallRecord(provider="openai", model="gpt-4o", input_tokens=1000, output_tokens=500, estimated_cost_usd=0.015, duration_ms=100.0, has_vision=False)
+    record2 = LLMCallRecord(provider="anthropic", model="claude-sonnet-4", input_tokens=2000, output_tokens=1000, estimated_cost_usd=0.030, duration_ms=200.0, has_vision=False)
     
     cost_tracker.record(record1)
     cost_tracker.record(record2)
     
-    result = cost_tracker.total_input_tokens()
+    result = cost_tracker.total_input_tokens
     assert result == 3000
     assert isinstance(result, int)
 
 
 def test_cost_tracker_total_output_tokens(cost_tracker):
     """Test calculating total output tokens across calls."""
-    record1 = LLMCallRecord("openai", "gpt-4o", 1000, 500, 0.015, 100.0, False)
-    record2 = LLMCallRecord("anthropic", "claude-sonnet-4", 2000, 1000, 0.030, 200.0, False)
+    record1 = LLMCallRecord(provider="openai", model="gpt-4o", input_tokens=1000, output_tokens=500, estimated_cost_usd=0.015, duration_ms=100.0, has_vision=False)
+    record2 = LLMCallRecord(provider="anthropic", model="claude-sonnet-4", input_tokens=2000, output_tokens=1000, estimated_cost_usd=0.030, duration_ms=200.0, has_vision=False)
     
     cost_tracker.record(record1)
     cost_tracker.record(record2)
     
-    result = cost_tracker.total_output_tokens()
+    result = cost_tracker.total_output_tokens
     assert result == 1500
     assert isinstance(result, int)
 
 
 def test_cost_tracker_summary(cost_tracker):
     """Test generating summary with all required keys."""
-    record1 = LLMCallRecord("openai", "gpt-4o", 1000, 500, 0.015, 100.0, False)
-    record2 = LLMCallRecord("anthropic", "claude-sonnet-4", 2000, 1000, 0.030, 200.0, False)
+    record1 = LLMCallRecord(provider="openai", model="gpt-4o", input_tokens=1000, output_tokens=500, estimated_cost_usd=0.015, duration_ms=100.0, has_vision=False)
+    record2 = LLMCallRecord(provider="anthropic", model="claude-sonnet-4", input_tokens=2000, output_tokens=1000, estimated_cost_usd=0.030, duration_ms=200.0, has_vision=False)
     
     cost_tracker.record(record1)
     cost_tracker.record(record2)
@@ -353,9 +362,9 @@ def test_cost_tracker_summary(cost_tracker):
 
 def test_cost_tracker_by_provider(cost_tracker):
     """Test grouping calls by provider with statistics."""
-    record1 = LLMCallRecord("openai", "gpt-4o", 1000, 500, 0.015, 100.0, False)
-    record2 = LLMCallRecord("anthropic", "claude-sonnet-4", 2000, 1000, 0.030, 200.0, False)
-    record3 = LLMCallRecord("openai", "gpt-4o", 500, 250, 0.0075, 50.0, False)
+    record1 = LLMCallRecord(provider="openai", model="gpt-4o", input_tokens=1000, output_tokens=500, estimated_cost_usd=0.015, duration_ms=100.0, has_vision=False)
+    record2 = LLMCallRecord(provider="anthropic", model="claude-sonnet-4", input_tokens=2000, output_tokens=1000, estimated_cost_usd=0.030, duration_ms=200.0, has_vision=False)
+    record3 = LLMCallRecord(provider="openai", model="gpt-4o", input_tokens=500, output_tokens=250, estimated_cost_usd=0.0075, duration_ms=50.0, has_vision=False)
     
     cost_tracker.record(record1)
     cost_tracker.record(record2)
@@ -390,10 +399,9 @@ def test_llm_provider_init_with_tracker(cost_tracker):
 def test_llm_provider_record():
     """Test recording API call with usage metrics."""
     provider = OpenAIProvider("gpt-4o", None)
-    
-    with patch('src_webprobe_llm_provider.time.monotonic', side_effect=[0, 0.12345]):
-        provider._record(1000, 500, 123.45, False)
-    
+
+    provider._record(1000, 500, 123.45, False)
+
     assert len(provider.cost_tracker.calls) == 1
     call = provider.cost_tracker.calls[0]
     assert call.input_tokens == 1000
@@ -409,45 +417,39 @@ def test_llm_provider_record():
 def test_anthropic_provider_name():
     """Test Anthropic provider returns correct name."""
     provider = AnthropicProvider("claude-sonnet-4-20250514", None)
-    result = provider.provider_name()
+    result = provider.provider_name
     assert result == "anthropic"
 
 
 @pytest.mark.asyncio
 async def test_anthropic_complete_success():
     """Test complete text generation via Anthropic API."""
-    with patch('src_webprobe_llm_provider.anthropic.Anthropic') as mock_client_class:
-        mock_client = MagicMock()
-        mock_client_class.return_value = mock_client
-        
-        # Mock response
-        mock_response = MagicMock()
-        mock_response.content = [MagicMock(text="Test response")]
-        mock_response.usage = MagicMock(input_tokens=100, output_tokens=50)
-        mock_client.messages.create = AsyncMock(return_value=mock_response)
-        
+    mock_client = AsyncMock()
+
+    # Mock response
+    mock_response = MagicMock()
+    mock_response.content = [MagicMock(text="Test response")]
+    mock_response.usage = MagicMock(input_tokens=100, output_tokens=50)
+    mock_client.messages.create = AsyncMock(return_value=mock_response)
+
+    with patch('anthropic.AsyncAnthropic', return_value=mock_client):
         provider = AnthropicProvider("claude-sonnet-4-20250514", None)
-        
-        with patch('src_webprobe_llm_provider.time.monotonic', side_effect=[0, 0.123]):
-            result = await provider.complete("You are helpful", [{"role": "user", "content": "Hello"}], 1000)
-        
-        assert isinstance(result, str)
-        assert len(result) > 0
-        assert result == "Test response"
+        result = await provider.complete("You are helpful", [{"role": "user", "content": "Hello"}], 1000)
+
+    assert isinstance(result, str)
+    assert len(result) > 0
+    assert result == "Test response"
 
 
 @pytest.mark.asyncio
 async def test_anthropic_complete_api_error():
     """Test handling Anthropic API error gracefully."""
-    with patch('src_webprobe_llm_provider.anthropic.Anthropic') as mock_client_class:
-        mock_client = MagicMock()
-        mock_client_class.return_value = mock_client
-        
-        # Mock API error
-        mock_client.messages.create = AsyncMock(side_effect=Exception("API Error"))
-        
+    mock_client = AsyncMock()
+    mock_client.messages.create = AsyncMock(side_effect=Exception("API Error"))
+
+    with patch('anthropic.AsyncAnthropic', return_value=mock_client):
         provider = AnthropicProvider("claude-sonnet-4-20250514", None)
-        
+
         with pytest.raises(Exception):
             await provider.complete("You are helpful", [{"role": "user", "content": "Hello"}], 1000)
 
@@ -455,17 +457,16 @@ async def test_anthropic_complete_api_error():
 @pytest.mark.asyncio
 async def test_anthropic_complete_empty_content():
     """Test handling empty response content list."""
-    with patch('src_webprobe_llm_provider.anthropic.Anthropic') as mock_client_class:
-        mock_client = MagicMock()
-        mock_client_class.return_value = mock_client
-        
-        # Mock response with empty content
-        mock_response = MagicMock()
-        mock_response.content = []
-        mock_client.messages.create = AsyncMock(return_value=mock_response)
-        
+    mock_client = AsyncMock()
+
+    # Mock response with empty content
+    mock_response = MagicMock()
+    mock_response.content = []
+    mock_client.messages.create = AsyncMock(return_value=mock_response)
+
+    with patch('anthropic.AsyncAnthropic', return_value=mock_client):
         provider = AnthropicProvider("claude-sonnet-4-20250514", None)
-        
+
         with pytest.raises(IndexError):
             await provider.complete("You are helpful", [{"role": "user", "content": "Hello"}], 1000)
 
@@ -473,24 +474,21 @@ async def test_anthropic_complete_empty_content():
 @pytest.mark.asyncio
 async def test_anthropic_vision_success(temp_image_file):
     """Test analyzing image via Anthropic vision API."""
-    with patch('src_webprobe_llm_provider.anthropic.Anthropic') as mock_client_class:
-        mock_client = MagicMock()
-        mock_client_class.return_value = mock_client
-        
-        # Mock response
-        mock_response = MagicMock()
-        mock_response.content = [MagicMock(text="This is a cat")]
-        mock_response.usage = MagicMock(input_tokens=200, output_tokens=50)
-        mock_client.messages.create = AsyncMock(return_value=mock_response)
-        
+    mock_client = AsyncMock()
+
+    # Mock response
+    mock_response = MagicMock()
+    mock_response.content = [MagicMock(text="This is a cat")]
+    mock_response.usage = MagicMock(input_tokens=200, output_tokens=50)
+    mock_client.messages.create = AsyncMock(return_value=mock_response)
+
+    with patch('anthropic.AsyncAnthropic', return_value=mock_client):
         provider = AnthropicProvider("claude-sonnet-4-20250514", None)
-        
-        with patch('src_webprobe_llm_provider.time.monotonic', side_effect=[0, 0.234]):
-            result = await provider.vision("You are helpful", "Describe this image", temp_image_file, 1000)
-        
-        assert isinstance(result, str)
-        assert len(result) > 0
-        assert provider.cost_tracker.calls[0].has_vision == True
+        result = await provider.vision("You are helpful", "Describe this image", temp_image_file, 1000)
+
+    assert isinstance(result, str)
+    assert len(result) > 0
+    assert provider.cost_tracker.calls[0].has_vision == True
 
 
 @pytest.mark.asyncio
@@ -509,44 +507,38 @@ async def test_anthropic_vision_file_error():
 def test_openai_provider_name():
     """Test OpenAI provider returns correct name."""
     provider = OpenAIProvider("gpt-4o", None)
-    result = provider.provider_name()
+    result = provider.provider_name
     assert result == "openai"
 
 
 @pytest.mark.asyncio
 async def test_openai_complete_success():
     """Test complete text generation via OpenAI API."""
-    with patch('src_webprobe_llm_provider.openai.OpenAI') as mock_client_class:
-        mock_client = MagicMock()
-        mock_client_class.return_value = mock_client
-        
-        # Mock response
-        mock_response = MagicMock()
-        mock_response.choices = [MagicMock(message=MagicMock(content="Test response"))]
-        mock_response.usage = MagicMock(prompt_tokens=100, completion_tokens=50)
-        mock_client.chat.completions.create = Mock(return_value=mock_response)
-        
+    mock_client = MagicMock()
+
+    # Mock response
+    mock_response = MagicMock()
+    mock_response.choices = [MagicMock(message=MagicMock(content="Test response"))]
+    mock_response.usage = MagicMock(prompt_tokens=100, completion_tokens=50)
+    mock_client.chat.completions.create = AsyncMock(return_value=mock_response)
+
+    with patch('openai.AsyncOpenAI', return_value=mock_client):
         provider = OpenAIProvider("gpt-4o", None)
-        
-        with patch('src_webprobe_llm_provider.time.monotonic', side_effect=[0, 0.156]):
-            result = await provider.complete("You are helpful", [{"role": "user", "content": "Hello"}], 1000)
-        
-        assert isinstance(result, str)
-        assert result == "Test response"
+        result = await provider.complete("You are helpful", [{"role": "user", "content": "Hello"}], 1000)
+
+    assert isinstance(result, str)
+    assert result == "Test response"
 
 
 @pytest.mark.asyncio
 async def test_openai_complete_api_error():
     """Test handling OpenAI API error gracefully."""
-    with patch('src_webprobe_llm_provider.openai.OpenAI') as mock_client_class:
-        mock_client = MagicMock()
-        mock_client_class.return_value = mock_client
-        
-        # Mock API error
-        mock_client.chat.completions.create = Mock(side_effect=Exception("API Error"))
-        
+    mock_client = MagicMock()
+    mock_client.chat.completions.create = AsyncMock(side_effect=Exception("API Error"))
+
+    with patch('openai.AsyncOpenAI', return_value=mock_client):
         provider = OpenAIProvider("gpt-4o", None)
-        
+
         with pytest.raises(Exception):
             await provider.complete("You are helpful", [{"role": "user", "content": "Hello"}], 1000)
 
@@ -554,23 +546,20 @@ async def test_openai_complete_api_error():
 @pytest.mark.asyncio
 async def test_openai_vision_success(temp_image_file):
     """Test analyzing image via OpenAI vision API."""
-    with patch('src_webprobe_llm_provider.openai.OpenAI') as mock_client_class:
-        mock_client = MagicMock()
-        mock_client_class.return_value = mock_client
-        
-        # Mock response
-        mock_response = MagicMock()
-        mock_response.choices = [MagicMock(message=MagicMock(content="This is a dog"))]
-        mock_response.usage = MagicMock(prompt_tokens=200, completion_tokens=50)
-        mock_client.chat.completions.create = Mock(return_value=mock_response)
-        
+    mock_client = MagicMock()
+
+    # Mock response
+    mock_response = MagicMock()
+    mock_response.choices = [MagicMock(message=MagicMock(content="This is a dog"))]
+    mock_response.usage = MagicMock(prompt_tokens=200, completion_tokens=50)
+    mock_client.chat.completions.create = AsyncMock(return_value=mock_response)
+
+    with patch('openai.AsyncOpenAI', return_value=mock_client):
         provider = OpenAIProvider("gpt-4o", None)
-        
-        with patch('src_webprobe_llm_provider.time.monotonic', side_effect=[0, 0.267]):
-            result = await provider.vision("You are helpful", "Describe this image", temp_image_file, 1000)
-        
-        assert isinstance(result, str)
-        assert provider.cost_tracker.calls[0].has_vision == True
+        result = await provider.vision("You are helpful", "Describe this image", temp_image_file, 1000)
+
+    assert isinstance(result, str)
+    assert provider.cost_tracker.calls[0].has_vision == True
 
 
 @pytest.mark.asyncio
@@ -589,44 +578,38 @@ async def test_openai_vision_file_error():
 def test_gemini_provider_name():
     """Test Gemini provider returns correct name."""
     provider = GeminiProvider("gemini-2.5-flash", None)
-    result = provider.provider_name()
+    result = provider.provider_name
     assert result == "gemini"
 
 
 @pytest.mark.asyncio
 async def test_gemini_complete_success():
     """Test complete text generation via Gemini API."""
-    with patch('src_webprobe_llm_provider.google.genai.Client') as mock_client_class:
-        mock_client = MagicMock()
-        mock_client_class.return_value = mock_client
-        
-        # Mock response
-        mock_response = MagicMock()
-        mock_response.text = "Test response"
-        mock_response.usage_metadata = MagicMock(prompt_token_count=100, candidates_token_count=50)
-        mock_client.models.generate_content = AsyncMock(return_value=mock_response)
-        
+    mock_client = MagicMock()
+
+    # Mock response
+    mock_response = MagicMock()
+    mock_response.text = "Test response"
+    mock_response.usage_metadata = MagicMock(prompt_token_count=100, candidates_token_count=50)
+    mock_client.aio.models.generate_content = AsyncMock(return_value=mock_response)
+
+    with patch('google.genai.Client', return_value=mock_client):
         provider = GeminiProvider("gemini-2.5-flash", None)
-        
-        with patch('src_webprobe_llm_provider.time.monotonic', side_effect=[0, 0.189]):
-            result = await provider.complete("You are helpful", [{"role": "user", "content": "Hello"}], 1000)
-        
-        assert isinstance(result, str)
-        assert result == "Test response"
+        result = await provider.complete("You are helpful", [{"role": "user", "content": "Hello"}], 1000)
+
+    assert isinstance(result, str)
+    assert result == "Test response"
 
 
 @pytest.mark.asyncio
 async def test_gemini_complete_api_error():
     """Test handling Gemini API error gracefully."""
-    with patch('src_webprobe_llm_provider.google.genai.Client') as mock_client_class:
-        mock_client = MagicMock()
-        mock_client_class.return_value = mock_client
-        
-        # Mock API error
-        mock_client.models.generate_content = AsyncMock(side_effect=Exception("API Error"))
-        
+    mock_client = MagicMock()
+    mock_client.aio.models.generate_content = AsyncMock(side_effect=Exception("API Error"))
+
+    with patch('google.genai.Client', return_value=mock_client):
         provider = GeminiProvider("gemini-2.5-flash", None)
-        
+
         with pytest.raises(Exception):
             await provider.complete("You are helpful", [{"role": "user", "content": "Hello"}], 1000)
 
@@ -634,23 +617,20 @@ async def test_gemini_complete_api_error():
 @pytest.mark.asyncio
 async def test_gemini_vision_success(temp_image_file):
     """Test analyzing image via Gemini vision API."""
-    with patch('src_webprobe_llm_provider.google.genai.Client') as mock_client_class:
-        mock_client = MagicMock()
-        mock_client_class.return_value = mock_client
-        
-        # Mock response
-        mock_response = MagicMock()
-        mock_response.text = "This is a bird"
-        mock_response.usage_metadata = MagicMock(prompt_token_count=200, candidates_token_count=50)
-        mock_client.models.generate_content = AsyncMock(return_value=mock_response)
-        
+    mock_client = MagicMock()
+
+    # Mock response
+    mock_response = MagicMock()
+    mock_response.text = "This is a bird"
+    mock_response.usage_metadata = MagicMock(prompt_token_count=200, candidates_token_count=50)
+    mock_client.aio.models.generate_content = AsyncMock(return_value=mock_response)
+
+    with patch('google.genai.Client', return_value=mock_client):
         provider = GeminiProvider("gemini-2.5-flash", None)
-        
-        with patch('src_webprobe_llm_provider.time.monotonic', side_effect=[0, 0.298]):
-            result = await provider.vision("You are helpful", "Describe this image", temp_image_file, 1000)
-        
-        assert isinstance(result, str)
-        assert provider.cost_tracker.calls[0].has_vision == True
+        result = await provider.vision("You are helpful", "Describe this image", temp_image_file, 1000)
+
+    assert isinstance(result, str)
+    assert provider.cost_tracker.calls[0].has_vision == True
 
 
 @pytest.mark.asyncio
@@ -669,45 +649,41 @@ async def test_gemini_vision_file_error():
 def test_apprentice_provider_name():
     """Test Apprentice provider returns correct name."""
     provider = ApprenticeProvider("auto", None)
-    result = provider.provider_name()
+    result = provider.provider_name
     assert result == "apprentice"
 
 
 @pytest.mark.asyncio
 async def test_apprentice_complete_success():
     """Test complete text generation via Apprentice API."""
-    with patch('src_webprobe_llm_provider.openai.OpenAI') as mock_client_class:
-        mock_client = MagicMock()
-        mock_client_class.return_value = mock_client
-        
-        # Mock response
-        mock_response = MagicMock()
-        mock_response.choices = [MagicMock(message=MagicMock(content="Test response from Apprentice"))]
-        mock_response.usage = MagicMock(prompt_tokens=100, completion_tokens=50)
-        mock_client.chat.completions.create = Mock(return_value=mock_response)
-        
+    mock_client = MagicMock()
+
+    # Mock response
+    mock_response = MagicMock()
+    mock_response.choices = [MagicMock(message=MagicMock(content="Test response from Apprentice"))]
+    mock_response.usage = MagicMock(prompt_tokens=100, completion_tokens=50)
+    mock_client.chat.completions.create = AsyncMock(return_value=mock_response)
+
+    with patch('openai.AsyncOpenAI', return_value=mock_client):
         provider = ApprenticeProvider("auto", None)
-        
-        with patch('src_webprobe_llm_provider.time.monotonic', side_effect=[0, 0.178]):
-            result = await provider.complete("You are helpful", [{"role": "user", "content": "Hello"}], 1000)
-        
-        assert isinstance(result, str)
-        assert result == "Test response from Apprentice"
+        result = await provider.complete("You are helpful", [{"role": "user", "content": "Hello"}], 1000)
+
+    assert isinstance(result, str)
+    assert result == "Test response from Apprentice"
 
 
 @pytest.mark.asyncio
 async def test_apprentice_complete_connection_error():
     """Test handling connection error when Apprentice service unreachable."""
-    with patch('src_webprobe_llm_provider.openai.OpenAI') as mock_client_class:
-        mock_client = MagicMock()
-        mock_client_class.return_value = mock_client
-        
-        # Mock connection error
-        import openai
-        mock_client.chat.completions.create = Mock(side_effect=openai.APIConnectionError("Connection failed"))
-        
+    import openai
+    mock_client = MagicMock()
+    mock_client.chat.completions.create = AsyncMock(
+        side_effect=openai.APIConnectionError(request=MagicMock())
+    )
+
+    with patch('openai.AsyncOpenAI', return_value=mock_client):
         provider = ApprenticeProvider("auto", None)
-        
+
         with pytest.raises(Exception):
             await provider.complete("You are helpful", [{"role": "user", "content": "Hello"}], 1000)
 
@@ -715,15 +691,12 @@ async def test_apprentice_complete_connection_error():
 @pytest.mark.asyncio
 async def test_apprentice_complete_api_error():
     """Test handling Apprentice API error gracefully."""
-    with patch('src_webprobe_llm_provider.openai.OpenAI') as mock_client_class:
-        mock_client = MagicMock()
-        mock_client_class.return_value = mock_client
-        
-        # Mock API error
-        mock_client.chat.completions.create = Mock(side_effect=Exception("API Error"))
-        
+    mock_client = MagicMock()
+    mock_client.chat.completions.create = AsyncMock(side_effect=Exception("API Error"))
+
+    with patch('openai.AsyncOpenAI', return_value=mock_client):
         provider = ApprenticeProvider("auto", None)
-        
+
         with pytest.raises(Exception):
             await provider.complete("You are helpful", [{"role": "user", "content": "Hello"}], 1000)
 
@@ -731,23 +704,20 @@ async def test_apprentice_complete_api_error():
 @pytest.mark.asyncio
 async def test_apprentice_vision_success(temp_image_file):
     """Test analyzing image via Apprentice vision API."""
-    with patch('src_webprobe_llm_provider.openai.OpenAI') as mock_client_class:
-        mock_client = MagicMock()
-        mock_client_class.return_value = mock_client
-        
-        # Mock response
-        mock_response = MagicMock()
-        mock_response.choices = [MagicMock(message=MagicMock(content="This is a tree"))]
-        mock_response.usage = MagicMock(prompt_tokens=200, completion_tokens=50)
-        mock_client.chat.completions.create = Mock(return_value=mock_response)
-        
+    mock_client = MagicMock()
+
+    # Mock response
+    mock_response = MagicMock()
+    mock_response.choices = [MagicMock(message=MagicMock(content="This is a tree"))]
+    mock_response.usage = MagicMock(prompt_tokens=200, completion_tokens=50)
+    mock_client.chat.completions.create = AsyncMock(return_value=mock_response)
+
+    with patch('openai.AsyncOpenAI', return_value=mock_client):
         provider = ApprenticeProvider("auto", None)
-        
-        with patch('src_webprobe_llm_provider.time.monotonic', side_effect=[0, 0.345]):
-            result = await provider.vision("You are helpful", "Describe this image", temp_image_file, 1000)
-        
-        assert isinstance(result, str)
-        assert provider.cost_tracker.calls[0].has_vision == True
+        result = await provider.vision("You are helpful", "Describe this image", temp_image_file, 1000)
+
+    assert isinstance(result, str)
+    assert provider.cost_tracker.calls[0].has_vision == True
 
 
 @pytest.mark.asyncio
@@ -765,9 +735,9 @@ async def test_apprentice_vision_file_error():
 
 def test_invariant_non_negative_tokens(cost_tracker):
     """Test that all token counts are non-negative."""
-    record1 = LLMCallRecord("openai", "gpt-4o", 1000, 500, 0.015, 100.0, False)
-    record2 = LLMCallRecord("anthropic", "claude-sonnet-4", 0, 0, 0.0, 50.0, False)
-    record3 = LLMCallRecord("gemini", "gemini-2.5-flash", 5000, 2500, 0.05, 150.0, True)
+    record1 = LLMCallRecord(provider="openai", model="gpt-4o", input_tokens=1000, output_tokens=500, estimated_cost_usd=0.015, duration_ms=100.0, has_vision=False)
+    record2 = LLMCallRecord(provider="anthropic", model="claude-sonnet-4", input_tokens=0, output_tokens=0, estimated_cost_usd=0.0, duration_ms=50.0, has_vision=False)
+    record3 = LLMCallRecord(provider="gemini", model="gemini-2.5-flash", input_tokens=5000, output_tokens=2500, estimated_cost_usd=0.05, duration_ms=150.0, has_vision=True)
     
     cost_tracker.record(record1)
     cost_tracker.record(record2)
@@ -779,9 +749,9 @@ def test_invariant_non_negative_tokens(cost_tracker):
 
 def test_invariant_non_negative_costs(cost_tracker):
     """Test that all costs are non-negative."""
-    record1 = LLMCallRecord("openai", "gpt-4o", 1000, 500, 0.015, 100.0, False)
-    record2 = LLMCallRecord("anthropic", "claude-sonnet-4", 2000, 1000, 0.030, 200.0, False)
-    record3 = LLMCallRecord("gemini", "gemini-2.5-flash", 0, 0, 0.0, 50.0, False)
+    record1 = LLMCallRecord(provider="openai", model="gpt-4o", input_tokens=1000, output_tokens=500, estimated_cost_usd=0.015, duration_ms=100.0, has_vision=False)
+    record2 = LLMCallRecord(provider="anthropic", model="claude-sonnet-4", input_tokens=2000, output_tokens=1000, estimated_cost_usd=0.030, duration_ms=200.0, has_vision=False)
+    record3 = LLMCallRecord(provider="gemini", model="gemini-2.5-flash", input_tokens=0, output_tokens=0, estimated_cost_usd=0.0, duration_ms=50.0, has_vision=False)
     
     cost_tracker.record(record1)
     cost_tracker.record(record2)
@@ -790,41 +760,43 @@ def test_invariant_non_negative_costs(cost_tracker):
     assert all(call.estimated_cost_usd >= 0 for call in cost_tracker.calls)
 
 
-def test_invariant_apprentice_base_url():
+@pytest.mark.asyncio
+async def test_invariant_apprentice_base_url():
     """Test that Apprentice uses localhost:8741 base URL."""
-    with patch('src_webprobe_llm_provider.openai.OpenAI') as mock_client_class:
+    mock_client = MagicMock()
+
+    # Mock response so complete() works
+    mock_response = MagicMock()
+    mock_response.choices = [MagicMock(message=MagicMock(content="ok"))]
+    mock_response.usage = MagicMock(prompt_tokens=10, completion_tokens=5)
+    mock_client.chat.completions.create = AsyncMock(return_value=mock_response)
+
+    with patch('openai.AsyncOpenAI', return_value=mock_client) as mock_cls:
         provider = ApprenticeProvider("auto", None)
-        
+        # Trigger the lazy import by calling complete
+        await provider.complete("sys", [{"role": "user", "content": "hi"}], 100)
         # Verify the base_url was set correctly
-        if mock_client_class.called:
-            call_kwargs = mock_client_class.call_args[1] if mock_client_class.call_args else {}
-            if 'base_url' in call_kwargs:
-                assert 'localhost:8741' in call_kwargs['base_url']
+        mock_cls.assert_called_with(base_url="http://localhost:8741/v1")
 
 
 @pytest.mark.asyncio
 async def test_invariant_image_media_type(temp_image_file):
     """Test that vision calls use image/png media type."""
-    with patch('src_webprobe_llm_provider.anthropic.Anthropic') as mock_client_class:
-        mock_client = MagicMock()
-        mock_client_class.return_value = mock_client
-        
-        # Mock response
-        mock_response = MagicMock()
-        mock_response.content = [MagicMock(text="Image analysis")]
-        mock_response.usage = MagicMock(input_tokens=200, output_tokens=50)
-        mock_client.messages.create = AsyncMock(return_value=mock_response)
-        
+    mock_client = AsyncMock()
+
+    # Mock response
+    mock_response = MagicMock()
+    mock_response.content = [MagicMock(text="Image analysis")]
+    mock_response.usage = MagicMock(input_tokens=200, output_tokens=50)
+    mock_client.messages.create = AsyncMock(return_value=mock_response)
+
+    with patch('anthropic.AsyncAnthropic', return_value=mock_client):
         provider = AnthropicProvider("claude-sonnet-4-20250514", None)
-        
-        with patch('src_webprobe_llm_provider.time.monotonic', side_effect=[0, 0.234]):
-            await provider.vision("You are helpful", "Describe this image", temp_image_file, 1000)
-        
-        # Check that messages.create was called with image/png media type
-        call_args = mock_client.messages.create.call_args
-        if call_args:
-            # The media_type should be in the content of the message
-            assert call_args is not None
+        await provider.vision("You are helpful", "Describe this image", temp_image_file, 1000)
+
+    # Check that messages.create was called with image/png media type
+    call_args = mock_client.messages.create.call_args
+    assert call_args is not None
 
 
 # ============================================================================
@@ -834,10 +806,10 @@ async def test_invariant_image_media_type(temp_image_file):
 def test_cost_tracker_multiple_providers(cost_tracker):
     """Test tracking calls from multiple providers."""
     records = [
-        LLMCallRecord("openai", "gpt-4o", 1000, 500, 0.015, 100.0, False),
-        LLMCallRecord("anthropic", "claude-sonnet-4", 2000, 1000, 0.030, 200.0, False),
-        LLMCallRecord("gemini", "gemini-2.5-flash", 1500, 750, 0.0225, 150.0, True),
-        LLMCallRecord("apprentice", "auto", 800, 400, 0.012, 80.0, False),
+        LLMCallRecord(provider="openai", model="gpt-4o", input_tokens=1000, output_tokens=500, estimated_cost_usd=0.015, duration_ms=100.0, has_vision=False),
+        LLMCallRecord(provider="anthropic", model="claude-sonnet-4", input_tokens=2000, output_tokens=1000, estimated_cost_usd=0.030, duration_ms=200.0, has_vision=False),
+        LLMCallRecord(provider="gemini", model="gemini-2.5-flash", input_tokens=1500, output_tokens=750, estimated_cost_usd=0.0225, duration_ms=150.0, has_vision=True),
+        LLMCallRecord(provider="apprentice", model="auto", input_tokens=800, output_tokens=400, estimated_cost_usd=0.012, duration_ms=80.0, has_vision=False),
     ]
     
     for record in records:
@@ -867,22 +839,19 @@ def test_provider_without_vision_flag():
 @pytest.mark.asyncio
 async def test_complete_with_empty_messages():
     """Test completion with empty message list."""
-    with patch('src_webprobe_llm_provider.openai.OpenAI') as mock_client_class:
-        mock_client = MagicMock()
-        mock_client_class.return_value = mock_client
-        
-        mock_response = MagicMock()
-        mock_response.choices = [MagicMock(message=MagicMock(content=""))]
-        mock_response.usage = MagicMock(prompt_tokens=10, completion_tokens=0)
-        mock_client.chat.completions.create = Mock(return_value=mock_response)
-        
+    mock_client = MagicMock()
+
+    mock_response = MagicMock()
+    mock_response.choices = [MagicMock(message=MagicMock(content=""))]
+    mock_response.usage = MagicMock(prompt_tokens=10, completion_tokens=0)
+    mock_client.chat.completions.create = AsyncMock(return_value=mock_response)
+
+    with patch('openai.AsyncOpenAI', return_value=mock_client):
         provider = OpenAIProvider("gpt-4o", None)
-        
-        with patch('src_webprobe_llm_provider.time.monotonic', side_effect=[0, 0.05]):
-            result = await provider.complete("System", [], 100)
-        
-        # Should handle gracefully
-        assert isinstance(result, str)
+        result = await provider.complete("System", [], 100)
+
+    # Should handle gracefully
+    assert isinstance(result, str)
 
 
 def test_cost_estimation_large_numbers():

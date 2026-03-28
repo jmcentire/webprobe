@@ -106,8 +106,9 @@ class TestMakeRunId:
         # Parse timestamp (YYYYMMDDTHHmmss)
         parsed_time = datetime.strptime(timestamp_str, '%Y%m%dT%H%M%S').replace(tzinfo=timezone.utc)
         
-        # Should be between before and after
-        assert before <= parsed_time <= after, "Timestamp should be current UTC time"
+        # Should be between before and after (truncate to seconds since run_id drops microseconds)
+        before_trunc = before.replace(microsecond=0)
+        assert before_trunc <= parsed_time <= after, "Timestamp should be current UTC time"
 
 
 class TestIdentityKey:
@@ -190,13 +191,14 @@ class TestEnums:
 
     def test_security_category_enum_values(self):
         """Test SecurityCategory enum has all expected values"""
-        expected = ['headers', 'cookies', 'xss', 'mixed_content', 'cors', 
-                   'information_disclosure', 'forms', 'tls']
-        
+        expected = ['headers', 'cookies', 'xss', 'mixed_content', 'cors',
+                   'information_disclosure', 'forms', 'tls',
+                   'accessibility', 'visual', 'exploration']
+
         for variant in expected:
             assert hasattr(SecurityCategory, variant), f"Should have '{variant}' variant"
-        
-        assert len(list(SecurityCategory)) == 8, "Should have exactly 8 variants"
+
+        assert len(list(SecurityCategory)) == 11, "Should have exactly 11 variants"
 
 
 # ============================================================================

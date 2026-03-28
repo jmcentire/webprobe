@@ -19,6 +19,8 @@ import time
 from datetime import datetime
 from pathlib import Path
 from unittest.mock import Mock, MagicMock, AsyncMock, patch, call
+
+from src.webprobe.llm_provider import CostTracker
 from typing import List, Dict, Any
 
 # Import the module under test
@@ -26,9 +28,13 @@ from typing import List, Dict, Any
 try:
     from src.webprobe.explorer import (
         ExploreConfig,
+        ScanMode,
         _extract_interactive_elements,
         _run_agent,
-        on_console,
+        _parse_agent_action,
+        _validate_selector,
+        _validate_navigation_url,
+        _sanitize_for_prompt,
         explore_site,
     )
 except ImportError:
@@ -36,17 +42,25 @@ except ImportError:
     try:
         from webprobe.explorer import (
             ExploreConfig,
+            ScanMode,
             _extract_interactive_elements,
             _run_agent,
-            on_console,
+            _parse_agent_action,
+            _validate_selector,
+            _validate_navigation_url,
+            _sanitize_for_prompt,
             explore_site,
         )
     except ImportError:
         # Mock the imports for testing structure
         ExploreConfig = None
+        ScanMode = None
         _extract_interactive_elements = None
         _run_agent = None
-        on_console = None
+        _parse_agent_action = None
+        _validate_selector = None
+        _validate_navigation_url = None
+        _sanitize_for_prompt = None
         explore_site = None
 
 
@@ -87,7 +101,7 @@ def mock_browser_context():
 def mock_browser_pool(mock_page, mock_browser_context):
     """Mock BrowserPool."""
     pool = AsyncMock()
-    pool.get_context = AsyncMock(return_value=mock_browser_context)
+    pool.new_context = AsyncMock(return_value=mock_browser_context)
     mock_browser_context.new_page = AsyncMock(return_value=mock_page)
     return pool
 
@@ -125,10 +139,9 @@ def sample_explore_config():
             concurrency=8,
             concurrency_warn_threshold=10,
             max_actions_per_agent=5,
-            visual_analysis=False,
-            contrast_check=False,
-            hidden_elements=False,
-            mask_path=None
+            scan_mode=ScanMode.explore_only,
+            mask_path=None,
+            cost_limit_usd=10.0,
         )
     else:
         config = Mock()
@@ -137,10 +150,9 @@ def sample_explore_config():
         config.concurrency = 8
         config.concurrency_warn_threshold = 10
         config.max_actions_per_agent = 5
-        config.visual_analysis = False
-        config.contrast_check = False
-        config.hidden_elements = False
+        config.scan_mode = "explore_only"
         config.mask_path = None
+        config.cost_limit_usd = 10.0
         return config
 
 
@@ -183,6 +195,12 @@ def mock_semaphore():
     return semaphore
 
 
+@pytest.fixture
+def mock_cost_tracker():
+    """Fresh CostTracker for tests."""
+    return CostTracker()
+
+
 # ============================================================================
 # ExploreConfig TESTS
 # ============================================================================
@@ -191,52 +209,49 @@ def test_explore_config_init_happy_path():
     """ExploreConfig initializes with all parameters set correctly."""
     if not ExploreConfig:
         pytest.skip("ExploreConfig not available")
-    
+
     config = ExploreConfig(
         provider="openai",
         model="gpt-4",
         concurrency=8,
         concurrency_warn_threshold=10,
         max_actions_per_agent=5,
-        visual_analysis=True,
-        contrast_check=True,
-        hidden_elements=False,
-        mask_path="/path/to/mask.json"
+        scan_mode=ScanMode.full,
+        mask_path="/path/to/mask.json",
+        cost_limit_usd=5.0,
     )
-    
+
     assert config.provider == "openai"
     assert config.model == "gpt-4"
     assert config.concurrency == 8
     assert config.concurrency_warn_threshold == 10
     assert config.max_actions_per_agent == 5
-    assert config.visual_analysis is True
-    assert config.contrast_check is True
-    assert config.hidden_elements is False
+    assert config.scan_mode == ScanMode.full
     assert config.mask_path == "/path/to/mask.json"
+    assert config.cost_limit_usd == 5.0
 
 
 def test_explore_config_init_none_values():
     """ExploreConfig initializes with None for optional parameters."""
     if not ExploreConfig:
         pytest.skip("ExploreConfig not available")
-    
+
     config = ExploreConfig(
         provider="openai",
         model=None,
         concurrency=1,
         concurrency_warn_threshold=5,
         max_actions_per_agent=0,
-        visual_analysis=False,
-        contrast_check=False,
-        hidden_elements=False,
-        mask_path=None
+        scan_mode=ScanMode.visual,
+        mask_path=None,
     )
-    
+
     assert config.provider == "openai"
     assert config.model is None
     assert config.concurrency == 1
     assert config.max_actions_per_agent == 0
     assert config.mask_path is None
+    assert config.scan_mode == ScanMode.visual
 
 
 # ============================================================================
@@ -277,20 +292,20 @@ async def test_extract_interactive_elements_empty_page(mock_page):
 
 @pytest.mark.asyncio
 async def test_extract_interactive_elements_max_40_elements(mock_page):
-    """Returns maximum 40 elements even if more exist."""
+    """The 40-element cap is enforced in JavaScript, not Python.
+    When evaluate returns N elements, all N are formatted."""
     if not _extract_interactive_elements:
         pytest.skip("_extract_interactive_elements not available")
-    
-    # Generate 50 elements
-    elements = [{"tag": "a", "text": f"Link {i}", "href": f"/page{i}"} for i in range(50)]
+
+    # The JavaScript limits to MAX_INTERACTIVE_ELEMENTS (40), so the mock
+    # simulates the browser returning exactly 40 elements.
+    elements = [{"tag": "a", "text": f"Link {i}", "href": f"/page{i}"} for i in range(40)]
     mock_page.evaluate.return_value = elements
-    
+
     result = await _extract_interactive_elements(mock_page)
-    
-    # Count newlines to estimate number of elements
-    # Should have at most 40 elements
+
     lines = result.strip().split('\n')
-    assert len(lines) <= 40
+    assert len(lines) == 40
 
 
 @pytest.mark.asyncio
@@ -329,7 +344,7 @@ async def test_extract_interactive_elements_unicode_content(mock_page):
 @pytest.mark.asyncio
 async def test_run_agent_happy_path(
     sample_node, mock_llm_provider, mock_browser_pool, 
-    sample_explore_config, tmp_run_dir, mock_semaphore
+    sample_explore_config, tmp_run_dir, mock_semaphore, mock_cost_tracker
 ):
     """Agent successfully explores a node and returns findings."""
     if not _run_agent:
@@ -343,12 +358,13 @@ async def test_run_agent_happy_path(
         config=sample_explore_config,
         base_url="https://example.com",
         run_dir=tmp_run_dir,
-        semaphore=mock_semaphore
+        semaphore=mock_semaphore,
+        cost_tracker=mock_cost_tracker,
     )
     
     assert isinstance(result, list)
     # Browser context should be closed
-    mock_browser_pool.get_context.return_value.close.assert_called()
+    mock_browser_pool.new_context.return_value.close.assert_called()
     # Semaphore should be acquired and released
     mock_semaphore.__aenter__.assert_called()
     mock_semaphore.__aexit__.assert_called()
@@ -357,14 +373,14 @@ async def test_run_agent_happy_path(
 @pytest.mark.asyncio
 async def test_run_agent_navigation_failure(
     sample_node, mock_llm_provider, mock_browser_pool,
-    sample_explore_config, tmp_run_dir, mock_semaphore
+    sample_explore_config, tmp_run_dir, mock_semaphore, mock_cost_tracker
 ):
     """Handles initial page.goto() failure."""
     if not _run_agent:
         pytest.skip("_run_agent not available")
     
     # Make goto fail
-    context = await mock_browser_pool.get_context()
+    context = await mock_browser_pool.new_context()
     page = await context.new_page()
     page.goto.side_effect = Exception("Navigation failed")
     
@@ -376,7 +392,8 @@ async def test_run_agent_navigation_failure(
         config=sample_explore_config,
         base_url="https://example.com",
         run_dir=tmp_run_dir,
-        semaphore=mock_semaphore
+        semaphore=mock_semaphore,
+        cost_tracker=mock_cost_tracker,
     )
     
     # Should return empty or handle gracefully
@@ -390,13 +407,13 @@ async def test_run_agent_navigation_failure(
 @pytest.mark.asyncio
 async def test_run_agent_page_state_error(
     sample_node, mock_llm_provider, mock_browser_pool,
-    sample_explore_config, tmp_run_dir, mock_semaphore
+    sample_explore_config, tmp_run_dir, mock_semaphore, mock_cost_tracker
 ):
     """Handles exception during page.url, page.title(), or page.evaluate()."""
     if not _run_agent:
         pytest.skip("_run_agent not available")
     
-    context = await mock_browser_pool.get_context()
+    context = await mock_browser_pool.new_context()
     page = await context.new_page()
     page.title.side_effect = Exception("Title failed")
     
@@ -408,7 +425,8 @@ async def test_run_agent_page_state_error(
         config=sample_explore_config,
         base_url="https://example.com",
         run_dir=tmp_run_dir,
-        semaphore=mock_semaphore
+        semaphore=mock_semaphore,
+        cost_tracker=mock_cost_tracker,
     )
     
     assert isinstance(result, list)
@@ -419,7 +437,7 @@ async def test_run_agent_page_state_error(
 @pytest.mark.asyncio
 async def test_run_agent_llm_error(
     sample_node, mock_llm_provider, mock_browser_pool,
-    sample_explore_config, tmp_run_dir, mock_semaphore
+    sample_explore_config, tmp_run_dir, mock_semaphore, mock_cost_tracker
 ):
     """Handles exception during llm.complete()."""
     if not _run_agent:
@@ -435,11 +453,12 @@ async def test_run_agent_llm_error(
         config=sample_explore_config,
         base_url="https://example.com",
         run_dir=tmp_run_dir,
-        semaphore=mock_semaphore
+        semaphore=mock_semaphore,
+        cost_tracker=mock_cost_tracker,
     )
     
     assert isinstance(result, list)
-    context = await mock_browser_pool.get_context()
+    context = await mock_browser_pool.new_context()
     context.close.assert_called()
     mock_semaphore.__aexit__.assert_called()
 
@@ -447,7 +466,7 @@ async def test_run_agent_llm_error(
 @pytest.mark.asyncio
 async def test_run_agent_action_parse_error(
     sample_node, mock_llm_provider, mock_browser_pool,
-    sample_explore_config, tmp_run_dir, mock_semaphore
+    sample_explore_config, tmp_run_dir, mock_semaphore, mock_cost_tracker
 ):
     """Handles JSON parsing failures or invalid JSON structure."""
     if not _run_agent:
@@ -464,11 +483,12 @@ async def test_run_agent_action_parse_error(
         config=sample_explore_config,
         base_url="https://example.com",
         run_dir=tmp_run_dir,
-        semaphore=mock_semaphore
+        semaphore=mock_semaphore,
+        cost_tracker=mock_cost_tracker,
     )
     
     assert isinstance(result, list)
-    context = await mock_browser_pool.get_context()
+    context = await mock_browser_pool.new_context()
     context.close.assert_called()
     mock_semaphore.__aexit__.assert_called()
 
@@ -476,13 +496,13 @@ async def test_run_agent_action_parse_error(
 @pytest.mark.asyncio
 async def test_run_agent_action_execution_error(
     sample_node, mock_llm_provider, mock_browser_pool,
-    sample_explore_config, tmp_run_dir, mock_semaphore
+    sample_explore_config, tmp_run_dir, mock_semaphore, mock_cost_tracker
 ):
     """Handles exception during click/fill/navigate/scroll actions."""
     if not _run_agent:
         pytest.skip("_run_agent not available")
     
-    context = await mock_browser_pool.get_context()
+    context = await mock_browser_pool.new_context()
     page = await context.new_page()
     page.click.side_effect = Exception("Click failed")
     
@@ -494,7 +514,8 @@ async def test_run_agent_action_execution_error(
         config=sample_explore_config,
         base_url="https://example.com",
         run_dir=tmp_run_dir,
-        semaphore=mock_semaphore
+        semaphore=mock_semaphore,
+        cost_tracker=mock_cost_tracker,
     )
     
     assert isinstance(result, list)
@@ -506,7 +527,7 @@ async def test_run_agent_action_execution_error(
 @pytest.mark.asyncio
 async def test_run_agent_max_actions_limit(
     sample_node, mock_llm_provider, mock_browser_pool,
-    sample_explore_config, tmp_run_dir, mock_semaphore
+    sample_explore_config, tmp_run_dir, mock_semaphore, mock_cost_tracker
 ):
     """Agent stops after max_actions_per_agent iterations."""
     if not _run_agent:
@@ -529,7 +550,8 @@ async def test_run_agent_max_actions_limit(
         config=sample_explore_config,
         base_url="https://example.com",
         run_dir=tmp_run_dir,
-        semaphore=mock_semaphore
+        semaphore=mock_semaphore,
+        cost_tracker=mock_cost_tracker,
     )
     
     # LLM should be called at most max_actions_per_agent times
@@ -540,7 +562,7 @@ async def test_run_agent_max_actions_limit(
 @pytest.mark.asyncio
 async def test_run_agent_zero_max_actions(
     sample_node, mock_llm_provider, mock_browser_pool,
-    sample_explore_config, tmp_run_dir, mock_semaphore
+    sample_explore_config, tmp_run_dir, mock_semaphore, mock_cost_tracker
 ):
     """Agent with max_actions_per_agent=0 performs no iterations."""
     if not _run_agent:
@@ -556,28 +578,29 @@ async def test_run_agent_zero_max_actions(
         config=sample_explore_config,
         base_url="https://example.com",
         run_dir=tmp_run_dir,
-        semaphore=mock_semaphore
+        semaphore=mock_semaphore,
+        cost_tracker=mock_cost_tracker,
     )
     
     # LLM should not be called
     assert mock_llm_provider.complete.call_count == 0
     assert isinstance(result, list)
     
-    context = await mock_browser_pool.get_context()
+    context = await mock_browser_pool.new_context()
     context.close.assert_called()
 
 
 @pytest.mark.asyncio
-async def test_run_agent_visual_analysis_enabled(
+async def test_run_agent_with_full_scan_mode(
     sample_node, mock_llm_provider, mock_browser_pool,
-    sample_explore_config, tmp_run_dir, mock_semaphore
+    sample_explore_config, tmp_run_dir, mock_semaphore, mock_cost_tracker
 ):
-    """Agent performs screenshot analysis when visual_analysis=True."""
+    """Agent runs in full scan mode (interactive exploration still works)."""
     if not _run_agent:
         pytest.skip("_run_agent not available")
-    
-    sample_explore_config.visual_analysis = True
-    
+
+    sample_explore_config.scan_mode = ScanMode.full
+
     result = await _run_agent(
         agent_id=1,
         node=sample_node,
@@ -586,28 +609,25 @@ async def test_run_agent_visual_analysis_enabled(
         config=sample_explore_config,
         base_url="https://example.com",
         run_dir=tmp_run_dir,
-        semaphore=mock_semaphore
+        semaphore=mock_semaphore,
+        cost_tracker=mock_cost_tracker,
     )
-    
-    # Screenshot should be called
-    context = await mock_browser_pool.get_context()
-    page = await context.new_page()
-    # Visual analysis would call screenshot, but implementation details vary
-    # Just verify no errors
+
+    # _run_agent only does interactive exploration regardless of scan_mode
     assert isinstance(result, list)
 
 
 @pytest.mark.asyncio
-async def test_run_agent_visual_analysis_disabled(
+async def test_run_agent_with_explore_only_mode(
     sample_node, mock_llm_provider, mock_browser_pool,
-    sample_explore_config, tmp_run_dir, mock_semaphore
+    sample_explore_config, tmp_run_dir, mock_semaphore, mock_cost_tracker
 ):
-    """Agent skips screenshot when visual_analysis=False."""
+    """Agent runs in explore_only scan mode."""
     if not _run_agent:
         pytest.skip("_run_agent not available")
-    
-    sample_explore_config.visual_analysis = False
-    
+
+    sample_explore_config.scan_mode = ScanMode.explore_only
+
     result = await _run_agent(
         agent_id=1,
         node=sample_node,
@@ -616,13 +636,10 @@ async def test_run_agent_visual_analysis_disabled(
         config=sample_explore_config,
         base_url="https://example.com",
         run_dir=tmp_run_dir,
-        semaphore=mock_semaphore
+        semaphore=mock_semaphore,
+        cost_tracker=mock_cost_tracker,
     )
-    
-    # Screenshot should not be called
-    context = await mock_browser_pool.get_context()
-    page = await context.new_page()
-    # Implementation may vary, just verify no errors
+
     assert isinstance(result, list)
 
 
@@ -632,9 +649,6 @@ async def test_run_agent_visual_analysis_disabled(
 
 def test_on_console_happy_path():
     """Appends formatted console message to list."""
-    if not on_console:
-        pytest.skip("on_console not available")
-    
     console_log = []
     
     # Create mock console message
@@ -654,9 +668,6 @@ def test_on_console_happy_path():
 
 def test_on_console_all_message_types():
     """Handles all console message types (log/warn/error/debug)."""
-    if not on_console:
-        pytest.skip("on_console not available")
-    
     console_log = []
     
     def handler(msg):
@@ -677,9 +688,6 @@ def test_on_console_all_message_types():
 
 def test_on_console_empty_message():
     """Handles empty message text."""
-    if not on_console:
-        pytest.skip("on_console not available")
-    
     console_log = []
     
     def handler(msg):
@@ -697,9 +705,6 @@ def test_on_console_empty_message():
 
 def test_on_console_unicode_message():
     """Handles Unicode characters in console messages."""
-    if not on_console:
-        pytest.skip("on_console not available")
-    
     console_log = []
     
     def handler(msg):
@@ -728,9 +733,9 @@ async def test_explore_site_happy_path(
     if not explore_site:
         pytest.skip("explore_site not available")
     
-    with patch('src_webprobe_explorer.BrowserPool') as MockPool, \
-         patch('src_webprobe_explorer.LLMProvider') as MockLLM, \
-         patch('src_webprobe_explorer._run_agent') as mock_run_agent:
+    with patch('src.webprobe.explorer.BrowserPool') as MockPool, \
+         patch('src.webprobe.explorer.LLMProvider') as MockLLM, \
+         patch('src.webprobe.explorer._run_agent') as mock_run_agent:
         
         # Mock _run_agent to return empty findings
         mock_run_agent.return_value = []
@@ -763,8 +768,8 @@ async def test_explore_site_empty_graph(
     empty_graph = Mock()
     empty_graph.nodes = {}
     
-    with patch('src_webprobe_explorer.BrowserPool'), \
-         patch('src_webprobe_explorer.LLMProvider'):
+    with patch('src.webprobe.explorer.BrowserPool'), \
+         patch('src.webprobe.explorer.LLMProvider'):
         
         result = await explore_site(
             config=sample_webprobe_config,
@@ -790,9 +795,9 @@ async def test_explore_site_single_node(
     single_node_graph = Mock()
     single_node_graph.nodes = {"node_1": sample_node}
     
-    with patch('src_webprobe_explorer.BrowserPool'), \
-         patch('src_webprobe_explorer.LLMProvider'), \
-         patch('src_webprobe_explorer._run_agent') as mock_run_agent:
+    with patch('src.webprobe.explorer.BrowserPool'), \
+         patch('src.webprobe.explorer.LLMProvider'), \
+         patch('src.webprobe.explorer._run_agent') as mock_run_agent:
         
         mock_run_agent.return_value = []
         
@@ -819,9 +824,9 @@ async def test_explore_site_concurrency_1(
     
     sample_explore_config.concurrency = 1
     
-    with patch('src_webprobe_explorer.BrowserPool'), \
-         patch('src_webprobe_explorer.LLMProvider'), \
-         patch('src_webprobe_explorer._run_agent') as mock_run_agent, \
+    with patch('src.webprobe.explorer.BrowserPool'), \
+         patch('src.webprobe.explorer.LLMProvider'), \
+         patch('src.webprobe.explorer._run_agent') as mock_run_agent, \
          patch('asyncio.Semaphore') as MockSemaphore:
         
         mock_run_agent.return_value = []
@@ -849,9 +854,9 @@ async def test_explore_site_concurrency_8(
     
     sample_explore_config.concurrency = 8
     
-    with patch('src_webprobe_explorer.BrowserPool'), \
-         patch('src_webprobe_explorer.LLMProvider'), \
-         patch('src_webprobe_explorer._run_agent') as mock_run_agent:
+    with patch('src.webprobe.explorer.BrowserPool'), \
+         patch('src.webprobe.explorer.LLMProvider'), \
+         patch('src.webprobe.explorer._run_agent') as mock_run_agent:
         
         mock_run_agent.return_value = []
         
@@ -874,9 +879,9 @@ async def test_explore_site_agent_exception(
     if not explore_site:
         pytest.skip("explore_site not available")
     
-    with patch('src_webprobe_explorer.BrowserPool'), \
-         patch('src_webprobe_explorer.LLMProvider'), \
-         patch('src_webprobe_explorer._run_agent') as mock_run_agent:
+    with patch('src.webprobe.explorer.BrowserPool'), \
+         patch('src.webprobe.explorer.LLMProvider'), \
+         patch('src.webprobe.explorer._run_agent') as mock_run_agent:
         
         # First agent fails, others succeed
         mock_run_agent.side_effect = [
@@ -911,13 +916,13 @@ async def test_explore_site_mask_applied(
     mask_file.write_text('{"suppressed": ["finding_1"]}')
     sample_explore_config.mask_path = str(mask_file)
     
-    with patch('src_webprobe_explorer.BrowserPool'), \
-         patch('src_webprobe_explorer.LLMProvider'), \
-         patch('src_webprobe_explorer._run_agent') as mock_run_agent, \
-         patch('src_webprobe_explorer.apply_mask') as mock_apply_mask:
+    with patch('src.webprobe.explorer.BrowserPool'), \
+         patch('src.webprobe.explorer.LLMProvider'), \
+         patch('src.webprobe.explorer._run_agent') as mock_run_agent, \
+         patch('src.webprobe.explorer.apply_mask') as mock_apply_mask:
         
         mock_run_agent.return_value = []
-        mock_apply_mask.return_value = []
+        mock_apply_mask.return_value = ([], [])
         
         result = await explore_site(
             config=sample_webprobe_config,
@@ -943,9 +948,9 @@ async def test_explore_site_no_mask(
     
     sample_explore_config.mask_path = None
     
-    with patch('src_webprobe_explorer.BrowserPool'), \
-         patch('src_webprobe_explorer.LLMProvider'), \
-         patch('src_webprobe_explorer._run_agent') as mock_run_agent:
+    with patch('src.webprobe.explorer.BrowserPool'), \
+         patch('src.webprobe.explorer.LLMProvider'), \
+         patch('src.webprobe.explorer._run_agent') as mock_run_agent:
         
         mock_run_agent.return_value = []
         
@@ -968,9 +973,9 @@ async def test_explore_site_cost_tracking(
     if not explore_site:
         pytest.skip("explore_site not available")
     
-    with patch('src_webprobe_explorer.BrowserPool'), \
-         patch('src_webprobe_explorer.LLMProvider'), \
-         patch('src_webprobe_explorer._run_agent') as mock_run_agent:
+    with patch('src.webprobe.explorer.BrowserPool'), \
+         patch('src.webprobe.explorer.LLMProvider'), \
+         patch('src.webprobe.explorer._run_agent') as mock_run_agent:
         
         mock_run_agent.return_value = []
         
@@ -999,9 +1004,9 @@ async def test_explore_site_visual_analysis_all_true(
     sample_explore_config.contrast_check = True
     sample_explore_config.hidden_elements = True
     
-    with patch('src_webprobe_explorer.BrowserPool'), \
-         patch('src_webprobe_explorer.LLMProvider'), \
-         patch('src_webprobe_explorer._run_agent') as mock_run_agent:
+    with patch('src.webprobe.explorer.BrowserPool'), \
+         patch('src.webprobe.explorer.LLMProvider'), \
+         patch('src.webprobe.explorer._run_agent') as mock_run_agent:
         
         mock_run_agent.return_value = []
         
@@ -1028,9 +1033,9 @@ async def test_explore_site_visual_analysis_all_false(
     sample_explore_config.contrast_check = False
     sample_explore_config.hidden_elements = False
     
-    with patch('src_webprobe_explorer.BrowserPool'), \
-         patch('src_webprobe_explorer.LLMProvider'), \
-         patch('src_webprobe_explorer._run_agent') as mock_run_agent:
+    with patch('src.webprobe.explorer.BrowserPool'), \
+         patch('src.webprobe.explorer.LLMProvider'), \
+         patch('src.webprobe.explorer._run_agent') as mock_run_agent:
         
         mock_run_agent.return_value = []
         
@@ -1053,9 +1058,9 @@ async def test_explore_site_large_finding_set(
     if not explore_site:
         pytest.skip("explore_site not available")
     
-    with patch('src_webprobe_explorer.BrowserPool'), \
-         patch('src_webprobe_explorer.LLMProvider'), \
-         patch('src_webprobe_explorer._run_agent') as mock_run_agent:
+    with patch('src.webprobe.explorer.BrowserPool'), \
+         patch('src.webprobe.explorer.LLMProvider'), \
+         patch('src.webprobe.explorer._run_agent') as mock_run_agent:
         
         # Each agent returns many findings
         large_finding_set = [Mock() for _ in range(400)]
@@ -1082,9 +1087,9 @@ async def test_explore_site_findings_with_special_chars(
     if not explore_site:
         pytest.skip("explore_site not available")
     
-    with patch('src_webprobe_explorer.BrowserPool'), \
-         patch('src_webprobe_explorer.LLMProvider'), \
-         patch('src_webprobe_explorer._run_agent') as mock_run_agent:
+    with patch('src.webprobe.explorer.BrowserPool'), \
+         patch('src.webprobe.explorer.LLMProvider'), \
+         patch('src.webprobe.explorer._run_agent') as mock_run_agent:
         
         # Create findings with special characters
         special_finding = Mock()
@@ -1111,7 +1116,7 @@ async def test_explore_site_findings_with_special_chars(
 @pytest.mark.asyncio
 async def test_run_agent_fake_test_data_invariant(
     sample_node, mock_llm_provider, mock_browser_pool,
-    sample_explore_config, tmp_run_dir, mock_semaphore
+    sample_explore_config, tmp_run_dir, mock_semaphore, mock_cost_tracker
 ):
     """Agents use fake test data, never real personal information."""
     if not _run_agent:
@@ -1135,7 +1140,8 @@ async def test_run_agent_fake_test_data_invariant(
         config=sample_explore_config,
         base_url="https://example.com",
         run_dir=tmp_run_dir,
-        semaphore=mock_semaphore
+        semaphore=mock_semaphore,
+        cost_tracker=mock_cost_tracker,
     )
     
     # Verify system prompt mentions fake data
@@ -1149,7 +1155,7 @@ async def test_run_agent_fake_test_data_invariant(
 @pytest.mark.asyncio
 async def test_run_agent_avoid_destructive_actions_invariant(
     sample_node, mock_llm_provider, mock_browser_pool,
-    sample_explore_config, tmp_run_dir, mock_semaphore
+    sample_explore_config, tmp_run_dir, mock_semaphore, mock_cost_tracker
 ):
     """Agents avoid destructive actions (delete/remove/cancel-account)."""
     if not _run_agent:
@@ -1172,7 +1178,8 @@ async def test_run_agent_avoid_destructive_actions_invariant(
         config=sample_explore_config,
         base_url="https://example.com",
         run_dir=tmp_run_dir,
-        semaphore=mock_semaphore
+        semaphore=mock_semaphore,
+        cost_tracker=mock_cost_tracker,
     )
     
     # Verify system prompt mentions avoidance of destructive actions
@@ -1189,9 +1196,9 @@ async def test_explore_site_phase_name_invariant(
     if not explore_site:
         pytest.skip("explore_site not available")
     
-    with patch('src_webprobe_explorer.BrowserPool'), \
-         patch('src_webprobe_explorer.LLMProvider'), \
-         patch('src_webprobe_explorer._run_agent') as mock_run_agent:
+    with patch('src.webprobe.explorer.BrowserPool'), \
+         patch('src.webprobe.explorer.LLMProvider'), \
+         patch('src.webprobe.explorer._run_agent') as mock_run_agent:
         
         mock_run_agent.return_value = []
         
@@ -1216,7 +1223,7 @@ async def test_explore_site_phase_name_invariant(
 @pytest.mark.asyncio
 async def test_run_agent_one_screenshot_per_node_invariant(
     sample_node, mock_llm_provider, mock_browser_pool,
-    sample_explore_config, tmp_run_dir, mock_semaphore
+    sample_explore_config, tmp_run_dir, mock_semaphore, mock_cost_tracker
 ):
     """One screenshot analysis per node maximum."""
     if not _run_agent:
@@ -1225,7 +1232,7 @@ async def test_run_agent_one_screenshot_per_node_invariant(
     sample_explore_config.visual_analysis = True
     sample_explore_config.max_actions_per_agent = 10
     
-    context = await mock_browser_pool.get_context()
+    context = await mock_browser_pool.new_context()
     page = await context.new_page()
     
     await _run_agent(
@@ -1236,7 +1243,8 @@ async def test_run_agent_one_screenshot_per_node_invariant(
         config=sample_explore_config,
         base_url="https://example.com",
         run_dir=tmp_run_dir,
-        semaphore=mock_semaphore
+        semaphore=mock_semaphore,
+        cost_tracker=mock_cost_tracker,
     )
     
     # Screenshot should be called at most once
@@ -1257,9 +1265,9 @@ async def test_explore_site_run_dir_creation(
     
     sample_explore_config.visual_analysis = True
     
-    with patch('src_webprobe_explorer.BrowserPool'), \
-         patch('src_webprobe_explorer.LLMProvider'), \
-         patch('src_webprobe_explorer._run_agent') as mock_run_agent:
+    with patch('src.webprobe.explorer.BrowserPool'), \
+         patch('src.webprobe.explorer.LLMProvider'), \
+         patch('src.webprobe.explorer._run_agent') as mock_run_agent:
         
         mock_run_agent.return_value = []
         

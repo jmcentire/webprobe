@@ -57,7 +57,20 @@ def is_same_origin(url: str, base_url: str) -> bool:
     """Check if url has same scheme+host+port as base_url."""
     a = urlparse(url)
     b = urlparse(base_url)
-    return (a.scheme == b.scheme and a.netloc == b.netloc)
+    a_scheme = a.scheme.lower()
+    b_scheme = b.scheme.lower()
+    a_netloc = a.netloc.lower()
+    b_netloc = b.netloc.lower()
+    # Remove default ports for comparison
+    if a_scheme == "http" and a_netloc.endswith(":80"):
+        a_netloc = a_netloc[:-3]
+    elif a_scheme == "https" and a_netloc.endswith(":443"):
+        a_netloc = a_netloc[:-4]
+    if b_scheme == "http" and b_netloc.endswith(":80"):
+        b_netloc = b_netloc[:-3]
+    elif b_scheme == "https" and b_netloc.endswith(":443"):
+        b_netloc = b_netloc[:-4]
+    return (a_scheme == b_scheme and a_netloc == b_netloc)
 
 
 class _LinkExtractor(HTMLParser):
@@ -85,7 +98,9 @@ class _LinkExtractor(HTMLParser):
 
     def handle_endtag(self, tag: str) -> None:
         if tag == "a" and self._current_link is not None:
-            text = " ".join(self._current_text).strip()
+            raw = " ".join(self._current_text).strip()
+            # Normalize internal whitespace to single spaces
+            text = re.sub(r"\s+", " ", raw)
             self.links.append((self._current_link, text))
             self._current_link = None
             self._current_text = []
@@ -219,7 +234,7 @@ async def _crawl_pass(
 
             # Determine auth requirement
             requires_auth: bool | None = None
-            if auth_manager and status in (401, 403):
+            if status in (401, 403):
                 requires_auth = True
             elif auth_manager and auth_manager.is_auth_redirect(norm, final_url):
                 requires_auth = True
