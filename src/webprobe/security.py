@@ -396,19 +396,53 @@ def scan_capture(url: str, capture: NodeCapture) -> list[SecurityFinding]:
 
 
 def scan_graph(graph: SiteGraph) -> list[SecurityFinding]:
-    """Run security scans across all captured nodes. Returns deduplicated findings."""
-    all_findings: list[SecurityFinding] = []
-    seen: set[tuple[str, str, str]] = set()  # (url, category, title) dedup
+    """Run security scans across all captured nodes. Returns consolidated findings.
+
+    Site-wide findings (headers, missing policies) are consolidated into a single
+    finding with affected_urls listing all pages. Per-page findings (cookies, forms,
+    reflected params) remain per-URL.
+    """
+    # Categories where findings are typically identical across all pages
+    SITE_WIDE_CATEGORIES = {SecurityCategory.headers, SecurityCategory.xss}
+    SITE_WIDE_TITLES = {
+        "Missing Strict-Transport-Security header",
+        "Missing Content-Security-Policy header",
+        "Missing clickjacking protection",
+        "Missing X-Content-Type-Options header",
+        "Missing Referrer-Policy header",
+        "Missing Permissions-Policy header",
+        "HSTS max-age too short",
+        "CSP allows unsafe-inline",
+        "CSP allows unsafe-eval",
+        "Weak X-Frame-Options value",
+    }
+
+    consolidated: dict[tuple[str, str], SecurityFinding] = {}  # (category, title) -> finding
+    per_url: list[SecurityFinding] = []
+    per_url_seen: set[tuple[str, str, str]] = set()  # (url, category, title)
 
     for node in graph.nodes.values():
         for capture in node.captures:
             findings = scan_capture(node.id, capture)
             for f in findings:
-                key = (f.url, f.category.value, f.title)
-                if key not in seen:
-                    seen.add(key)
-                    all_findings.append(f)
-                    # Also attach to the capture for per-node reporting
-                    capture.security_findings.append(f)
+                # Attach to capture for per-node reporting
+                capture.security_findings.append(f)
 
-    return all_findings
+                if f.category in SITE_WIDE_CATEGORIES and f.title in SITE_WIDE_TITLES:
+                    key = (f.category.value, f.title)
+                    if key in consolidated:
+                        existing = consolidated[key]
+                        if f.url not in existing.affected_urls:
+                            existing.affected_urls.append(f.url)
+                            existing.affected_count = len(existing.affected_urls)
+                    else:
+                        f.affected_urls = [f.url]
+                        f.affected_count = 1
+                        consolidated[key] = f
+                else:
+                    url_key = (f.url, f.category.value, f.title)
+                    if url_key not in per_url_seen:
+                        per_url_seen.add(url_key)
+                        per_url.append(f)
+
+    return list(consolidated.values()) + per_url

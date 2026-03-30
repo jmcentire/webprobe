@@ -93,7 +93,7 @@ def _find_broken_links(graph: SiteGraph) -> list[BrokenLink]:
         if target_node is None:
             # External or excluded link -- not a "broken" link, just out of scope
             continue
-        # Check if any capture has a success status
+        # Check if any capture has a success status or rendered content
         has_success = False
         worst_status: int | None = None
         for capture in target_node.captures:
@@ -102,6 +102,10 @@ def _find_broken_links(graph: SiteGraph) -> list[BrokenLink]:
                     has_success = True
                     break
                 worst_status = capture.http_status
+            elif capture.page_text and capture.page_text.strip():
+                # Page rendered content despite missing http_status (e.g. timeout)
+                has_success = True
+                break
         if not has_success and target_node.captures:
             broken.append(BrokenLink(
                 source=edge.source,
@@ -183,43 +187,58 @@ def _find_timing_outliers(graph: SiteGraph) -> list[TimingOutlier]:
     return outliers
 
 
-def _enumerate_prime_paths(G: nx.DiGraph, max_loop: int = 2, max_paths: int = 1000) -> list[PrimePath]:
-    """Enumerate prime paths: maximal simple paths with bounded loop traversal.
+def _enumerate_prime_paths(G: nx.DiGraph, max_loop: int = 2, max_paths: int = 1000, max_seconds: float = 30.0) -> list[PrimePath]:
+    """Enumerate prime paths via incremental extension.
 
-    A prime path is a simple path that is not a proper subpath of any other simple path.
-    We bound loop iterations to max_loop to avoid combinatorial explosion.
+    A prime path is a simple path that cannot be extended (the first or last node
+    would create a repeat). We build paths incrementally: start with single-edge
+    paths, extend by one node at a time, and keep only maximal (non-extendable) ones.
+
+    Bounded by max_paths and max_seconds to stay tractable on dense graphs.
     """
-    paths: list[PrimePath] = []
     if G.number_of_nodes() == 0:
-        return paths
+        return []
 
-    # For tractability, enumerate all simple paths between all pairs up to a cutoff
-    cutoff = min(G.number_of_nodes(), 15)  # Cap path length for large graphs
+    deadline = time.monotonic() + max_seconds
 
+    # Start with all edges as seed paths of length 2
+    active: list[list[str]] = []
+    for u, v in G.edges:
+        active.append([u, v])
+
+    prime: list[PrimePath] = []
     seen: set[tuple[str, ...]] = set()
-    for source in G.nodes:
-        for target in G.nodes:
-            try:
-                for path in nx.all_simple_paths(G, source, target, cutoff=cutoff):
-                    path_tuple = tuple(path)
-                    if len(path_tuple) < 2:
-                        continue
-                    if path_tuple in seen:
-                        continue
+
+    while active:
+        if time.monotonic() > deadline or len(prime) >= max_paths:
+            break
+
+        next_active: list[list[str]] = []
+        for path in active:
+            if time.monotonic() > deadline or len(prime) >= max_paths:
+                break
+
+            extended = False
+            last = path[-1]
+            for succ in G.successors(last):
+                if succ not in path:  # Keep it simple (no repeated nodes)
+                    next_active.append(path + [succ])
+                    extended = True
+
+            if not extended:
+                # Can't extend forward -- this is a candidate prime path
+                path_tuple = tuple(path)
+                if path_tuple not in seen:
                     seen.add(path_tuple)
-                    paths.append(PrimePath(
+                    prime.append(PrimePath(
                         path=list(path_tuple),
                         length=len(path_tuple),
-                        contains_loop=(source == target),
+                        contains_loop=(path[0] == path[-1]),
                     ))
-                    if len(paths) >= max_paths:
-                        return paths
-            except nx.NodeNotFound:
-                continue
-            except nx.NetworkXError:
-                continue
 
-    return paths
+        active = next_active
+
+    return prime
 
 
 def analyze(graph: SiteGraph) -> tuple[AnalysisResult, PhaseStatus]:

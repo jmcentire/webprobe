@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import quote
 
-from playwright.async_api import Page, Response
+from playwright.async_api import Page, Response, TimeoutError
 
 from webprobe.auth import AuthManager
 from webprobe.browser import BrowserPool
@@ -131,6 +131,7 @@ async def _visit_node(
             started_at = datetime.now(timezone.utc).isoformat()
             http_status: int | None = None
             doc_headers: dict[str, str] = {}
+            timed_out = False
             try:
                 response = await page.goto(
                     node.state.url,
@@ -140,6 +141,25 @@ async def _visit_node(
                 if response:
                     http_status = response.status
                     doc_headers = dict(response.headers)
+            except TimeoutError:
+                timed_out = True
+                # Page may have partially loaded — try to extract response data
+                try:
+                    response = page.main_frame._impl_obj._last_navigation_response
+                    if response:
+                        http_status = response.status
+                        doc_headers = {k: v for k, v in response.headers.items()}
+                except Exception:
+                    pass
+                # Fallback: check if page has content despite timeout
+                if http_status is None:
+                    try:
+                        # If the page rendered, treat it as a soft success
+                        title = await page.title()
+                        if title:
+                            http_status = 200  # Inferred from rendered content
+                    except Exception:
+                        pass
             except Exception:
                 pass
             nav_duration = (time.monotonic() - nav_start) * 1000

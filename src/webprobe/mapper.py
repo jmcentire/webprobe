@@ -53,24 +53,22 @@ def normalize_url(url: str, base: str | None = None) -> str:
     return urlunparse((scheme, netloc, path, parsed.params, parsed.query, ""))
 
 
+def _strip_port(netloc: str, scheme: str) -> str:
+    """Remove default ports from netloc."""
+    if scheme == "http" and netloc.endswith(":80"):
+        return netloc[:-3]
+    if scheme == "https" and netloc.endswith(":443"):
+        return netloc[:-4]
+    return netloc
+
+
 def is_same_origin(url: str, base_url: str) -> bool:
-    """Check if url has same scheme+host+port as base_url."""
+    """Check if url has same host as base_url. Treats http/https as same origin for site auditing."""
     a = urlparse(url)
     b = urlparse(base_url)
-    a_scheme = a.scheme.lower()
-    b_scheme = b.scheme.lower()
-    a_netloc = a.netloc.lower()
-    b_netloc = b.netloc.lower()
-    # Remove default ports for comparison
-    if a_scheme == "http" and a_netloc.endswith(":80"):
-        a_netloc = a_netloc[:-3]
-    elif a_scheme == "https" and a_netloc.endswith(":443"):
-        a_netloc = a_netloc[:-4]
-    if b_scheme == "http" and b_netloc.endswith(":80"):
-        b_netloc = b_netloc[:-3]
-    elif b_scheme == "https" and b_netloc.endswith(":443"):
-        b_netloc = b_netloc[:-4]
-    return (a_scheme == b_scheme and a_netloc == b_netloc)
+    a_netloc = _strip_port(a.netloc.lower(), a.scheme.lower())
+    b_netloc = _strip_port(b.netloc.lower(), b.scheme.lower())
+    return a_netloc == b_netloc
 
 
 class _LinkExtractor(HTMLParser):
@@ -161,6 +159,12 @@ def parse_sitemap(xml_text: str) -> list[str]:
     return urls
 
 
+_BROWSER_UA = (
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+)
+
+
 async def _fetch(
     session: aiohttp.ClientSession,
     url: str,
@@ -171,11 +175,22 @@ async def _fetch(
         await asyncio.sleep(delay_ms / 1000)
     start = time.monotonic()
     try:
-        async with session.get(url, allow_redirects=True, timeout=aiohttp.ClientTimeout(total=30)) as resp:
+        async with session.get(
+            url,
+            allow_redirects=True,
+            timeout=aiohttp.ClientTimeout(total=30),
+            headers={"User-Agent": _BROWSER_UA},
+        ) as resp:
             body = await resp.text(errors="replace")
             duration = (time.monotonic() - start) * 1000
             return resp.status, body, str(resp.url), duration
-    except Exception as e:
+    except asyncio.TimeoutError:
+        duration = (time.monotonic() - start) * 1000
+        return 0, "", url, duration
+    except aiohttp.ClientError:
+        duration = (time.monotonic() - start) * 1000
+        return 0, "", url, duration
+    except Exception:
         duration = (time.monotonic() - start) * 1000
         return 0, "", url, duration
 

@@ -277,17 +277,47 @@ def capture(ctx: click.Context, run_dir: str) -> None:
 @click.argument("run_dir", type=click.Path(exists=True))
 def analyze_cmd(run_dir: str) -> None:
     """Phase 3 only: Analyze an existing run."""
-    from webprobe.differ import load_run
     from webprobe.analyzer import analyze
+    from webprobe.reporter import generate_report
 
     rd = Path(run_dir)
-    run_obj = load_run(rd)
+
+    # Try loading from complete run first, fall back to graph.json for partial runs
+    graph = None
+    if (rd / "report.json").exists():
+        from webprobe.differ import load_run
+        run_obj = load_run(rd)
+        graph = run_obj.graph
+    elif (rd / "graph.json").exists():
+        from webprobe.models import SiteGraph
+        graph = SiteGraph.model_validate_json((rd / "graph.json").read_text())
+    else:
+        raise click.ClickException(f"No graph.json or report.json in {rd}")
+
     click.echo("Analyzing...")
-    result, phase = analyze(run_obj.graph)
+    result, phase = analyze(graph)
     (rd / "analysis.json").write_text(result.model_dump_json(indent=2))
-    click.echo(f"Broken links: {len(result.broken_links)}")
-    click.echo(f"Auth violations: {len(result.auth_violations)}")
-    click.echo(f"Analysis: {rd / 'analysis.json'}")
+
+    m = result.graph_metrics
+    click.echo(f"  Cyclomatic complexity: {m.cyclomatic_complexity}")
+    click.echo(f"  Broken links: {len(result.broken_links)}")
+    click.echo(f"  Auth violations: {len(result.auth_violations)}")
+    click.echo(f"  Timing outliers: {len(result.timing_outliers)}")
+    click.echo(f"  Prime paths: {len(result.prime_paths)}")
+    if result.security_findings:
+        by_sev: dict[str, int] = {}
+        for sf in result.security_findings:
+            by_sev[sf.severity.value] = by_sev.get(sf.severity.value, 0) + 1
+        parts = [f"{v} {k}" for k, v in sorted(by_sev.items())]
+        click.echo(f"  Security findings: {len(result.security_findings)} ({', '.join(parts)})")
+
+    # Generate report
+    from webprobe.models import Run
+    site_url = graph.root_url or next(iter(graph.nodes), "")
+    run_obj = Run(url=site_url, graph=graph, analysis=result, phases=[phase])
+    (rd / "report.json").write_text(run_obj.model_dump_json(indent=2))
+    generate_report(run_obj, rd)
+    click.echo(f"  Report: {rd / 'report.html'}")
 
 
 @main.command()

@@ -146,7 +146,7 @@ class SecurityCategory(str, Enum):
 
 
 class SecurityFinding(BaseModel):
-    """A single security finding for a node."""
+    """A single security finding, optionally consolidated across multiple URLs."""
 
     category: SecurityCategory
     severity: SecuritySeverity
@@ -155,6 +155,8 @@ class SecurityFinding(BaseModel):
     evidence: str = ""
     url: str = ""
     auth_context: AuthContext = AuthContext.anonymous
+    affected_urls: list[str] = Field(default_factory=list)
+    affected_count: int = 0
 
 
 class NodeCapture(BaseModel):
