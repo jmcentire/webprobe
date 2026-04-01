@@ -14,6 +14,7 @@ from urllib.parse import urljoin, urlparse, urlunparse
 import aiohttp
 
 from webprobe.auth import AuthManager
+from webprobe.browser import BrowserPool
 from webprobe.config import WebprobeConfig
 from webprobe.models import (
     AuthContext,
@@ -195,6 +196,41 @@ async def _fetch(
         return 0, "", url, duration
 
 
+async def _fetch_js(
+    pool: BrowserPool,
+    url: str,
+    delay_ms: int = 0,
+    auth_manager: AuthManager | None = None,
+) -> tuple[int, str, str, float, list[str]]:
+    """Fetch a URL with Playwright (JS rendered). Returns (status, body, final_url, duration_ms, js_links)."""
+    if delay_ms > 0:
+        await asyncio.sleep(delay_ms / 1000)
+    start = time.monotonic()
+    context = await pool.new_context(auth=auth_manager, base_url=url)
+    try:
+        page = await context.new_page()
+        try:
+            response = await page.goto(url, wait_until="networkidle", timeout=30000)
+            status = response.status if response else 0
+            final_url = page.url
+        except Exception:
+            duration = (time.monotonic() - start) * 1000
+            return 0, "", url, duration, []
+        body = await page.content()
+        try:
+            js_links = await page.evaluate("""() => {
+                return Array.from(document.querySelectorAll('a[href]'))
+                    .map(a => a.href)
+                    .filter(h => h && !h.startsWith('javascript:'));
+            }""")
+        except Exception:
+            js_links = []
+        duration = (time.monotonic() - start) * 1000
+        return status, body, final_url, duration, js_links
+    finally:
+        await context.close()
+
+
 async def _crawl_pass(
     base_url: str,
     seed_urls: Sequence[str],
@@ -202,10 +238,12 @@ async def _crawl_pass(
     auth_manager: AuthManager | None = None,
     auth_context: AuthContext = AuthContext.anonymous,
     disallowed_paths: Sequence[str] = (),
+    browser_pool: BrowserPool | None = None,
 ) -> tuple[dict[str, Node], list[Edge]]:
     """BFS crawl. Returns (nodes_dict, edges_list)."""
     nodes: dict[str, Node] = {}
     edges: list[Edge] = []
+    seen_edges: set[tuple[str, str]] = set()
     visited: set[str] = set()
     queue: asyncio.Queue[tuple[str, int, DiscoveryMethod]] = asyncio.Queue()
 
@@ -243,9 +281,16 @@ async def _crawl_pass(
 
             visited.add(norm)
 
-            status, body, final_url, duration = await _fetch(
-                session, norm, config.crawl.request_delay_ms
-            )
+            js_links: list[str] = []
+            if config.crawl.render_js and browser_pool is not None:
+                auth_for_js = auth_manager if auth_context == AuthContext.authenticated else None
+                status, body, final_url, duration, js_links = await _fetch_js(
+                    browser_pool, norm, config.crawl.request_delay_ms, auth_for_js
+                )
+            else:
+                status, body, final_url, duration = await _fetch(
+                    session, norm, config.crawl.request_delay_ms
+                )
 
             # Determine auth requirement
             requires_auth: bool | None = None
@@ -270,13 +315,34 @@ async def _crawl_pass(
                     target = normalize_url(href, base=norm)
                     if not target:
                         continue
-                    edges.append(Edge(
-                        source=norm,
-                        target=target,
-                        link_text=link_text,
-                        discovered_via=DiscoveryMethod.crawl,
-                        auth_context=auth_context,
-                    ))
+                    edge_key = (norm, target)
+                    if edge_key not in seen_edges:
+                        seen_edges.add(edge_key)
+                        edges.append(Edge(
+                            source=norm,
+                            target=target,
+                            link_text=link_text,
+                            discovered_via=DiscoveryMethod.crawl,
+                            auth_context=auth_context,
+                        ))
+                    if target not in visited:
+                        queue.put_nowait((target, depth + 1, DiscoveryMethod.crawl))
+
+                # Add JS-discovered links (from page.evaluate)
+                for js_href in js_links:
+                    target = normalize_url(js_href)
+                    if not target:
+                        continue
+                    edge_key = (norm, target)
+                    if edge_key not in seen_edges:
+                        seen_edges.add(edge_key)
+                        edges.append(Edge(
+                            source=norm,
+                            target=target,
+                            link_text="",
+                            discovered_via=DiscoveryMethod.crawl,
+                            auth_context=auth_context,
+                        ))
                     if target not in visited:
                         queue.put_nowait((target, depth + 1, DiscoveryMethod.crawl))
 
@@ -329,24 +395,36 @@ async def map_site(
             if full:
                 seed_urls.append(full)
 
-    # Pass 1: Anonymous crawl
-    anon_nodes, anon_edges = await _crawl_pass(
-        base_url, seed_urls, config,
-        auth_manager=auth_manager,
-        auth_context=AuthContext.anonymous,
-        disallowed_paths=disallowed_paths,
-    )
+    # Start browser pool for JS rendering if enabled
+    browser_pool: BrowserPool | None = None
+    if config.crawl.render_js:
+        browser_pool = BrowserPool(config.capture)
+        await browser_pool.start()
 
-    # Pass 2: Authenticated crawl (if auth configured)
-    auth_nodes: dict[str, Node] = {}
-    auth_edges: list[Edge] = []
-    if auth_manager.has_auth:
-        auth_nodes, auth_edges = await _crawl_pass(
+    try:
+        # Pass 1: Anonymous crawl
+        anon_nodes, anon_edges = await _crawl_pass(
             base_url, seed_urls, config,
             auth_manager=auth_manager,
-            auth_context=AuthContext.authenticated,
+            auth_context=AuthContext.anonymous,
             disallowed_paths=disallowed_paths,
+            browser_pool=browser_pool,
         )
+
+        # Pass 2: Authenticated crawl (if auth configured)
+        auth_nodes: dict[str, Node] = {}
+        auth_edges: list[Edge] = []
+        if auth_manager.has_auth:
+            auth_nodes, auth_edges = await _crawl_pass(
+                base_url, seed_urls, config,
+                auth_manager=auth_manager,
+                auth_context=AuthContext.authenticated,
+                disallowed_paths=disallowed_paths,
+                browser_pool=browser_pool,
+            )
+    finally:
+        if browser_pool:
+            await browser_pool.stop()
 
     # Merge results
     merged_nodes: dict[str, Node] = {}

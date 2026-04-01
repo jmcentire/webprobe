@@ -44,14 +44,18 @@ def main(ctx: click.Context, config_path: str | None) -> None:
 @click.option("--agents", type=int, default=5, help="Number of concurrent exploration agents.")
 @click.option("--mask", "mask_path", type=click.Path(exists=True), default=None,
               help="Path to mask YAML for suppressing known findings.")
+@click.option("--js", "render_js", is_flag=True, default=False,
+              help="Use Playwright for JS rendering during site mapping.")
 @click.pass_context
 def run(ctx: click.Context, url: str, project_root: str | None, output_dir: str | None,
         concurrency: int | None, explore: bool, llm_provider: str, llm_model: str | None,
-        agents: int, mask_path: str | None) -> None:
+        agents: int, mask_path: str | None, render_js: bool) -> None:
     """Run all phases: map, capture, analyze, report (+ explore with --explore)."""
     config: WebprobeConfig = ctx.obj["config"]
     if concurrency is not None:
         config.capture.concurrency = concurrency
+    if render_js:
+        config.crawl.render_js = True
 
     async def _run() -> None:
         from webprobe.models import Run
@@ -219,10 +223,15 @@ def explore_cmd(ctx: click.Context, run_dir: str, provider: str, model: str | No
 @click.argument("url")
 @click.option("--project-root", type=click.Path(exists=True), default=None)
 @click.option("--output-dir", type=click.Path(), default=None)
+@click.option("--js", "render_js", is_flag=True, default=False,
+              help="Use Playwright for JS rendering during site mapping.")
 @click.pass_context
-def map_cmd(ctx: click.Context, url: str, project_root: str | None, output_dir: str | None) -> None:
+def map_cmd(ctx: click.Context, url: str, project_root: str | None, output_dir: str | None,
+            render_js: bool) -> None:
     """Phase 1 only: Map the site and build the graph."""
     config: WebprobeConfig = ctx.obj["config"]
+    if render_js:
+        config.crawl.render_js = True
 
     async def _map() -> None:
         from webprobe.models import Run

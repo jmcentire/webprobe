@@ -44,6 +44,7 @@ class CrawlConfig(BaseModel):
     follow_external: bool = False
     url_exclude_patterns: list[str] = Field(default_factory=list)
     request_delay_ms: int = 100
+    render_js: bool = False
 
 
 class CaptureConfig(BaseModel):

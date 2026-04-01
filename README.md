@@ -86,6 +86,7 @@ webprobe status <run-dir>              # Run summary
 --llm-model NAME       Override model (default: claude-sonnet-4)
 --agents N             Concurrent exploration agents (default: 5)
 --mask PATH            YAML mask file for suppressing known findings
+--js                   Use Playwright for JS rendering during mapping
 ```
 
 ## Configuration
