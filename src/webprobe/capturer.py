@@ -214,6 +214,7 @@ async def _visit_node(
                         secure=c.get("secure", False),
                         http_only=c.get("httpOnly", False),
                         same_site=c.get("sameSite", ""),
+                        expires=c.get("expires", -1),
                     ))
             except Exception:
                 pass
@@ -233,12 +234,16 @@ async def _visit_node(
                         );
                         const autocompleteOff = form.getAttribute('autocomplete') === 'off' ||
                             inputs.some(i => i.type === 'password' && i.getAttribute('autocomplete') === 'off');
+                        const inputNames = inputs.map(i => i.name || '').filter(Boolean);
+                        const inputTypes = inputs.map(i => i.type || 'text');
                         return {
                             action: form.action || '',
                             method: form.method || 'GET',
                             hasCsrf: hasCsrf,
                             hasPassword: hasPassword,
                             autocompleteOff: autocompleteOff,
+                            inputNames: inputNames,
+                            inputTypes: inputTypes,
                         };
                     });
                 }""")
@@ -249,7 +254,25 @@ async def _visit_node(
                         has_csrf_token=f.get("hasCsrf", False),
                         has_password_field=f.get("hasPassword", False),
                         autocomplete_off=f.get("autocompleteOff", False),
+                        input_names=f.get("inputNames", []),
+                        input_types=f.get("inputTypes", []),
                     ))
+            except Exception:
+                pass
+
+            # SRI integrity attribute detection
+            try:
+                sri_data = await page.evaluate("""() => {
+                    const els = document.querySelectorAll('script[src], link[rel="stylesheet"][href]');
+                    return Array.from(els).map(el => ({
+                        url: el.src || el.href,
+                        hasIntegrity: !!el.integrity,
+                    }));
+                }""")
+                sri_map = {item["url"]: item["hasIntegrity"] for item in sri_data}
+                for res in resources:
+                    if res.url in sri_map:
+                        res.has_integrity = sri_map[res.url]
             except Exception:
                 pass
 

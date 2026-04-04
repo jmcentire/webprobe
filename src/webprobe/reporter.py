@@ -213,6 +213,79 @@ HTML_TEMPLATE = Template("""\
 </table>
 {% endif %}
 
+{% if analysis and analysis.compliance %}
+<h2>Compliance Summary</h2>
+<div class="summary">
+  {% for std_key, count in analysis.compliance.violations_by_standard.items() %}
+  <div class="card">
+    <div class="label">{{ std_key }}</div>
+    <div class="value {{ 'red' if count else 'green' }}">{{ count }}</div>
+  </div>
+  {% endfor %}
+</div>
+
+{% set flagged_controls = [] %}
+{% for ctrl in analysis.compliance.controls %}
+{% if ctrl.finding_count > 0 %}
+{% set _ = flagged_controls.append(ctrl) %}
+{% endif %}
+{% endfor %}
+{% if flagged_controls %}
+<h3>Controls with Findings</h3>
+<table>
+  <tr><th>Standard</th><th>Control</th><th>Name</th><th>Testable</th><th>Findings</th><th>Max Severity</th></tr>
+  {% for ctrl in analysis.compliance.controls|sort(attribute='finding_count', reverse=True) %}
+  {% if ctrl.finding_count > 0 %}
+  <tr>
+    <td>{{ ctrl.standard_name }}</td>
+    <td>{{ ctrl.control_id }}</td>
+    <td>{{ ctrl.control_name }}</td>
+    <td>{{ ctrl.testable }}</td>
+    <td>{{ ctrl.finding_count }}</td>
+    <td>{% if ctrl.max_severity %}<span class="badge badge-{{ ctrl.max_severity }}">{{ ctrl.max_severity }}</span>{% endif %}</td>
+  </tr>
+  {% endif %}
+  {% endfor %}
+</table>
+{% endif %}
+
+{% if analysis.compliance.untestable_controls %}
+<h3>Controls Requiring Manual Review</h3>
+<table>
+  <tr><th>Standard</th><th>Control</th><th>Name</th><th>Notes</th></tr>
+  {% for ctrl in analysis.compliance.untestable_controls %}
+  {% if ctrl.manual_notes %}
+  <tr>
+    <td>{{ ctrl.standard_name }}</td>
+    <td>{{ ctrl.control_id }}</td>
+    <td>{{ ctrl.control_name }}</td>
+    <td>{{ ctrl.manual_notes }}</td>
+  </tr>
+  {% endif %}
+  {% endfor %}
+</table>
+{% endif %}
+{% endif %}
+
+{% set advocate_findings = [] %}
+{% if analysis and analysis.security_findings %}
+{% for sf in analysis.security_findings %}{% if sf.category is defined and sf.category == 'advocate' %}{% set _ = advocate_findings.append(sf) %}{% endif %}{% endfor %}
+{% endif %}
+{% if advocate_findings %}
+<h2>Advocate Review ({{ advocate_findings|length }} findings)</h2>
+<table>
+  <tr><th>Severity</th><th>Finding</th><th>Detail</th><th>URL</th></tr>
+  {% for sf in advocate_findings %}
+  <tr>
+    <td><span class="badge badge-{{ sf.severity }}">{{ sf.severity }}</span></td>
+    <td>{{ sf.title }}</td>
+    <td>{{ sf.detail }}{% if sf.evidence %}<br><code style="font-size:0.8rem;color:#8b949e;">{{ sf.evidence[:200] }}</code>{% endif %}</td>
+    <td style="max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ sf.url }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% endif %}
+
 <h2>Node Details</h2>
 {% for node in nodes %}
 <div class="card" id="node-{{ loop.index }}" style="margin-bottom: 1rem;">
@@ -298,6 +371,28 @@ HTML_TEMPLATE = Template("""\
   {% endfor %}
 </div>
 {% endfor %}
+
+{% if run.advocate_cost %}
+<h2>Advocate Cost</h2>
+<div class="summary">
+  <div class="card">
+    <div class="label">LLM Calls</div>
+    <div class="value">{{ run.advocate_cost.total_calls }}</div>
+  </div>
+  <div class="card">
+    <div class="label">Input Tokens</div>
+    <div class="value">{{ run.advocate_cost.total_input_tokens }}</div>
+  </div>
+  <div class="card">
+    <div class="label">Output Tokens</div>
+    <div class="value">{{ run.advocate_cost.total_output_tokens }}</div>
+  </div>
+  <div class="card">
+    <div class="label">Estimated Cost</div>
+    <div class="value">${{ "%.4f"|format(run.advocate_cost.total_cost_usd) }}</div>
+  </div>
+</div>
+{% endif %}
 
 {% if run.explore_cost %}
 <h2>Exploration Cost</h2>

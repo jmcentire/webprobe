@@ -1,0 +1,1108 @@
+schema_version: "1.0"
+
+standards:
+  # ---------------------------------------------------------------------------
+  # OWASP Top 10 (2021)
+  # ---------------------------------------------------------------------------
+  owasp_top10_2021:
+    name: "OWASP Top 10 (2021)"
+    version: "2021"
+    controls:
+      - id: "A01"
+        name: "Broken Access Control"
+        testable: partial
+        finding_matchers:
+          - category: "cors"
+          - category: "forms"
+            title_pattern: ".*CSRF.*"
+          - category: "auth_session"
+          - category: "headers"
+            title_pattern: ".*clickjacking.*"
+          - category: "headers"
+            title_pattern: ".*X-Frame-Options.*"
+          - category: "sensitive_files"
+        manual_notes: "Full access control testing requires authenticated role-based testing with multiple user roles."
+
+      - id: "A02"
+        name: "Cryptographic Failures"
+        testable: partial
+        finding_matchers:
+          - category: "tls"
+          - category: "cookies"
+            title_pattern: ".*missing Secure flag.*"
+          - category: "mixed_content"
+          - category: "headers"
+            title_pattern: ".*Strict-Transport-Security.*"
+          - category: "headers"
+            title_pattern: ".*HSTS.*"
+        manual_notes: "Cannot test server-side encryption at rest, key management, or password hashing algorithms."
+
+      - id: "A03"
+        name: "Injection"
+        testable: partial
+        finding_matchers:
+          - category: "injection"
+          - category: "xss"
+            title_pattern: ".*reflected.*"
+          - category: "xss"
+            title_pattern: ".*unsafe-inline.*"
+          - category: "xss"
+            title_pattern: ".*unsafe-eval.*"
+          - category: "forms"
+            title_pattern: ".*CSRF.*"
+        manual_notes: "Passive scanning detects indicators only. Active injection testing (SQLi, command injection) requires authenticated fuzzing."
+
+      - id: "A04"
+        name: "Insecure Design"
+        testable: no
+        finding_matchers: []
+        manual_notes: "Design-level flaws require threat modeling, architecture review, and business logic analysis -- not detectable via web scanning."
+
+      - id: "A05"
+        name: "Security Misconfiguration"
+        testable: "yes"
+        finding_matchers:
+          - category: "headers"
+          - category: "cors"
+          - category: "information_disclosure"
+            title_pattern: ".*Server version.*"
+          - category: "information_disclosure"
+            title_pattern: ".*X-Powered-By.*"
+          - category: "information_disclosure"
+            title_pattern: ".*source map.*"
+          - category: "information_disclosure"
+            title_pattern: ".*Stack trace.*"
+          - category: "cookies"
+            title_pattern: ".*SameSite.*"
+          - category: "sensitive_files"
+        manual_notes: ""
+
+      - id: "A06"
+        name: "Vulnerable and Outdated Components"
+        testable: partial
+        finding_matchers:
+          - category: "supply_chain"
+          - category: "information_disclosure"
+            title_pattern: ".*Server version.*"
+          - category: "information_disclosure"
+            title_pattern: ".*X-Powered-By.*"
+        manual_notes: "Full component analysis requires SCA tools (dependency scanning). Web scanning can only detect disclosed version strings."
+
+      - id: "A07"
+        name: "Identification and Authentication Failures"
+        testable: partial
+        finding_matchers:
+          - category: "auth_session"
+          - category: "cookies"
+            title_pattern: ".*Session cookie.*"
+          - category: "cookies"
+            title_pattern: ".*HttpOnly.*"
+          - category: "forms"
+            title_pattern: ".*Password field allows autocomplete.*"
+        manual_notes: "Cannot test credential stuffing protections, MFA, or password complexity policies via passive scanning."
+
+      - id: "A08"
+        name: "Software and Data Integrity Failures"
+        testable: partial
+        finding_matchers:
+          - category: "supply_chain"
+          - category: "xss"
+            title_pattern: ".*CSP.*"
+          - category: "forms"
+            title_pattern: ".*CSRF.*"
+        manual_notes: "Cannot verify CI/CD pipeline integrity, software signing, or deserialization safety remotely."
+
+      - id: "A09"
+        name: "Security Logging and Monitoring Failures"
+        testable: no
+        finding_matchers: []
+        manual_notes: "Logging and monitoring configurations are server-side and not observable via web scanning."
+
+      - id: "A10"
+        name: "Server-Side Request Forgery (SSRF)"
+        testable: no
+        finding_matchers: []
+        manual_notes: "SSRF requires active exploitation testing with crafted payloads -- not detectable via passive scanning."
+
+  # ---------------------------------------------------------------------------
+  # PCI DSS v4.0
+  # ---------------------------------------------------------------------------
+  pci_dss_v4:
+    name: "PCI DSS v4.0"
+    version: "4.0"
+    controls:
+      - id: "2.2.7"
+        name: "All non-console administrative access is encrypted"
+        testable: "yes"
+        finding_matchers:
+          - category: "tls"
+          - category: "mixed_content"
+          - category: "headers"
+            title_pattern: ".*Strict-Transport-Security.*"
+          - category: "headers"
+            title_pattern: ".*HSTS.*"
+        manual_notes: ""
+
+      - id: "4.2.1"
+        name: "Strong cryptography for transmission of cardholder data"
+        testable: partial
+        finding_matchers:
+          - category: "tls"
+          - category: "mixed_content"
+          - category: "cookies"
+            title_pattern: ".*missing Secure flag.*"
+          - category: "forms"
+            title_pattern: ".*Form submits to HTTP.*"
+        manual_notes: "TLS configuration testable; internal transmission paths and key management require server-side audit."
+
+      - id: "6.2.4"
+        name: "Software engineering techniques prevent common vulnerabilities"
+        testable: partial
+        finding_matchers:
+          - category: "injection"
+          - category: "xss"
+          - category: "forms"
+            title_pattern: ".*CSRF.*"
+          - category: "cors"
+        manual_notes: "Detects vulnerability indicators; full code review and SAST needed for comprehensive assessment."
+
+      - id: "6.4.1"
+        name: "Public-facing web applications protected against attacks"
+        testable: partial
+        finding_matchers:
+          - category: "xss"
+          - category: "injection"
+          - category: "headers"
+            title_pattern: ".*Content-Security-Policy.*"
+          - category: "cors"
+        manual_notes: "WAF presence and effectiveness requires active testing beyond passive scanning."
+
+      - id: "6.4.2"
+        name: "Public-facing web applications -- automated technical solution"
+        testable: partial
+        finding_matchers:
+          - category: "headers"
+            title_pattern: ".*Content-Security-Policy.*"
+          - category: "xss"
+            title_pattern: ".*unsafe-inline.*"
+          - category: "xss"
+            title_pattern: ".*unsafe-eval.*"
+        manual_notes: "WAF/RASP deployment verification requires infrastructure-level assessment."
+
+      - id: "6.5.4"
+        name: "Roles and functions separated between production and non-production"
+        testable: no
+        finding_matchers: []
+        manual_notes: "Environment separation is an organizational control not verifiable via web scanning."
+
+      - id: "6.5.5"
+        name: "Live PANs not used in non-production environments"
+        testable: no
+        finding_matchers: []
+        manual_notes: "Data handling in non-production environments cannot be verified via external scanning."
+
+      - id: "8.3.6"
+        name: "Password complexity requirements"
+        testable: no
+        finding_matchers: []
+        manual_notes: "Password policy enforcement is server-side and not observable via passive scanning."
+
+      - id: "11.3.1"
+        name: "Internal vulnerability scans performed quarterly"
+        testable: no
+        finding_matchers: []
+        manual_notes: "Scan scheduling and remediation tracking require organizational process review."
+
+      - id: "11.3.2"
+        name: "External vulnerability scans performed quarterly"
+        testable: partial
+        finding_matchers:
+          - category: "headers"
+          - category: "tls"
+          - category: "information_disclosure"
+          - category: "cors"
+          - category: "cookies"
+          - category: "xss"
+          - category: "mixed_content"
+        manual_notes: "Webprobe provides external scanning capabilities but is not an ASV-certified tool."
+
+      - id: "12.3.1"
+        name: "Risk assessment performed annually"
+        testable: no
+        finding_matchers: []
+        manual_notes: "Risk assessment is an organizational process not verifiable via web scanning."
+
+  # ---------------------------------------------------------------------------
+  # ISO 27001:2022
+  # ---------------------------------------------------------------------------
+  iso_27001_2022:
+    name: "ISO 27001:2022"
+    version: "2022"
+    controls:
+      - id: "A.8.9"
+        name: "Configuration management"
+        testable: partial
+        finding_matchers:
+          - category: "headers"
+          - category: "information_disclosure"
+            title_pattern: ".*Server version.*"
+          - category: "information_disclosure"
+            title_pattern: ".*X-Powered-By.*"
+          - category: "cors"
+          - category: "cookies"
+            title_pattern: ".*SameSite.*"
+        manual_notes: "Server and infrastructure configuration management requires internal audit beyond web-visible settings."
+
+      - id: "A.8.24"
+        name: "Use of cryptography"
+        testable: partial
+        finding_matchers:
+          - category: "tls"
+          - category: "mixed_content"
+          - category: "cookies"
+            title_pattern: ".*missing Secure flag.*"
+          - category: "headers"
+            title_pattern: ".*Strict-Transport-Security.*"
+          - category: "headers"
+            title_pattern: ".*HSTS.*"
+        manual_notes: "Key management, encryption at rest, and cryptographic policy require server-side and organizational review."
+
+      - id: "A.8.26"
+        name: "Application security requirements"
+        testable: partial
+        finding_matchers:
+          - category: "xss"
+          - category: "injection"
+          - category: "forms"
+            title_pattern: ".*CSRF.*"
+          - category: "headers"
+            title_pattern: ".*Content-Security-Policy.*"
+          - category: "cors"
+          - category: "auth_session"
+        manual_notes: "Secure development lifecycle, code review processes, and security testing integration require organizational audit."
+
+      - id: "A.8.12"
+        name: "Data leakage prevention"
+        testable: partial
+        finding_matchers:
+          - category: "information_disclosure"
+          - category: "sensitive_files"
+          - category: "headers"
+            title_pattern: ".*Referrer-Policy.*"
+          - category: "privacy"
+        manual_notes: "DLP policy enforcement, data classification, and egress controls require server-side assessment."
+
+      - id: "A.8.5"
+        name: "Secure authentication"
+        testable: partial
+        finding_matchers:
+          - category: "auth_session"
+          - category: "cookies"
+            title_pattern: ".*Session cookie.*"
+          - category: "cookies"
+            title_pattern: ".*HttpOnly.*"
+          - category: "forms"
+            title_pattern: ".*Password field.*"
+        manual_notes: "MFA, password policies, brute-force protections, and account lockout require active testing."
+
+      - id: "A.5.34"
+        name: "Privacy and protection of PII"
+        testable: partial
+        finding_matchers:
+          - category: "privacy"
+          - category: "headers"
+            title_pattern: ".*Referrer-Policy.*"
+          - category: "cookies"
+            title_pattern: ".*SameSite.*"
+          - category: "tls"
+        manual_notes: "Data minimization, consent management, and data processing agreements require organizational review."
+
+      - id: "A.8.28"
+        name: "Secure coding"
+        testable: partial
+        finding_matchers:
+          - category: "xss"
+          - category: "injection"
+          - category: "information_disclosure"
+            title_pattern: ".*Stack trace.*"
+          - category: "information_disclosure"
+            title_pattern: ".*source map.*"
+        manual_notes: "Secure coding practices, SAST integration, and peer review require development process audit."
+
+  # ---------------------------------------------------------------------------
+  # NIST CSF 2.0
+  # ---------------------------------------------------------------------------
+  nist_csf_2:
+    name: "NIST Cybersecurity Framework 2.0"
+    version: "2.0"
+    controls:
+      - id: "PR.DS-01"
+        name: "Data-at-rest is protected"
+        testable: no
+        finding_matchers: []
+        manual_notes: "Data-at-rest encryption requires server-side and infrastructure audit -- not observable via web scanning."
+
+      - id: "PR.DS-02"
+        name: "Data-in-transit is protected"
+        testable: "yes"
+        finding_matchers:
+          - category: "tls"
+          - category: "mixed_content"
+          - category: "headers"
+            title_pattern: ".*Strict-Transport-Security.*"
+          - category: "headers"
+            title_pattern: ".*HSTS.*"
+          - category: "cookies"
+            title_pattern: ".*missing Secure flag.*"
+          - category: "forms"
+            title_pattern: ".*Form submits to HTTP.*"
+        manual_notes: ""
+
+      - id: "PR.AA-01"
+        name: "Identities and credentials for authorized users are managed"
+        testable: partial
+        finding_matchers:
+          - category: "auth_session"
+          - category: "cookies"
+            title_pattern: ".*Session cookie.*"
+          - category: "forms"
+            title_pattern: ".*Password field.*"
+        manual_notes: "Identity lifecycle management, credential rotation, and provisioning require organizational review."
+
+      - id: "PR.AA-03"
+        name: "Users, services, and hardware are authenticated"
+        testable: partial
+        finding_matchers:
+          - category: "auth_session"
+          - category: "cookies"
+            title_pattern: ".*HttpOnly.*"
+          - category: "cookies"
+            title_pattern: ".*SameSite.*"
+        manual_notes: "MFA, service-to-service authentication, and hardware authentication require infrastructure audit."
+
+      - id: "PR.PS-01"
+        name: "Configuration management practices are established"
+        testable: partial
+        finding_matchers:
+          - category: "headers"
+          - category: "information_disclosure"
+            title_pattern: ".*Server version.*"
+          - category: "information_disclosure"
+            title_pattern: ".*X-Powered-By.*"
+          - category: "cors"
+        manual_notes: "Configuration management processes, baselines, and change tracking require organizational review."
+
+      - id: "DE.CM-01"
+        name: "Networks and network services are monitored"
+        testable: no
+        finding_matchers: []
+        manual_notes: "Network monitoring infrastructure is server-side and not observable via external web scanning."
+
+      - id: "DE.AE-02"
+        name: "Potentially adverse events are analyzed"
+        testable: no
+        finding_matchers: []
+        manual_notes: "Event analysis and SIEM capabilities require internal security operations review."
+
+      - id: "ID.RA-01"
+        name: "Vulnerabilities in assets are identified"
+        testable: partial
+        finding_matchers:
+          - category: "headers"
+          - category: "tls"
+          - category: "xss"
+          - category: "injection"
+          - category: "information_disclosure"
+          - category: "cors"
+          - category: "cookies"
+          - category: "mixed_content"
+          - category: "supply_chain"
+          - category: "sensitive_files"
+        manual_notes: "Webprobe identifies web-layer vulnerabilities. Full vulnerability management requires infrastructure and application-level scanning."
+
+      - id: "ID.RA-05"
+        name: "Threats, vulnerabilities, likelihoods, and impacts are used to understand risk"
+        testable: no
+        finding_matchers: []
+        manual_notes: "Risk quantification requires threat intelligence correlation and business impact analysis beyond scanning."
+
+  # ---------------------------------------------------------------------------
+  # HIPAA
+  # ---------------------------------------------------------------------------
+  hipaa:
+    name: "HIPAA Security Rule"
+    version: "2013"
+    controls:
+      - id: "164.312(a)(1)"
+        name: "Access Control"
+        testable: partial
+        finding_matchers:
+          - category: "auth_session"
+          - category: "cors"
+          - category: "cookies"
+            title_pattern: ".*Session cookie.*"
+          - category: "cookies"
+            title_pattern: ".*HttpOnly.*"
+          - category: "headers"
+            title_pattern: ".*clickjacking.*"
+          - category: "sensitive_files"
+        manual_notes: "Unique user IDs, emergency access, automatic logoff timeout, and role-based access require application-level audit."
+
+      - id: "164.312(a)(2)(i)"
+        name: "Unique User Identification"
+        testable: no
+        finding_matchers: []
+        manual_notes: "User identification uniqueness is an application logic requirement not verifiable via web scanning."
+
+      - id: "164.312(a)(2)(iii)"
+        name: "Automatic Logoff"
+        testable: partial
+        finding_matchers:
+          - category: "cookies"
+            title_pattern: ".*SameSite.*"
+          - category: "auth_session"
+        manual_notes: "Session timeout configuration requires application-level testing with authenticated sessions."
+
+      - id: "164.312(c)(1)"
+        name: "Integrity"
+        testable: partial
+        finding_matchers:
+          - category: "supply_chain"
+          - category: "xss"
+            title_pattern: ".*CSP.*"
+          - category: "forms"
+            title_pattern: ".*CSRF.*"
+        manual_notes: "Data integrity verification mechanisms (checksums, digital signatures) require server-side audit."
+
+      - id: "164.312(d)"
+        name: "Person or Entity Authentication"
+        testable: partial
+        finding_matchers:
+          - category: "auth_session"
+          - category: "forms"
+            title_pattern: ".*Password field.*"
+          - category: "cookies"
+            title_pattern: ".*Session cookie.*"
+        manual_notes: "Multi-factor authentication and credential verification procedures require application-level assessment."
+
+      - id: "164.312(e)(1)"
+        name: "Transmission Security"
+        testable: "yes"
+        finding_matchers:
+          - category: "tls"
+          - category: "mixed_content"
+          - category: "headers"
+            title_pattern: ".*Strict-Transport-Security.*"
+          - category: "headers"
+            title_pattern: ".*HSTS.*"
+          - category: "cookies"
+            title_pattern: ".*missing Secure flag.*"
+          - category: "forms"
+            title_pattern: ".*Form submits to HTTP.*"
+        manual_notes: ""
+
+      - id: "164.312(e)(2)(ii)"
+        name: "Encryption"
+        testable: partial
+        finding_matchers:
+          - category: "tls"
+          - category: "mixed_content"
+        manual_notes: "Encryption mechanism specifics and key management require server-side audit."
+
+      - id: "164.308(a)(1)(ii)(A)"
+        name: "Risk Analysis"
+        testable: no
+        finding_matchers: []
+        manual_notes: "Risk analysis is an organizational process. Webprobe findings can inform risk analysis but do not constitute one."
+
+  # ---------------------------------------------------------------------------
+  # SOC 2
+  # ---------------------------------------------------------------------------
+  soc2:
+    name: "SOC 2 Type II"
+    version: "2017"
+    controls:
+      - id: "CC6.1"
+        name: "Logical and Physical Access Controls"
+        testable: partial
+        finding_matchers:
+          - category: "auth_session"
+          - category: "cors"
+          - category: "cookies"
+            title_pattern: ".*Session cookie.*"
+          - category: "cookies"
+            title_pattern: ".*HttpOnly.*"
+          - category: "headers"
+            title_pattern: ".*clickjacking.*"
+          - category: "sensitive_files"
+        manual_notes: "Physical access, identity provisioning, and access review processes require organizational audit."
+
+      - id: "CC6.6"
+        name: "Security Measures Against Threats Outside System Boundaries"
+        testable: partial
+        finding_matchers:
+          - category: "headers"
+          - category: "tls"
+          - category: "cors"
+          - category: "xss"
+          - category: "injection"
+          - category: "mixed_content"
+        manual_notes: "Firewall rules, IDS/IPS, and network segmentation require infrastructure assessment."
+
+      - id: "CC6.7"
+        name: "Restriction and Protection of Information in Transmission"
+        testable: "yes"
+        finding_matchers:
+          - category: "tls"
+          - category: "mixed_content"
+          - category: "headers"
+            title_pattern: ".*Strict-Transport-Security.*"
+          - category: "headers"
+            title_pattern: ".*HSTS.*"
+          - category: "cookies"
+            title_pattern: ".*missing Secure flag.*"
+          - category: "forms"
+            title_pattern: ".*Form submits to HTTP.*"
+        manual_notes: ""
+
+      - id: "CC7.1"
+        name: "Detection and Monitoring of Security Events"
+        testable: no
+        finding_matchers: []
+        manual_notes: "Security event detection, SIEM, and alerting are server-side operational controls."
+
+      - id: "CC7.2"
+        name: "Monitoring of System Components for Anomalies"
+        testable: no
+        finding_matchers: []
+        manual_notes: "Anomaly detection and behavioral monitoring require internal security operations review."
+
+      - id: "CC8.1"
+        name: "Change Management"
+        testable: no
+        finding_matchers: []
+        manual_notes: "Change management processes and approval workflows are organizational controls."
+
+  # ---------------------------------------------------------------------------
+  # FedRAMP (Rev 5)
+  # ---------------------------------------------------------------------------
+  fedramp_rev5:
+    name: "FedRAMP (NIST SP 800-53 Rev 5)"
+    version: "Rev 5"
+    controls:
+      - id: "SC-8"
+        name: "Transmission Confidentiality and Integrity"
+        testable: "yes"
+        finding_matchers:
+          - category: "tls"
+          - category: "mixed_content"
+          - category: "headers"
+            title_pattern: ".*Strict-Transport-Security.*"
+          - category: "headers"
+            title_pattern: ".*HSTS.*"
+          - category: "cookies"
+            title_pattern: ".*missing Secure flag.*"
+          - category: "forms"
+            title_pattern: ".*Form submits to HTTP.*"
+        manual_notes: ""
+
+      - id: "SC-13"
+        name: "Cryptographic Protection"
+        testable: partial
+        finding_matchers:
+          - category: "tls"
+          - category: "mixed_content"
+          - category: "cookies"
+            title_pattern: ".*missing Secure flag.*"
+        manual_notes: "FIPS 140-2/3 validated module usage and key management require server-side audit."
+
+      - id: "SC-28"
+        name: "Protection of Information at Rest"
+        testable: no
+        finding_matchers: []
+        manual_notes: "Data-at-rest encryption verification requires server-side and infrastructure access."
+
+      - id: "SI-10"
+        name: "Information Input Validation"
+        testable: partial
+        finding_matchers:
+          - category: "injection"
+          - category: "xss"
+          - category: "xss"
+            title_pattern: ".*reflected.*"
+          - category: "forms"
+            title_pattern: ".*CSRF.*"
+        manual_notes: "Full input validation coverage requires active fuzzing and DAST tools."
+
+      - id: "SI-11"
+        name: "Error Handling"
+        testable: partial
+        finding_matchers:
+          - category: "information_disclosure"
+            title_pattern: ".*Stack trace.*"
+          - category: "information_disclosure"
+            title_pattern: ".*Server version.*"
+          - category: "information_disclosure"
+            title_pattern: ".*X-Powered-By.*"
+        manual_notes: "Error handling in non-web interfaces and internal error propagation require code review."
+
+      - id: "AC-3"
+        name: "Access Enforcement"
+        testable: partial
+        finding_matchers:
+          - category: "auth_session"
+          - category: "cors"
+          - category: "sensitive_files"
+          - category: "headers"
+            title_pattern: ".*clickjacking.*"
+        manual_notes: "Full access enforcement testing requires multi-role authenticated sessions."
+
+      - id: "AC-4"
+        name: "Information Flow Enforcement"
+        testable: partial
+        finding_matchers:
+          - category: "cors"
+          - category: "headers"
+            title_pattern: ".*Content-Security-Policy.*"
+          - category: "mixed_content"
+          - category: "headers"
+            title_pattern: ".*Referrer-Policy.*"
+        manual_notes: "Network-level information flow controls require infrastructure audit."
+
+      - id: "CM-7"
+        name: "Least Functionality"
+        testable: partial
+        finding_matchers:
+          - category: "information_disclosure"
+            title_pattern: ".*Server version.*"
+          - category: "information_disclosure"
+            title_pattern: ".*X-Powered-By.*"
+          - category: "information_disclosure"
+            title_pattern: ".*source map.*"
+          - category: "sensitive_files"
+          - category: "headers"
+            title_pattern: ".*Permissions-Policy.*"
+        manual_notes: "Unnecessary services, ports, and protocols require infrastructure-level assessment."
+
+      - id: "IA-2"
+        name: "Identification and Authentication (Organizational Users)"
+        testable: partial
+        finding_matchers:
+          - category: "auth_session"
+          - category: "cookies"
+            title_pattern: ".*Session cookie.*"
+          - category: "forms"
+            title_pattern: ".*Password field.*"
+        manual_notes: "PIV/CAC authentication, MFA, and identity proofing require application and infrastructure audit."
+
+  # ---------------------------------------------------------------------------
+  # GDPR / CCPA
+  # ---------------------------------------------------------------------------
+  gdpr_ccpa:
+    name: "GDPR / CCPA"
+    version: "2018/2020"
+    controls:
+      - id: "GDPR-Art.5"
+        name: "Principles relating to processing of personal data"
+        testable: partial
+        finding_matchers:
+          - category: "privacy"
+          - category: "headers"
+            title_pattern: ".*Referrer-Policy.*"
+          - category: "cookies"
+            title_pattern: ".*SameSite.*"
+          - category: "information_disclosure"
+        manual_notes: "Data minimization, purpose limitation, and lawfulness of processing require organizational and legal review."
+
+      - id: "GDPR-Art.25"
+        name: "Data protection by design and by default"
+        testable: partial
+        finding_matchers:
+          - category: "privacy"
+          - category: "headers"
+            title_pattern: ".*Content-Security-Policy.*"
+          - category: "headers"
+            title_pattern: ".*Permissions-Policy.*"
+          - category: "headers"
+            title_pattern: ".*Referrer-Policy.*"
+          - category: "cookies"
+            title_pattern: ".*SameSite.*"
+          - category: "cookies"
+            title_pattern: ".*missing Secure flag.*"
+        manual_notes: "Privacy by design assessment requires architecture review, data flow mapping, and DPIA."
+
+      - id: "GDPR-Art.32"
+        name: "Security of processing"
+        testable: partial
+        finding_matchers:
+          - category: "tls"
+          - category: "mixed_content"
+          - category: "headers"
+          - category: "cookies"
+          - category: "xss"
+          - category: "injection"
+          - category: "cors"
+          - category: "auth_session"
+        manual_notes: "Pseudonymization, encryption at rest, resilience testing, and disaster recovery require organizational assessment."
+
+      - id: "GDPR-Art.33"
+        name: "Notification of personal data breach to supervisory authority"
+        testable: no
+        finding_matchers: []
+        manual_notes: "Breach notification is a procedural requirement. See data_breach_notification standard for details."
+
+      - id: "GDPR-Art.35"
+        name: "Data protection impact assessment"
+        testable: no
+        finding_matchers: []
+        manual_notes: "DPIAs are organizational processes requiring risk assessment methodology beyond web scanning."
+
+      - id: "CCPA-1798.150"
+        name: "Consumer private right of action for data breaches"
+        testable: partial
+        finding_matchers:
+          - category: "tls"
+          - category: "auth_session"
+          - category: "cookies"
+            title_pattern: ".*missing Secure flag.*"
+          - category: "information_disclosure"
+        manual_notes: "Liability arises from failure to implement reasonable security. Technical controls are only part of the assessment."
+
+  # ---------------------------------------------------------------------------
+  # OFAC
+  # ---------------------------------------------------------------------------
+  ofac:
+    name: "OFAC Sanctions Compliance"
+    version: "2024"
+    controls:
+      - id: "SDN-SCREEN"
+        name: "SDN List Screening"
+        testable: no
+        finding_matchers: []
+        manual_notes: "Sanctions compliance requires screening users/transactions against the OFAC SDN list. Not testable via web scanning."
+
+      - id: "GEO-RESTRICT"
+        name: "Geographic Restrictions"
+        testable: no
+        finding_matchers: []
+        manual_notes: "IP-based geo-blocking and transaction screening for sanctioned jurisdictions require infrastructure and process review."
+
+  # ---------------------------------------------------------------------------
+  # CIA Triad
+  # ---------------------------------------------------------------------------
+  cia_triad:
+    name: "CIA Triad"
+    version: "N/A"
+    controls:
+      - id: "CONF"
+        name: "Confidentiality"
+        testable: partial
+        finding_matchers:
+          - category: "tls"
+          - category: "mixed_content"
+          - category: "headers"
+            title_pattern: ".*Strict-Transport-Security.*"
+          - category: "headers"
+            title_pattern: ".*HSTS.*"
+          - category: "cookies"
+            title_pattern: ".*missing Secure flag.*"
+          - category: "information_disclosure"
+          - category: "sensitive_files"
+          - category: "cors"
+          - category: "headers"
+            title_pattern: ".*Referrer-Policy.*"
+        manual_notes: "Full confidentiality assessment requires encryption at rest, access control, and data classification review."
+
+      - id: "INTEG"
+        name: "Integrity"
+        testable: partial
+        finding_matchers:
+          - category: "xss"
+          - category: "injection"
+          - category: "forms"
+            title_pattern: ".*CSRF.*"
+          - category: "supply_chain"
+          - category: "xss"
+            title_pattern: ".*CSP.*"
+          - category: "mixed_content"
+            title_pattern: ".*script.*"
+        manual_notes: "Data integrity verification, checksums, and digital signatures require server-side assessment."
+
+      - id: "AVAIL"
+        name: "Availability"
+        testable: partial
+        finding_matchers:
+          - category: "tls"
+        manual_notes: "Availability testing (DDoS resilience, failover, redundancy) requires infrastructure-level assessment. TLS certificate expiry is the main web-testable indicator."
+
+  # ---------------------------------------------------------------------------
+  # Privacy by Design
+  # ---------------------------------------------------------------------------
+  privacy_by_design:
+    name: "Privacy by Design"
+    version: "2009"
+    controls:
+      - id: "PbD-1"
+        name: "Proactive not Reactive; Preventative not Remedial"
+        testable: partial
+        finding_matchers:
+          - category: "headers"
+            title_pattern: ".*Content-Security-Policy.*"
+          - category: "headers"
+            title_pattern: ".*Strict-Transport-Security.*"
+          - category: "headers"
+            title_pattern: ".*HSTS.*"
+          - category: "headers"
+            title_pattern: ".*Permissions-Policy.*"
+        manual_notes: "Proactive privacy posture requires organizational culture assessment beyond technical controls."
+
+      - id: "PbD-2"
+        name: "Privacy as the Default Setting"
+        testable: partial
+        finding_matchers:
+          - category: "cookies"
+            title_pattern: ".*SameSite.*"
+          - category: "headers"
+            title_pattern: ".*Referrer-Policy.*"
+          - category: "privacy"
+          - category: "headers"
+            title_pattern: ".*Permissions-Policy.*"
+        manual_notes: "Default privacy settings in application logic require functional testing."
+
+      - id: "PbD-3"
+        name: "Privacy Embedded into Design"
+        testable: partial
+        finding_matchers:
+          - category: "headers"
+            title_pattern: ".*Content-Security-Policy.*"
+          - category: "cookies"
+            title_pattern: ".*missing Secure flag.*"
+          - category: "cookies"
+            title_pattern: ".*HttpOnly.*"
+          - category: "tls"
+        manual_notes: "Architectural privacy embedding requires design review and threat modeling."
+
+      - id: "PbD-4"
+        name: "Full Functionality -- Positive-Sum, not Zero-Sum"
+        testable: no
+        finding_matchers: []
+        manual_notes: "Balancing privacy with functionality is a design philosophy not measurable via scanning."
+
+      - id: "PbD-5"
+        name: "End-to-End Security -- Full Lifecycle Protection"
+        testable: partial
+        finding_matchers:
+          - category: "tls"
+          - category: "mixed_content"
+          - category: "cookies"
+            title_pattern: ".*missing Secure flag.*"
+          - category: "headers"
+            title_pattern: ".*Strict-Transport-Security.*"
+        manual_notes: "Data lifecycle protection (creation through deletion) requires process and infrastructure review."
+
+      - id: "PbD-6"
+        name: "Visibility and Transparency"
+        testable: partial
+        finding_matchers:
+          - category: "privacy"
+        manual_notes: "Privacy policy presence detectable; policy completeness, accuracy, and accessibility require legal review."
+
+      - id: "PbD-7"
+        name: "Respect for User Privacy"
+        testable: partial
+        finding_matchers:
+          - category: "privacy"
+          - category: "cookies"
+            title_pattern: ".*SameSite.*"
+          - category: "headers"
+            title_pattern: ".*Permissions-Policy.*"
+        manual_notes: "User-centric privacy measures (consent, data portability, deletion) require functional testing."
+
+  # ---------------------------------------------------------------------------
+  # Access Control
+  # ---------------------------------------------------------------------------
+  access_control:
+    name: "Access Control (RBAC/ABAC)"
+    version: "N/A"
+    controls:
+      - id: "AC-AUTH"
+        name: "Authentication Boundaries"
+        testable: partial
+        finding_matchers:
+          - category: "auth_session"
+          - category: "forms"
+            title_pattern: ".*Password field.*"
+          - category: "cookies"
+            title_pattern: ".*Session cookie.*"
+          - category: "cookies"
+            title_pattern: ".*HttpOnly.*"
+        manual_notes: "Full authentication boundary testing requires multi-role authenticated sessions."
+
+      - id: "AC-SESSION"
+        name: "Session Management"
+        testable: partial
+        finding_matchers:
+          - category: "cookies"
+            title_pattern: ".*Session cookie.*"
+          - category: "cookies"
+            title_pattern: ".*HttpOnly.*"
+          - category: "cookies"
+            title_pattern: ".*SameSite.*"
+          - category: "cookies"
+            title_pattern: ".*missing Secure flag.*"
+          - category: "auth_session"
+        manual_notes: "Session fixation, regeneration on auth, and timeout enforcement require active testing."
+
+      - id: "AC-CORS"
+        name: "Cross-Origin Resource Sharing"
+        testable: "yes"
+        finding_matchers:
+          - category: "cors"
+        manual_notes: ""
+
+      - id: "AC-CSRF"
+        name: "Cross-Site Request Forgery Protection"
+        testable: "yes"
+        finding_matchers:
+          - category: "forms"
+            title_pattern: ".*CSRF.*"
+        manual_notes: ""
+
+      - id: "AC-FRAME"
+        name: "Framing and Clickjacking Protection"
+        testable: "yes"
+        finding_matchers:
+          - category: "headers"
+            title_pattern: ".*clickjacking.*"
+          - category: "headers"
+            title_pattern: ".*X-Frame-Options.*"
+        manual_notes: ""
+
+      - id: "AC-RBAC"
+        name: "Role-Based Access Control"
+        testable: no
+        finding_matchers: []
+        manual_notes: "RBAC enforcement requires authenticated multi-role testing. Horizontal and vertical privilege escalation not testable via passive scanning."
+
+  # ---------------------------------------------------------------------------
+  # Data Breach Notification
+  # ---------------------------------------------------------------------------
+  data_breach_notification:
+    name: "Data Breach Notification Laws"
+    version: "Various"
+    controls:
+      - id: "DBN-DETECT"
+        name: "Breach Detection Capability"
+        testable: no
+        finding_matchers: []
+        manual_notes: "Breach detection requires logging, monitoring, and alerting infrastructure review."
+
+      - id: "DBN-NOTIFY"
+        name: "Notification Procedures"
+        testable: no
+        finding_matchers: []
+        manual_notes: "Notification procedures, timelines, and templates are organizational/legal requirements."
+
+      - id: "DBN-PREVENT"
+        name: "Preventive Technical Controls"
+        testable: partial
+        finding_matchers:
+          - category: "tls"
+          - category: "auth_session"
+          - category: "cookies"
+            title_pattern: ".*missing Secure flag.*"
+          - category: "information_disclosure"
+          - category: "sensitive_files"
+        manual_notes: "Preventive controls reduce breach likelihood; this maps the testable technical subset."
+
+      - id: "DBN-RECORD"
+        name: "Breach Documentation and Record Keeping"
+        testable: no
+        finding_matchers: []
+        manual_notes: "Record-keeping requirements are organizational processes not verifiable via web scanning."
+
+  # ---------------------------------------------------------------------------
+  # CJIS Security Policy
+  # ---------------------------------------------------------------------------
+  cjis:
+    name: "CJIS Security Policy"
+    version: "5.9.3"
+    controls:
+      - id: "5.5.6"
+        name: "Remote Access"
+        testable: partial
+        finding_matchers:
+          - category: "tls"
+          - category: "auth_session"
+          - category: "headers"
+            title_pattern: ".*Strict-Transport-Security.*"
+        manual_notes: "VPN requirements, multi-factor for remote access, and advanced authentication require infrastructure audit."
+
+      - id: "5.10.1"
+        name: "Information Flow Enforcement"
+        testable: partial
+        finding_matchers:
+          - category: "cors"
+          - category: "headers"
+            title_pattern: ".*Content-Security-Policy.*"
+          - category: "mixed_content"
+        manual_notes: "Network segmentation and flow control enforcement require infrastructure-level assessment."
+
+      - id: "5.10.1.2"
+        name: "Access Control Mechanisms"
+        testable: partial
+        finding_matchers:
+          - category: "auth_session"
+          - category: "cookies"
+            title_pattern: ".*Session cookie.*"
+          - category: "cookies"
+            title_pattern: ".*HttpOnly.*"
+          - category: "cors"
+          - category: "sensitive_files"
+        manual_notes: "Full access control testing requires multi-role authenticated sessions and RBAC verification."
+
+      - id: "5.10.1.3"
+        name: "Unsuccessful Login Attempts"
+        testable: no
+        finding_matchers: []
+        manual_notes: "Account lockout and login attempt limiting are server-side controls not verifiable via passive scanning."
+
+      - id: "5.10.2"
+        name: "Session Lock"
+        testable: partial
+        finding_matchers:
+          - category: "auth_session"
+          - category: "cookies"
+            title_pattern: ".*SameSite.*"
+        manual_notes: "Session timeout and lock enforcement require active authenticated testing."
+
+      - id: "5.13.1"
+        name: "Use of Encryption"
+        testable: partial
+        finding_matchers:
+          - category: "tls"
+          - category: "mixed_content"
+          - category: "headers"
+            title_pattern: ".*Strict-Transport-Security.*"
+          - category: "headers"
+            title_pattern: ".*HSTS.*"
+          - category: "cookies"
+            title_pattern: ".*missing Secure flag.*"
+        manual_notes: "FIPS 140-2 validation, key management, and encryption at rest require server-side audit."
+
+      - id: "5.13.2"
+        name: "Public Key Infrastructure"
+        testable: partial
+        finding_matchers:
+          - category: "tls"
+        manual_notes: "Full PKI assessment (CA trust, certificate pinning, OCSP) requires specialized TLS audit tools."
+
+      - id: "5.13.7"
+        name: "Encryption of CJI in Transit"
+        testable: "yes"
+        finding_matchers:
+          - category: "tls"
+          - category: "mixed_content"
+          - category: "forms"
+            title_pattern: ".*Form submits to HTTP.*"
+        manual_notes: ""

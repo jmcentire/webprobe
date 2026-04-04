@@ -787,7 +787,7 @@ def test_analyze_includes_security_findings(mock_scan_graph, linear_graph):
     assert hasattr(result, 'security_findings')
     assert len(result.security_findings) == 1
     assert result.security_findings[0].title == "XSS vulnerability"
-    mock_scan_graph.assert_called_once_with(linear_graph)
+    mock_scan_graph.assert_called_once_with(linear_graph, None)
 
 
 # ============================================================================

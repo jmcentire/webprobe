@@ -83,6 +83,7 @@ def _make_analysis_mock(**overrides):
     analysis.timing_outliers = overrides.get("timing_outliers", [])
     analysis.prime_paths = overrides.get("prime_paths", [])
     analysis.security_findings = overrides.get("security_findings", [])
+    analysis.compliance = None
     return analysis
 
 
@@ -100,9 +101,10 @@ def minimal_run():
     run.analysis = _make_analysis_mock()
     run.phases = []
     run.explore_cost = None
+    run.advocate_cost = None
     run.run_id = "test-minimal"
     run.url = "https://example.com"
-    run.schema_version = "1.1"
+    run.schema_version = "1.2"
     run.started_at = "2024-01-01T00:00:00Z"
     run.completed_at = None
     return run
@@ -131,12 +133,13 @@ def typical_run():
     ]
 
     run.explore_cost = None
+    run.advocate_cost = None
 
     run.run_id = "test-typical"
     run.started_at = "2024-01-01T00:00:00Z"
     run.completed_at = "2024-01-01T00:01:00Z"
     run.url = "https://example.com"
-    run.schema_version = "1.1"
+    run.schema_version = "1.2"
 
     # Mock serialization
     run.model_dump_json = Mock(return_value=json.dumps({
@@ -190,12 +193,13 @@ def maximal_run():
     ]
 
     run.explore_cost = None
+    run.advocate_cost = None
 
     run.run_id = "test-maximal"
     run.started_at = "2024-01-01T00:00:00Z"
     run.completed_at = "2024-01-01T00:10:00Z"
     run.url = "https://example.com"
-    run.schema_version = "1.1"
+    run.schema_version = "1.2"
 
     # Mock serialization
     run.model_dump_json = Mock(return_value=json.dumps({
@@ -442,11 +446,12 @@ def test_html_nodes_sorted_by_id(temp_run_dir):
     run.analysis = _make_analysis_mock(total_nodes=3)
     run.phases = []
     run.explore_cost = None
+    run.advocate_cost = None
     run.run_id = "test-sorted"
     run.started_at = "2024-01-01T00:00:00Z"
     run.completed_at = None
     run.url = "https://example.com"
-    run.schema_version = "1.1"
+    run.schema_version = "1.2"
 
     run.model_dump_json = Mock(return_value='{}')
 

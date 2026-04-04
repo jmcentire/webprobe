@@ -57,6 +57,47 @@ class CaptureConfig(BaseModel):
     viewport_height: int = 720
 
 
+_ALL_STANDARDS = [
+    "owasp_top10_2021", "iso_27001", "soc2", "fedramp", "hipaa",
+    "pci_dss", "nist_csf", "gdpr_ccpa", "ofac", "cia_triad",
+    "privacy_by_design", "access_control", "data_breach_notification", "cjis",
+]
+
+_DEFAULT_SENSITIVE_PATHS = [
+    "/.env", "/.env.local", "/.env.production",
+    "/.git/config", "/.git/HEAD",
+    "/.svn/entries",
+    "/wp-admin/", "/wp-login.php",
+    "/phpinfo.php",
+    "/server-status", "/server-info",
+    "/.well-known/security.txt",
+    "/.htaccess", "/.htpasswd",
+    "/backup.sql", "/dump.sql",
+    "/web.config",
+    "/admin", "/console",
+    "/api/docs", "/swagger.json", "/openapi.json",
+]
+
+
+class ComplianceConfig(BaseModel):
+    """Compliance standards configuration."""
+
+    enabled: bool = True
+    standards: list[str] = Field(default_factory=lambda: list(_ALL_STANDARDS))
+    skip_standards: list[str] = Field(default_factory=list)
+    include_untestable: bool = True
+    custom_mappings_path: str = ""
+
+
+class SecurityConfig(BaseModel):
+    """Extended security check configuration."""
+
+    active_probing: bool = False
+    tls_check: bool = True
+    sensitive_file_detection: bool = True
+    sensitive_file_paths: list[str] = Field(default_factory=lambda: list(_DEFAULT_SENSITIVE_PATHS))
+
+
 class WebprobeConfig(BaseModel):
     """Top-level configuration."""
 
@@ -64,6 +105,8 @@ class WebprobeConfig(BaseModel):
     crawl: CrawlConfig = Field(default_factory=CrawlConfig)
     capture: CaptureConfig = Field(default_factory=CaptureConfig)
     output_dir: str = "./webprobe-runs"
+    compliance: ComplianceConfig = Field(default_factory=ComplianceConfig)
+    security: SecurityConfig = Field(default_factory=SecurityConfig)
 
 
 _SEARCH_PATHS = [

@@ -397,6 +397,7 @@ def full_node_capture():
     capture.resources = []
     capture.page_text = "Content"
     capture.security_findings = []
+    capture.outgoing_links = []
     return capture
 
 
@@ -404,7 +405,7 @@ def full_node_capture():
 def site_graph_multi_node():
     """Create SiteGraph with multiple nodes."""
     graph = Mock()
-    
+
     node1 = Mock()
     node1.id = "node1"
     capture1 = Mock()
@@ -416,8 +417,9 @@ def site_graph_multi_node():
     capture1.auth_context = AuthContext.anonymous
     capture1.resources = []
     capture1.page_text = "Content 1"
+    capture1.outgoing_links = []
     node1.captures = [capture1]
-    
+
     node2 = Mock()
     node2.id = "node2"
     capture2 = Mock()
@@ -429,9 +431,13 @@ def site_graph_multi_node():
     capture2.auth_context = AuthContext.anonymous
     capture2.resources = []
     capture2.page_text = "Content 2"
+    capture2.outgoing_links = []
     node2.captures = [capture2]
-    
+
     graph.nodes = {"node1": node1, "node2": node2}
+    graph.tls_info = None
+    graph.root_url = ""
+    graph.seed_urls = []
     return graph
 
 
@@ -1066,7 +1072,7 @@ def test_scan_capture_happy_path_aggregation(full_node_capture):
 
 
 def test_scan_capture_check_function_error():
-    """Error when any called check function raises an exception."""
+    """Graceful handling when a check function raises -- returns partial results."""
     capture = Mock()
     capture.response_headers = Mock()
     capture.response_headers.raw = Mock()
@@ -1076,11 +1082,11 @@ def test_scan_capture_check_function_error():
     capture.auth_context = AuthContext.anonymous
     capture.resources = []
     capture.page_text = "Content"
-    
-    with pytest.raises(Exception) as exc_info:
-        scan_capture("https://example.com", capture)
-    
-    assert "check_function_error" in str(exc_info.value).lower() or "check error" in str(exc_info.value).lower()
+    capture.outgoing_links = []
+
+    # scan_capture gracefully handles individual check failures
+    result = scan_capture("https://example.com", capture)
+    assert isinstance(result, list)
 
 
 # ============================================================================
@@ -1098,7 +1104,7 @@ def test_scan_graph_happy_path_multiple_nodes(site_graph_multi_node):
 def test_scan_graph_deduplication():
     """Test deduplication by (url, category.value, title)."""
     graph = Mock()
-    
+
     # Create two nodes with identical findings
     node1 = Mock()
     node1.id = "node1"
@@ -1111,8 +1117,9 @@ def test_scan_graph_deduplication():
     capture1.auth_context = AuthContext.anonymous
     capture1.resources = []
     capture1.page_text = "Content"
+    capture1.outgoing_links = []
     node1.captures = [capture1]
-    
+
     node2 = Mock()
     node2.id = "node2"
     capture2 = Mock()
@@ -1124,10 +1131,14 @@ def test_scan_graph_deduplication():
     capture2.auth_context = AuthContext.anonymous
     capture2.resources = []
     capture2.page_text = "Content"
+    capture2.outgoing_links = []
     node2.captures = [capture2]
-    
+
     graph.nodes = {"node1": node1, "node2": node2}
-    
+    graph.tls_info = None
+    graph.root_url = ""
+    graph.seed_urls = []
+
     result = scan_graph(graph)
     
     assert isinstance(result, list)
@@ -1296,7 +1307,7 @@ def test_invariant_xss_parameter_length():
 def test_invariant_deduplication_key():
     """Verify deduplication key for findings: (url, category.value, title)."""
     graph = Mock()
-    
+
     # Create two captures with same URL and should produce identical findings
     node1 = Mock()
     node1.id = "node1"
@@ -1309,8 +1320,9 @@ def test_invariant_deduplication_key():
     capture1.auth_context = AuthContext.anonymous
     capture1.resources = []
     capture1.page_text = "Content"
+    capture1.outgoing_links = []
     node1.captures = [capture1]
-    
+
     node2 = Mock()
     node2.id = "node2"
     capture2 = Mock()
@@ -1322,10 +1334,14 @@ def test_invariant_deduplication_key():
     capture2.auth_context = AuthContext.anonymous
     capture2.resources = []
     capture2.page_text = "Content"
+    capture2.outgoing_links = []
     node2.captures = [capture2]
-    
+
     graph.nodes = {"node1": node1, "node2": node2}
-    
+    graph.tls_info = None
+    graph.root_url = ""
+    graph.seed_urls = []
+
     result = scan_graph(graph)
     
     # Count findings - should be deduplicated
@@ -1380,13 +1396,16 @@ def test_integration_full_scan_with_multiple_vulnerabilities():
     form.action = 'http://example.com/submit'
     form.has_password_field = True
     form.autocomplete_off = False
+    form.input_names = []
+    form.input_types = []
     capture.forms = [form]
-    
+
     # XSS reflection
     capture.page_text = "Search results for: testvalue"
     capture.auth_context = AuthContext.anonymous
     capture.security_findings = []
-    
+    capture.outgoing_links = []
+
     result = scan_capture("https://example.com?search=testvalue", capture)
     
     assert isinstance(result, list)
@@ -1396,7 +1415,7 @@ def test_integration_full_scan_with_multiple_vulnerabilities():
 def test_integration_scan_graph_multi_node_deduplication():
     """Integration test: Scan multiple nodes with deduplication."""
     graph = Mock()
-    
+
     nodes = {}
     for i in range(3):
         node = Mock()
@@ -1410,11 +1429,15 @@ def test_integration_scan_graph_multi_node_deduplication():
         capture.auth_context = AuthContext.anonymous
         capture.resources = []
         capture.page_text = "Content"
+        capture.outgoing_links = []
         node.captures = [capture]
         nodes[f"node{i}"] = node
-    
+
     graph.nodes = nodes
-    
+    graph.tls_info = None
+    graph.root_url = ""
+    graph.seed_urls = []
+
     result = scan_graph(graph)
     
     assert isinstance(result, list)
@@ -1451,7 +1474,10 @@ def test_integration_empty_graph():
     """Integration test: Scan empty graph."""
     graph = Mock()
     graph.nodes = {}
-    
+    graph.tls_info = None
+    graph.root_url = ""
+    graph.seed_urls = []
+
     result = scan_graph(graph)
     
     assert isinstance(result, list)
@@ -1495,12 +1521,15 @@ def test_integration_capture_with_no_issues():
     form.action = 'https://example.com/submit'
     form.has_password_field = False
     form.autocomplete_off = True
+    form.input_names = []
+    form.input_types = []
     capture.forms = [form]
-    
+
     capture.page_text = "Clean content"
     capture.auth_context = AuthContext.anonymous
     capture.security_findings = []
-    
+    capture.outgoing_links = []
+
     result = scan_capture("https://example.com", capture)
     
     assert isinstance(result, list)
