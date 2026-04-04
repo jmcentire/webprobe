@@ -241,7 +241,7 @@ def _enumerate_prime_paths(G: nx.DiGraph, max_loop: int = 2, max_paths: int = 10
     return prime
 
 
-def analyze(graph: SiteGraph) -> tuple[AnalysisResult, PhaseStatus]:
+def analyze(graph: SiteGraph, config: "WebprobeConfig | None" = None) -> tuple[AnalysisResult, PhaseStatus]:
     """Phase 3: Analyze the site graph."""
     phase = PhaseStatus(
         phase="analyze",
@@ -258,7 +258,7 @@ def analyze(graph: SiteGraph) -> tuple[AnalysisResult, PhaseStatus]:
     auth_violations = _find_auth_violations(graph)
     timing_outliers = _find_timing_outliers(graph)
     prime_paths = _enumerate_prime_paths(G)
-    security_findings = scan_graph(graph)
+    security_findings = scan_graph(graph, config)
 
     result = AnalysisResult(
         graph_metrics=metrics,
@@ -268,6 +268,19 @@ def analyze(graph: SiteGraph) -> tuple[AnalysisResult, PhaseStatus]:
         prime_paths=prime_paths,
         security_findings=security_findings,
     )
+
+    # Compliance annotation
+    compliance_summary = None
+    if config and config.compliance.enabled:
+        try:
+            from webprobe.compliance import annotate_findings, load_mappings
+            mappings = load_mappings(custom_path=config.compliance.custom_mappings_path)
+            enabled = [s for s in config.compliance.standards if s not in config.compliance.skip_standards]
+            compliance_summary = annotate_findings(security_findings, mappings, enabled)
+        except Exception:
+            import logging
+            logging.getLogger(__name__).warning("Compliance annotation failed", exc_info=True)
+    result.compliance = compliance_summary
 
     duration = (time.monotonic() - start) * 1000
     phase.status = "completed"

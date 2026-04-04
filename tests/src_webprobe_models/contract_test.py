@@ -198,7 +198,7 @@ class TestEnums:
         for variant in expected:
             assert hasattr(SecurityCategory, variant), f"Should have '{variant}' variant"
 
-        assert len(list(SecurityCategory)) == 11, "Should have exactly 11 variants"
+        assert len(list(SecurityCategory)) == 17, "Should have exactly 17 variants"
 
 
 # ============================================================================
@@ -1091,7 +1091,7 @@ class TestRun:
         )
         
         run = Run(
-            schema_version="1.1",
+            schema_version="1.2",
             run_id="test-run-123",
             url="https://example.com",
             started_at="2024-01-15T10:00:00Z",
@@ -1103,7 +1103,7 @@ class TestRun:
             explore_cost=None
         )
         
-        assert run.schema_version == "1.1"
+        assert run.schema_version == "1.2"
         assert run.run_id == "test-run-123"
         assert run.completed_at is None
 
@@ -1117,7 +1117,7 @@ class TestRun:
         )
         
         run = Run(
-            schema_version="1.1",
+            schema_version="1.2",
             run_id="test-run-456",
             url="https://example.com",
             started_at="2024-01-15T10:00:00Z",
@@ -1135,7 +1135,7 @@ class TestRun:
     def test_run_schema_version_invariant(self):
         """Test that Run defaults to SCHEMA_VERSION 1.1"""
         # Test constant
-        assert SCHEMA_VERSION == "1.1"
+        assert SCHEMA_VERSION == "1.2"
         
         graph = SiteGraph(
             nodes={},
@@ -1154,7 +1154,7 @@ class TestRun:
             graph=graph
         )
         
-        assert run.schema_version == "1.1"
+        assert run.schema_version == "1.2"
 
 
 class TestNodeDiff:
@@ -1356,7 +1356,7 @@ class TestSerialization:
         )
         
         original = Run(
-            schema_version="1.1",
+            schema_version="1.2",
             run_id="test-123",
             url="https://example.com",
             started_at="2024-01-15T10:00:00Z",
@@ -1369,7 +1369,7 @@ class TestSerialization:
         data_dict = original.dict()
         
         # Verify all fields present
-        assert data_dict["schema_version"] == "1.1"
+        assert data_dict["schema_version"] == "1.2"
         assert data_dict["run_id"] == "test-123"
         
         # Recreate from dict
@@ -1388,7 +1388,7 @@ class TestInvariants:
 
     def test_schema_version_constant(self):
         """Test SCHEMA_VERSION constant is 1.1"""
-        assert SCHEMA_VERSION == "1.1"
+        assert SCHEMA_VERSION == "1.2"
 
     def test_node_state_identity_key_invariant(self):
         """Test NodeState.identity_key() always returns self.url"""

@@ -46,11 +46,21 @@ def main(ctx: click.Context, config_path: str | None) -> None:
               help="Path to mask YAML for suppressing known findings.")
 @click.option("--js", "render_js", is_flag=True, default=False,
               help="Use Playwright for JS rendering during site mapping.")
+@click.option("--advocate", is_flag=True, default=False,
+              help="Run Phase 6: LLM advocate review after analysis.")
+@click.option("--advocate-roles", default=None,
+              help="Comma-separated advocate roles (pentester,security_engineer,privacy_expert,compliance_officer).")
+@click.option("--advocate-model", default=None,
+              help="Override LLM model for advocates.")
+@click.option("--advocate-cost-limit", type=float, default=5.0,
+              help="Cost limit in USD for advocate phase.")
 @click.pass_context
 def run(ctx: click.Context, url: str, project_root: str | None, output_dir: str | None,
         concurrency: int | None, explore: bool, llm_provider: str, llm_model: str | None,
-        agents: int, mask_path: str | None, render_js: bool) -> None:
-    """Run all phases: map, capture, analyze, report (+ explore with --explore)."""
+        agents: int, mask_path: str | None, render_js: bool, advocate: bool,
+        advocate_roles: str | None, advocate_model: str | None,
+        advocate_cost_limit: float) -> None:
+    """Run all phases: map, capture, analyze, report (+ explore with --explore, + advocate with --advocate)."""
     config: WebprobeConfig = ctx.obj["config"]
     if concurrency is not None:
         config.capture.concurrency = concurrency
@@ -97,7 +107,7 @@ def run(ctx: click.Context, url: str, project_root: str | None, output_dir: str 
 
         # Phase 3: Analyze
         click.echo("Phase 3: Analyzing...")
-        analysis_result, analyze_phase = analyze(graph)
+        analysis_result, analyze_phase = analyze(graph, config)
         run_obj.phases.append(analyze_phase)
         run_obj.analysis = analysis_result
         (run_dir / "analysis.json").write_text(analysis_result.model_dump_json(indent=2))
@@ -153,7 +163,37 @@ def run(ctx: click.Context, url: str, project_root: str | None, output_dir: str 
                            f"({cost_summary['total_calls']} calls, "
                            f"{cost_summary['total_input_tokens'] + cost_summary['total_output_tokens']} tokens)")
 
-        # Phase 4: Report (runs last so it includes explore findings)
+        # Phase 6: Advocate (optional)
+        do_advocate = advocate
+        if do_advocate:
+            from webprobe.advocate import AdvocateConfig, AdvocateRole, run_advocates
+            from webprobe.models import CostSummary
+
+            adv_roles = None
+            if advocate_roles:
+                adv_roles = [AdvocateRole(r.strip()) for r in advocate_roles.split(",")]
+
+            advocate_cfg = AdvocateConfig(
+                provider=llm_provider,
+                model=advocate_model or llm_model,
+                roles=adv_roles,
+                cost_limit_usd=advocate_cost_limit,
+                mask_path=mask_path,
+            )
+            click.echo(f"Phase 6: Running advocate review ({len(advocate_cfg.roles)} personas)...")
+            adv_findings, adv_phase, adv_cost_tracker = await run_advocates(
+                config, advocate_cfg, run_obj.graph, run_obj.analysis, run_dir
+            )
+            run_obj.phases.append(adv_phase)
+            if run_obj.analysis:
+                run_obj.analysis.security_findings.extend(adv_findings)
+            click.echo(f"  {len(adv_findings)} findings ({adv_phase.duration_ms:.0f} ms)")
+
+            adv_cost_summary = adv_cost_tracker.summary()
+            run_obj.advocate_cost = CostSummary(**adv_cost_summary)
+            click.echo(f"  Advocate cost: ${adv_cost_summary['total_cost_usd']:.4f}")
+
+        # Phase 4: Report (runs last so it includes explore + advocate findings)
         click.echo("Phase 4: Generating report...")
         run_obj.completed_at = _now_iso()
         report_phase = generate_report(run_obj, run_dir)
@@ -217,6 +257,61 @@ def explore_cmd(ctx: click.Context, run_dir: str, provider: str, model: str | No
         click.echo(f"Report updated: {rd / 'report.html'}")
 
     asyncio.run(_explore())
+
+
+@main.command("advocate")
+@click.argument("run_dir", type=click.Path(exists=True))
+@click.option("--provider", type=click.Choice(["anthropic", "openai", "gemini", "apprentice"]),
+              default="anthropic", help="LLM provider.")
+@click.option("--model", default=None, help="Override LLM model name.")
+@click.option("--roles", default=None,
+              help="Comma-separated advocate roles (pentester,security_engineer,privacy_expert,compliance_officer).")
+@click.option("--cost-limit", type=float, default=5.0, help="Cost limit in USD.")
+@click.option("--mask", "mask_path", type=click.Path(exists=True), default=None,
+              help="Path to mask YAML.")
+@click.pass_context
+def advocate_cmd(ctx: click.Context, run_dir: str, provider: str, model: str | None,
+                 roles: str | None, cost_limit: float, mask_path: str | None) -> None:
+    """Phase 6 only: LLM advocate review of an existing run."""
+    config: WebprobeConfig = ctx.obj["config"]
+
+    async def _advocate() -> None:
+        from webprobe.advocate import AdvocateConfig, AdvocateRole, run_advocates
+        from webprobe.differ import load_run
+        from webprobe.models import CostSummary
+        from webprobe.reporter import generate_report
+
+        rd = Path(run_dir)
+        run_obj = load_run(rd)
+
+        adv_roles = None
+        if roles:
+            adv_roles = [AdvocateRole(r.strip()) for r in roles.split(",")]
+
+        advocate_cfg = AdvocateConfig(
+            provider=provider,
+            model=model,
+            roles=adv_roles,
+            cost_limit_usd=cost_limit,
+            mask_path=mask_path,
+        )
+        click.echo(f"Running advocate review ({len(advocate_cfg.roles)} personas)...")
+        findings, phase, cost_tracker = await run_advocates(
+            config, advocate_cfg, run_obj.graph, run_obj.analysis, rd
+        )
+        run_obj.phases.append(phase)
+        if run_obj.analysis:
+            run_obj.analysis.security_findings.extend(findings)
+        click.echo(f"{len(findings)} findings ({phase.duration_ms:.0f} ms)")
+
+        cost_summary = cost_tracker.summary()
+        run_obj.advocate_cost = CostSummary(**cost_summary)
+        click.echo(f"Advocate cost: ${cost_summary['total_cost_usd']:.4f}")
+
+        generate_report(run_obj, rd)
+        click.echo(f"Report updated: {rd / 'report.html'}")
+
+    asyncio.run(_advocate())
 
 
 @main.command("map")

@@ -10,7 +10,7 @@ from uuid import uuid4
 from pydantic import BaseModel, Field
 
 
-SCHEMA_VERSION = "1.1"
+SCHEMA_VERSION = "1.2"
 
 
 # ---- Enums ----
@@ -73,6 +73,7 @@ class Resource(BaseModel):
     size_bytes: int | None = None
     timing: TimingData | None = None
     mime_type: str = ""
+    has_integrity: bool = False
 
 
 class ConsoleMessage(BaseModel):
@@ -105,6 +106,7 @@ class CookieInfo(BaseModel):
     secure: bool = False
     http_only: bool = False
     same_site: str = ""  # "Strict", "Lax", "None", or ""
+    expires: float = -1  # Unix timestamp, -1 = session cookie
 
 
 class ResponseHeaders(BaseModel):
@@ -121,6 +123,8 @@ class FormInfo(BaseModel):
     has_csrf_token: bool = False
     has_password_field: bool = False
     autocomplete_off: bool = False
+    input_names: list[str] = Field(default_factory=list)
+    input_types: list[str] = Field(default_factory=list)
 
 
 class SecuritySeverity(str, Enum):
@@ -143,6 +147,22 @@ class SecurityCategory(str, Enum):
     accessibility = "accessibility"
     visual = "visual"
     exploration = "exploration"
+    injection = "injection"
+    auth_session = "auth_session"
+    privacy = "privacy"
+    supply_chain = "supply_chain"
+    sensitive_files = "sensitive_files"
+    advocate = "advocate"
+
+
+class ComplianceViolation(BaseModel):
+    """A single compliance standard control violated by a finding."""
+
+    standard: str
+    standard_name: str
+    control_id: str
+    control_name: str
+    testable: str = "yes"
 
 
 class SecurityFinding(BaseModel):
@@ -157,6 +177,7 @@ class SecurityFinding(BaseModel):
     auth_context: AuthContext = AuthContext.anonymous
     affected_urls: list[str] = Field(default_factory=list)
     affected_count: int = 0
+    compliance_violations: list[ComplianceViolation] = Field(default_factory=list)
 
 
 class NodeCapture(BaseModel):
@@ -205,6 +226,25 @@ class Edge(BaseModel):
     verified: bool = False
 
 
+# ---- TLS ----
+
+
+class TlsInfo(BaseModel):
+    """TLS connection details for the target host."""
+
+    protocol_version: str = ""
+    cipher_suite: str = ""
+    forward_secrecy: bool = False
+    cert_subject: str = ""
+    cert_issuer: str = ""
+    cert_not_after: str = ""
+    cert_days_remaining: int = 0
+    cert_self_signed: bool = False
+    cert_key_type: str = ""
+    cert_key_size: int = 0
+    san_names: list[str] = Field(default_factory=list)
+
+
 # ---- Graph ----
 
 
@@ -215,6 +255,7 @@ class SiteGraph(BaseModel):
     edges: list[Edge] = Field(default_factory=list)
     root_url: str = ""
     seed_urls: list[str] = Field(default_factory=list)
+    tls_info: TlsInfo | None = None
 
 
 # ---- Analysis Results ----
@@ -268,6 +309,29 @@ class PrimePath(BaseModel):
     contains_loop: bool = False
 
 
+class ComplianceControlSummary(BaseModel):
+    """Summary of a single compliance control's test status."""
+
+    standard: str
+    standard_name: str
+    control_id: str
+    control_name: str
+    testable: str
+    finding_count: int = 0
+    max_severity: str = ""
+    manual_notes: str = ""
+
+
+class ComplianceSummary(BaseModel):
+    """Aggregate compliance posture across all enabled standards."""
+
+    standards_checked: list[str] = Field(default_factory=list)
+    total_violations: int = 0
+    violations_by_standard: dict[str, int] = Field(default_factory=dict)
+    controls: list[ComplianceControlSummary] = Field(default_factory=list)
+    untestable_controls: list[ComplianceControlSummary] = Field(default_factory=list)
+
+
 class AnalysisResult(BaseModel):
     """Results from Phase 3 graph analysis."""
 
@@ -277,6 +341,7 @@ class AnalysisResult(BaseModel):
     timing_outliers: list[TimingOutlier] = Field(default_factory=list)
     prime_paths: list[PrimePath] = Field(default_factory=list)
     security_findings: list[SecurityFinding] = Field(default_factory=list)
+    compliance: ComplianceSummary | None = None
 
 
 # ---- Run ----
@@ -290,7 +355,7 @@ def _make_run_id() -> str:
 class PhaseStatus(BaseModel):
     """Status of a single phase execution."""
 
-    phase: Literal["map", "capture", "analyze", "report", "explore"]
+    phase: Literal["map", "capture", "analyze", "report", "explore", "advocate"]
     status: Literal["pending", "running", "completed", "failed"] = "pending"
     started_at: str | None = None
     completed_at: str | None = None
@@ -321,6 +386,7 @@ class Run(BaseModel):
     graph: SiteGraph = Field(default_factory=SiteGraph)
     analysis: AnalysisResult | None = None
     explore_cost: CostSummary | None = None
+    advocate_cost: CostSummary | None = None
 
 
 # ---- Diff ----
