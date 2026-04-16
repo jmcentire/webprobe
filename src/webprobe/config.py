@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Literal
 
 import yaml
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class AuthCredential(BaseModel):
@@ -24,12 +24,13 @@ class AuthCredential(BaseModel):
 class AuthConfig(BaseModel):
     """Authentication injection settings."""
 
-    method: Literal["cookie", "bearer", "header", "none"] = "none"
+    method: Literal["cookie", "bearer", "header", "localStorage", "none"] = "none"
     cookie_name: str = ""
     cookie_value: str = ""
     bearer_token: str = ""
     header_name: str = ""
     header_value: str = ""
+    local_storage: dict[str, str] = Field(default_factory=dict)
     login_url: str = "/login"
     auth_indicator: str = ""
     credentials: list[AuthCredential] = Field(default_factory=list)
@@ -107,6 +108,14 @@ class WebprobeConfig(BaseModel):
     output_dir: str = "./webprobe-runs"
     compliance: ComplianceConfig = Field(default_factory=ComplianceConfig)
     security: SecurityConfig = Field(default_factory=SecurityConfig)
+
+    @model_validator(mode="after")
+    def _force_js_for_localstorage_auth(self) -> WebprobeConfig:
+        # localStorage injection only works through a real browser; the aiohttp
+        # crawl path can't populate it. Force JS rendering so Phase 1 authenticates.
+        if self.auth.method == "localStorage" and not self.crawl.render_js:
+            self.crawl.render_js = True
+        return self
 
 
 _SEARCH_PATHS = [

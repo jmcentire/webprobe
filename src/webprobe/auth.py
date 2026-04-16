@@ -1,7 +1,8 @@
-"""Auth context management: cookie/bearer/header injection and auth detection."""
+"""Auth context management: cookie/bearer/header/localStorage injection and auth detection."""
 
 from __future__ import annotations
 
+import json
 from urllib.parse import urlparse
 
 import aiohttp
@@ -63,6 +64,26 @@ class AuthManager:
             await context.set_extra_http_headers({
                 self.config.header_name: self.config.header_value,
             })
+        elif self.config.method == "localStorage":
+            if not self.config.local_storage:
+                raise AttributeError("local_storage is required for localStorage auth")
+            origin = f"{parsed.scheme}://{parsed.netloc}"
+            entries_json = json.dumps(self.config.local_storage)
+            origin_json = json.dumps(origin)
+            # Runs before any page script on every navigation. Guard by origin so
+            # cross-origin pages (e.g. third-party iframes, redirects to auth
+            # providers) don't get populated with our app's storage.
+            script = (
+                "(() => { try {"
+                f" if (window.location.origin === {origin_json}) {{"
+                f"   const entries = {entries_json};"
+                "    for (const k in entries) {"
+                "      try { window.localStorage.setItem(k, entries[k]); } catch (e) {}"
+                "    }"
+                "  }"
+                "} catch (e) {} })();"
+            )
+            await context.add_init_script(script)
 
     def is_auth_redirect(self, original_url: str, final_url: str) -> bool:
         """Detect if a response redirected to the login page."""
