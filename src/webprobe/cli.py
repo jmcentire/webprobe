@@ -482,5 +482,100 @@ def status(run_dir: str) -> None:
         click.echo(f"Timing outliers: {len(a.timing_outliers)}")
 
 
+@main.command()
+@click.argument("url")
+@click.option("--mechanical-only", is_flag=True, default=False,
+              help="Skip LLM-only checks (mechanical_only mode); useful for CI without API keys.")
+@click.option("--dimension", "dimensions", multiple=True,
+              help="Run only the named dimension(s). Repeatable.")
+@click.option("--skip-dimension", "skip_dimensions", multiple=True,
+              help="Skip the named dimension(s). Repeatable.")
+@click.option("--output-dir", type=click.Path(), default=None,
+              help="Directory for run artifacts (default: ./runs/<timestamp>/).")
+@click.option("--emit-fixes-json", "fixes_path", type=click.Path(), default=None,
+              help="Write the structured Fix list as JSON to this path.")
+@click.option("--timeout", type=float, default=10.0,
+              help="Per-fetch timeout in seconds for the well-known prober.")
+@click.option("--skip-probe", is_flag=True, default=False,
+              help="Skip the well-known prober (use a pre-populated artifact store).")
+def audit(url: str, mechanical_only: bool, dimensions: tuple[str, ...],
+          skip_dimensions: tuple[str, ...], output_dir: str | None,
+          fixes_path: str | None, timeout: float, skip_probe: bool) -> None:
+    """Run the multi-dimensional audit pipeline against a URL.
+
+    Phases: probe well-known endpoints → run dimension analyzers → aggregate
+    scorecard. Writes scorecard.json + check_results.json + fixes.json under
+    <output-dir>/. Fix recommendations are emitted, never applied.
+    """
+    import asyncio
+    import json
+    from datetime import datetime, timezone
+
+    from webprobe.prober import ProberConfig, run_audit_pipeline
+
+    mode = "mechanical_only" if mechanical_only else "full"
+    cfg = ProberConfig(timeout_s=timeout)
+
+    click.echo(f"Auditing {url} (mode={mode})...")
+
+    result = asyncio.run(run_audit_pipeline(
+        url,
+        mode=mode,
+        prober_config=cfg,
+        only=dimensions if dimensions else None,
+        skip=skip_dimensions,
+        skip_probe=skip_probe,
+    ))
+
+    sc = result.scorecard
+    click.echo("")
+    click.echo(f"Overall band: {sc.overall_band.value}")
+    click.echo(f"Probe: {result.probe_summary.get('fetches', 0)} fetches "
+               f"({result.probe_summary.get('ok', 0)} ok, "
+               f"{result.probe_summary.get('errors', 0)} errors) "
+               f"in {result.probe_summary.get('elapsed_ms', 0):.0f} ms")
+    click.echo("")
+    click.echo("Per-dimension scores:")
+    for name, dim in sorted(sc.dimensions.items()):
+        partial = " (partial)" if dim.mode_partial else ""
+        click.echo(
+            f"  {name:25s}  {dim.subscore:5.1f}  {dim.band.value}  "
+            f"pass={dim.pass_count} fail={dim.fail_count} "
+            f"not_det={dim.not_detected_count} skip={dim.skipped_count}{partial}"
+        )
+
+    if output_dir is None:
+        ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S")
+        out = Path("runs") / ts
+    else:
+        out = Path(output_dir)
+    out.mkdir(parents=True, exist_ok=True)
+
+    (out / "scorecard.json").write_text(json.dumps(sc.model_dump(mode="json"), indent=2, sort_keys=True))
+    cr_payload = [r.model_dump(mode="json") for r in result.check_results]
+    (out / "check_results.json").write_text(json.dumps(cr_payload, indent=2, sort_keys=True))
+
+    fixes_out = []
+    for r in result.check_results:
+        if r.fix is not None:
+            fixes_out.append({
+                "check_id": r.check_id,
+                "dimension": r.dimension.value,
+                "severity": r.severity.value,
+                "status": r.status.value,
+                "title": r.title,
+                "fix": r.fix.model_dump(mode="json"),
+            })
+    (out / "fixes.json").write_text(json.dumps(fixes_out, indent=2, sort_keys=True))
+    if fixes_path:
+        Path(fixes_path).write_text(json.dumps(fixes_out, indent=2, sort_keys=True))
+
+    click.echo("")
+    click.echo(f"Wrote: {out}/{{scorecard,check_results,fixes}}.json")
+    if fixes_path:
+        click.echo(f"Also: {fixes_path}")
+    click.echo(f"Fix recommendations: {len(fixes_out)} (emit-only — webprobe never applies fixes)")
+
+
 if __name__ == "__main__":
     main()
