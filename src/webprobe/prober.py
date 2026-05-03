@@ -22,6 +22,8 @@ import aiohttp
 
 from webprobe.artifact_store import ArtifactStore
 from webprobe.models import Artifact, ArtifactType, CaptureStatus
+from webprobe.parsers import json_ld as json_ld_parser
+from webprobe.parsers import meta_tags as meta_tags_parser
 from webprobe.parsers import openapi as openapi_parser
 from webprobe.parsers import robots_txt as robots_parser
 from webprobe.parsers import sitemap as sitemap_parser
@@ -190,6 +192,58 @@ async def probe_site(
             summary["errors"] += 1
             _store_fetch(store, robots_fr, artifact_type=ArtifactType.robots_txt)
             sitemap_urls = [urljoin(origin + "/", "sitemap.xml")]
+
+        # Pass 1.5: homepage fetch — drives meta_tags / json_ld / dom artifacts so
+        # that Public-Facing Signals, Structured Data, and Accessibility have
+        # something to read when `webprobe audit` runs standalone (without the
+        # full Phase 2 capture pipeline).
+        home_url = base_url if base_url.endswith("/") else base_url + "/"
+        home_fr = await fetch(home_url)
+        summary["fetches"] += 1
+        if home_fr.ok:
+            summary["ok"] += 1
+            link_headers = [v for k, v in home_fr.headers.items() if k.lower() == "link"]
+            try:
+                html_text = home_fr.body.decode("utf-8", errors="replace")
+            except Exception:
+                html_text = ""
+            # http_response artifact
+            _store_fetch(store, home_fr, artifact_type=ArtifactType.http_response,
+                         payload_override={"status": home_fr.status, "headers": dict(home_fr.headers)},
+                         raw_bytes_override=home_fr.body)
+            # meta_tags
+            meta = meta_tags_parser.parse(home_fr.body, source_url=home_url, link_header_values=link_headers)
+            store.put(Artifact(
+                artifact_type=ArtifactType.meta_tags,
+                source_url=home_url,
+                capture_status=CaptureStatus.ok if meta.ok else CaptureStatus.parse_error,
+                capture_error=meta.error,
+                payload=meta.payload,
+                elapsed_ms=meta.elapsed_ms,
+            ), replace=True)
+            # json_ld
+            jl = json_ld_parser.parse(home_fr.body, source_url=home_url)
+            jl_status = CaptureStatus.ok if jl.ok else (CaptureStatus.not_found if jl.error == "no_jsonld_blocks_found" else CaptureStatus.parse_error)
+            store.put(Artifact(
+                artifact_type=ArtifactType.json_ld,
+                source_url=home_url,
+                capture_status=jl_status,
+                capture_error="" if jl.ok else jl.error,
+                payload=jl.payload,
+                elapsed_ms=jl.elapsed_ms,
+            ), replace=True)
+            # dom
+            store.put(Artifact(
+                artifact_type=ArtifactType.dom,
+                source_url=home_url,
+                capture_status=CaptureStatus.ok,
+                payload={"length": len(html_text), "truncated": len(html_text) > 1_000_000},
+                raw_bytes=home_fr.body[:1_000_000],
+                elapsed_ms=home_fr.elapsed_ms,
+            ), replace=True)
+        else:
+            summary["errors"] += 1
+            _store_fetch(store, home_fr, artifact_type=ArtifactType.http_response)
 
         # Pass 2: parallel discovery fetches (sitemaps, well-known, openapi, docs, trust, bazaar).
         candidate_fetches: list[tuple[str, ArtifactType]] = []
