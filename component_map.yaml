@@ -1,159 +1,292 @@
+version: "1.1"
+generated_by: "constrain (audit-expansion session) + manual union with original Pact component map"
+session_id: webprobe-audit-expansion-001
+
+# Component map is the union of:
+#   - Original webprobe modules (existing src_webprobe_*) — Python imports, not microservices
+#   - New audit-pipeline components (artifact_store, scheduler, scorecard, dimension analyzers)
+# The constrain-generated version framed components as services with HTTP ports;
+# webprobe is a single Python package, so the original framing is preserved.
+#
+# Pact decomposition pattern (canonical for this repo):
+#   - Real implementation:    src/webprobe/<module>/...        (installable package per pyproject.toml)
+#   - Public-API mirror:      src/src_webprobe_<module>/<module>.py  (single-file decomposition view)
+#   - Contract artifacts:     contracts/src_webprobe_<module>/{interface.json, interface.py, history/}
+#   - Contract tests:         tests/src_webprobe_<module>/contract_test.py  (imports from webprobe.<module>)
+# Component IDs in this file are the <module> slug (e.g. "discoverability"); they match the
+# directory name in all four locations above.
+#
+# Watch: src/src_webprobe_security/security.py is the OLD monolithic mirror and has not been
+# kept in sync with the decomposed src/webprobe/security/ (15 submodules). The dual-emission
+# migration in Block 1 updates this mirror to the current decomposed surface.
+
 components:
+
+  # ───────────────────────────────────────────────────────────────
+  # EXISTING WEBPROBE MODULES (preserved)
+  # ───────────────────────────────────────────────────────────────
+
   - id: models
-    role: "Pydantic v2 data models and stable schema definitions"
+    role: "Pydantic v2 data models and stable schema definitions (now includes CheckResult, Artifact, Fix, Scorecard)"
     protocol: "Python import"
-    authority: "schema"
+    authority: schema
     data_access: [read, write]
     dependencies: []
+    constraints: [CO001, CA001, CA002, CA005]
 
   - id: config
-    role: "YAML configuration loading and validation"
+    role: "YAML configuration loading and validation (now includes ai_user_agent_matrix and per-dimension thresholds)"
     protocol: "Python import"
-    authority: "configuration"
+    authority: configuration
     data_access: [read]
     dependencies: [models]
+    constraints: [CA016]
 
   - id: auth
     role: "Authentication injection for aiohttp and Playwright contexts"
     protocol: "Python import"
-    authority: "authentication"
+    authority: authentication
     data_access: [read]
     dependencies: [config]
+    constraints: []
 
   - id: mapper
-    role: "Phase 1: BFS crawl, sitemap/robots.txt parsing, graph construction"
+    role: "Phase 1: BFS crawl, sitemap/robots.txt parsing, graph construction (now feeds shared Artifact store)"
     protocol: "async Python"
-    authority: "site_discovery"
+    authority: site_discovery
     data_access: [read, write]
-    dependencies: [config, auth, models]
+    dependencies: [config, auth, models, artifact_store]
+    constraints: [CO005, CO011, CO013]
 
   - id: frameworks
     role: "Optional framework route detection from project root"
     protocol: "Python import"
-    authority: "route_detection"
+    authority: route_detection
     data_access: [read]
     dependencies: []
+    constraints: [CO013]
 
   - id: browser
     role: "Playwright browser lifecycle and context pool"
     protocol: "async Python"
-    authority: "browser_management"
+    authority: browser_management
     data_access: []
     dependencies: [config, auth]
+    constraints: []
 
   - id: capturer
-    role: "Phase 2: Playwright page visits, resource interception, timing, screenshots"
+    role: "Phase 2: Playwright page visits, resource interception, timing, screenshots, JSON-LD extraction (writes to canonical Artifact store)"
     protocol: "async Python"
-    authority: "page_capture"
+    authority: page_capture
     data_access: [read, write]
-    dependencies: [config, auth, browser, models]
+    dependencies: [config, auth, browser, models, artifact_store, mask]
+    constraints: [CO005, CO008, CO011, CA003, CA017]
 
   - id: security
-    role: "Passive security scanning of captured data"
+    role: "Passive security scanning (cookies, CSP, HSTS, mixed content); now emits CheckResult under the General Security dimension"
     protocol: "Python import"
-    authority: "security_analysis"
+    authority: security_analysis
     data_access: [read]
-    dependencies: [models]
+    dependencies: [models, artifact_store]
+    constraints: [CA001, CA002]
 
   - id: analyzer
     role: "Phase 3: graph metrics, broken links, auth violations, timing outliers, prime paths"
     protocol: "Python import"
-    authority: "graph_analysis"
+    authority: graph_analysis
     data_access: [read]
     dependencies: [models, security]
+    constraints: []
 
   - id: llm_provider
-    role: "Multi-provider LLM abstraction with cost tracking and transmogrifier"
+    role: "Multi-provider LLM abstraction with cost tracking and transmogrifier; supports temperature=0 and consensus-of-N for stability"
     protocol: "async Python"
-    authority: "llm_orchestration"
+    authority: llm_orchestration
     data_access: [read]
     dependencies: []
+    constraints: [CO003, CO006, CO007, CO014, CA024]
 
   - id: visual
     role: "WCAG contrast checking, hidden element detection, LLM vision analysis"
     protocol: "async Python"
-    authority: "visual_analysis"
+    authority: visual_analysis
     data_access: [read]
     dependencies: [llm_provider, models]
+    constraints: [CO012]
 
   - id: mask
-    role: "Finding suppression via YAML-based rules"
+    role: "Finding suppression and credential redaction (CO008); applied before any artifact or evidence is written"
     protocol: "Python import"
-    authority: "finding_suppression"
+    authority: finding_suppression
     data_access: [read]
     dependencies: [models]
+    constraints: [CO008, CO010]
 
   - id: explorer
     role: "Phase 5: concurrent LLM agents with Playwright browsers"
     protocol: "async Python"
-    authority: "llm_exploration"
+    authority: llm_exploration
     data_access: [read, write]
     dependencies: [config, browser, llm_provider, visual, mask, models]
+    constraints: [CO002, CO003, CO004, CO005]
 
   - id: reporter
-    role: "Phase 4: JSON and HTML report generation"
+    role: "Phase 4: JSON and HTML report generation (now consumes CheckResult and Scorecard; renders Fix recommendations without applying them)"
     protocol: "Python import"
-    authority: "reporting"
+    authority: reporting
     data_access: [read, write]
-    dependencies: [models]
+    dependencies: [models, scorecard, mask]
+    constraints: [CO001, CO008, CA009, CA012]
 
   - id: differ
     role: "Cross-run comparison and trending"
     protocol: "Python import"
-    authority: "diff_analysis"
+    authority: diff_analysis
     data_access: [read]
     dependencies: [models]
+    constraints: [CO001]
 
   - id: cli
     role: "Click CLI entry point wiring all phases"
     protocol: "Click commands"
-    authority: "user_interface"
+    authority: user_interface
     data_access: [read, write]
-    dependencies: [config, mapper, capturer, analyzer, explorer, reporter, differ, frameworks]
+    dependencies: [config, mapper, capturer, analyzer, explorer, reporter, differ, frameworks, scheduler, scorecard]
+    constraints: [CO004, CA009, CA015]
+
+  # ───────────────────────────────────────────────────────────────
+  # NEW AUDIT-PIPELINE INFRASTRUCTURE
+  # ───────────────────────────────────────────────────────────────
+
+  - id: artifact_store
+    role: "Canonical, in-memory shared store for capture artifacts (robots.txt, OpenAPI, JSON-LD, DOM-per-URL, headers-per-URL). Single source of truth; all dimensions read from here."
+    protocol: "Python import"
+    authority: artifact_store
+    data_access: [read, write]
+    dependencies: [models]
+    constraints: [CA003, CA004, CA017]
+
+  - id: scheduler
+    role: "Phase 3.5: DAG scheduler for dimension checks. Mechanical and runtime checks parallelized; LLM checks resolved topologically by declared dependencies. Honors mechanical-only mode by SKIPPING llm-mode checks."
+    protocol: "async Python"
+    authority: scheduler
+    data_access: [read]
+    dependencies: [models, artifact_store, llm_provider]
+    constraints: [CA006, CA007, CA013, CA014]
+
+  - id: scorecard
+    role: "Aggregates CheckResults into per-dimension subscores (0-100), per-dimension bands, and one overall band. Configurable via docs/AUDIT_DIMENSIONS.md mapping."
+    protocol: "Python import"
+    authority: scorecard_aggregation
+    data_access: [read]
+    dependencies: [models]
+    constraints: [CA010, CA011, CA012, CA023]
+
+  # ───────────────────────────────────────────────────────────────
+  # DIMENSION ANALYZERS (the 9 audit dimensions)
+  # ───────────────────────────────────────────────────────────────
+
+  - id: discoverability-analyzer
+    role: "Dimension 1: robots.txt structure, sitemap presence/validity, Link headers (RFC 8288), llms.txt, Content Signals, Markdown content negotiation"
+    protocol: "Python import"
+    authority: discoverability
+    data_access: [read]
+    dependencies: [models, artifact_store]
+    constraints: [CA001, CA002, CA005, CA006, CA022, CA017]
+
+  - id: bot-access-analyzer
+    role: "Dimension 2: AI user-agent allow/deny matrix, Web Bot Auth (/.well-known/http-message-signatures-directory)"
+    protocol: "Python import"
+    authority: bot_access
+    data_access: [read]
+    dependencies: [models, artifact_store, config]
+    constraints: [CA001, CA002, CA016, CA022, CA017]
+
+  - id: agent-surface-analyzer
+    role: "Dimension 3: API Catalog (RFC 9727), OAuth/OIDC discovery, OAuth Protected Resource (RFC 9728), MCP Server Card, Agent Skills index, WebMCP runtime detection"
+    protocol: "Python import"
+    authority: agent_surface
+    data_access: [read]
+    dependencies: [models, artifact_store, browser]
+    constraints: [CA001, CA002, CA005, CA006, CA022]
+
+  - id: api-surface-analyzer
+    role: "Dimension 4: OpenAPI presence + quality (LLM), Stripe-style design patterns (mechanical: status codes, ID prefixes, pagination, list-empty shape, timestamp format, naming; LLM: resource hierarchy, boolean-vs-enum), OWASP API Top 10"
+    protocol: "Python import"
+    authority: api_surface
+    data_access: [read]
+    dependencies: [models, artifact_store, llm_provider]
+    constraints: [CA001, CA002, CA006, CA007, CA014, CA018, CA019, CA020, CA022, CA024]
+
+  - id: structured-data-analyzer
+    role: "Dimension 5: JSON-LD extraction and schema.org validation (Product, Offer, Organization, AggregateRating, ProductGroup, Article, FAQPage, Recipe). Generalizes Shopify product check."
+    protocol: "Python import"
+    authority: structured_data
+    data_access: [read]
+    dependencies: [models, artifact_store]
+    constraints: [CA001, CA002, CA021, CA022]
+
+  - id: agentic-commerce-analyzer
+    role: "Dimension 6: x402 (HTTP 402 payment), MPP (x-payment-info in OpenAPI), UCP (.well-known/ucp), ACP (.well-known/acp.json)"
+    protocol: "Python import"
+    authority: agentic_commerce
+    data_access: [read]
+    dependencies: [models, artifact_store]
+    constraints: [CA001, CA002, CA022]
+
+  - id: public-facing-signals-analyzer
+    role: "Dimension 7: SEO meta + OG/Twitter Cards (mechanical sub-pass), copy/hero/CTA/trust quality (LLM sub-pass with consensus-of-N)"
+    protocol: "Python import"
+    authority: public_facing_signals
+    data_access: [read]
+    dependencies: [models, artifact_store, llm_provider]
+    constraints: [CA001, CA002, CA006, CA007, CA022, CA024]
+
+  - id: accessibility-analyzer
+    role: "Dimension 8: WCAG via axe-core integration. Color contrast (CO012), alt text, heading order, ARIA roles, keyboard nav, form labels, focus indicators."
+    protocol: "Python import"
+    authority: accessibility
+    data_access: [read]
+    dependencies: [models, artifact_store, browser]
+    constraints: [CO012, CA001, CA002, CA022]
+
+  # Dimension 9 (General security) is the existing `security` component above,
+  # extended to emit CheckResult under the unified schema.
+
+# ───────────────────────────────────────────────────────────────
+# Edges (data flow)
+# ───────────────────────────────────────────────────────────────
 
 edges:
-  - from: cli
-    to: mapper
-    tier: direct
-  - from: cli
-    to: capturer
-    tier: direct
-  - from: cli
-    to: analyzer
-    tier: direct
-  - from: cli
-    to: explorer
-    tier: direct
-  - from: cli
-    to: reporter
-    tier: direct
-  - from: cli
-    to: differ
-    tier: direct
-  - from: mapper
-    to: auth
-    tier: direct
-  - from: capturer
-    to: browser
-    tier: direct
-  - from: capturer
-    to: auth
-    tier: direct
-  - from: analyzer
-    to: security
-    tier: direct
-  - from: explorer
-    to: llm_provider
-    tier: direct
-  - from: explorer
-    to: visual
-    tier: direct
-  - from: explorer
-    to: mask
-    tier: direct
-  - from: explorer
-    to: browser
-    tier: direct
-  - from: visual
-    to: llm_provider
-    tier: direct
+  - { from: cli, to: mapper, tier: direct }
+  - { from: cli, to: capturer, tier: direct }
+  - { from: cli, to: scheduler, tier: direct }
+  - { from: cli, to: scorecard, tier: direct }
+  - { from: cli, to: reporter, tier: direct }
+  - { from: cli, to: differ, tier: direct }
+  - { from: mapper, to: artifact_store, tier: direct }
+  - { from: capturer, to: artifact_store, tier: direct }
+  - { from: capturer, to: mask, tier: direct }
+  - { from: capturer, to: browser, tier: direct }
+  - { from: scheduler, to: artifact_store, tier: direct }
+  - { from: scheduler, to: discoverability-analyzer, tier: direct }
+  - { from: scheduler, to: bot-access-analyzer, tier: direct }
+  - { from: scheduler, to: agent-surface-analyzer, tier: direct }
+  - { from: scheduler, to: api-surface-analyzer, tier: direct }
+  - { from: scheduler, to: structured-data-analyzer, tier: direct }
+  - { from: scheduler, to: agentic-commerce-analyzer, tier: direct }
+  - { from: scheduler, to: public-facing-signals-analyzer, tier: direct }
+  - { from: scheduler, to: accessibility-analyzer, tier: direct }
+  - { from: scheduler, to: security, tier: direct }
+  - { from: scheduler, to: llm_provider, tier: direct }
+  - { from: agent-surface-analyzer, to: browser, tier: direct }
+  - { from: accessibility-analyzer, to: browser, tier: direct }
+  - { from: api-surface-analyzer, to: llm_provider, tier: direct }
+  - { from: public-facing-signals-analyzer, to: llm_provider, tier: direct }
+  - { from: scorecard, to: scheduler, tier: direct }
+  - { from: reporter, to: scorecard, tier: direct }
+  - { from: explorer, to: llm_provider, tier: direct }
+  - { from: explorer, to: visual, tier: direct }
+  - { from: explorer, to: mask, tier: direct }
+  - { from: explorer, to: browser, tier: direct }
+  - { from: visual, to: llm_provider, tier: direct }

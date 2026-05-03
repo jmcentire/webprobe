@@ -1,10 +1,42 @@
+version: "1.1"
+generated_by: "constrain (audit-expansion session) + manual union with original Pact policy"
+session_id: webprobe-audit-expansion-001
+system: "webprobe — Site State-Graph Auditor with Multi-Dimensional Audit Pipeline"
+
+# Trust policy is the union of the original webprobe policy and the new
+# audit-system policy from the constrain session. Where the two disagreed
+# (the new file referenced microservices semantics that don't fit a Python
+# package), the original framing is preserved.
+
+# ─────────────────────────────────────────────────────────────────
+# Classification tiers
+# ─────────────────────────────────────────────────────────────────
+
 classification_tiers:
   - name: PUBLIC
-    description: "Report data, graph structure, timing metrics — safe to share"
-  - name: AUTH
-    description: "Auth credentials, session tokens — never in reports"
+    description: "Report data, graph structure, timing metrics, captured public site content, schema.org markup — safe to share"
   - name: PII
-    description: "Not applicable — webprobe does not handle user PII"
+    description: "User-submitted form data observed during exploration. Webprobe explores with synthetic data only (CO002), but if real PII is encountered it must not enter reports."
+  - name: AUTH
+    description: "Auth credentials, session tokens, API keys observed in headers/cookies — never in reports, never in evidence (CO008)"
+  - name: COMPLIANCE
+    description: "Audit findings, security assessments, OWASP results — sensitive in aggregate; treat as internal until reviewed"
+
+# ─────────────────────────────────────────────────────────────────
+# Trust mechanics (audit-system overlay)
+# ─────────────────────────────────────────────────────────────────
+
+trust:
+  floor: 0.10
+  authority_override_floor: 0.40
+  decay_lambda: 0.05
+  taint_lock_tiers: [PII, AUTH, COMPLIANCE]
+  conflict_trust_delta_threshold: 0.20
+
+# ─────────────────────────────────────────────────────────────────
+# Authority map — which component owns which decision domain
+# ─────────────────────────────────────────────────────────────────
+# Original webprobe modules (preserved):
 
 authority_map:
   schema: models
@@ -23,12 +55,132 @@ authority_map:
   diff_analysis: differ
   user_interface: cli
 
-human_gate_triggers:
-  - "Agent count exceeds concurrency_warn_threshold"
-  - "Schema version bump required"
+  # New dimension analyzers from the audit expansion:
+  artifact_store: capturer            # CA003: capturer owns the canonical artifact store
+  scheduler: scheduler                # CA013: DAG scheduler owns check execution order
+  scorecard_aggregation: scorecard    # CA010, CA012: per-dimension subscore + overall band
+  fix_emission: dimension-analyzers   # CA008, CA009: each analyzer emits Fix; webprobe never applies
+  discoverability: discoverability-analyzer
+  bot_access: bot-access-analyzer
+  agent_surface: agent-surface-analyzer
+  api_surface: api-surface-analyzer
+  structured_data: structured-data-analyzer
+  agentic_commerce: agentic-commerce-analyzer
+  public_facing_signals: public-facing-signals-analyzer
+  accessibility: accessibility-analyzer
+  general_security: security  # extends existing security/ package
+
+# ─────────────────────────────────────────────────────────────────
+# Field-level classifications (audit-system additions)
+# ─────────────────────────────────────────────────────────────────
+
+classifications:
+  - field_pattern: "robots.txt content"
+    tier: PUBLIC
+    authoritative_component: discoverability-analyzer
+    canary_eligible: true
+    rationale: "Public site configuration; multiple dimensions read it via the shared parser (CA017)"
+
+  - field_pattern: "AI user-agent matrix outcomes"
+    tier: PUBLIC
+    authoritative_component: bot-access-analyzer
+    canary_eligible: true
+    rationale: "Bot-access decisions are derived from public robots.txt and a configurable matrix (CA016)"
+
+  - field_pattern: "schema.org structured data (JSON-LD)"
+    tier: PUBLIC
+    authoritative_component: structured-data-analyzer
+    canary_eligible: true
+    rationale: "Public commerce/content metadata for agent consumption"
+
+  - field_pattern: "OpenAPI document"
+    tier: PUBLIC
+    authoritative_component: api-surface-analyzer
+    canary_eligible: true
+    rationale: "Published API contract; shared by API-surface presence/design/security checks"
+
+  - field_pattern: "/.well-known/* responses"
+    tier: PUBLIC
+    authoritative_component: agent-surface-analyzer
+    canary_eligible: true
+    rationale: "Public discovery metadata for agents"
+
+  - field_pattern: "WebMCP runtime probes"
+    tier: PUBLIC
+    authoritative_component: agent-surface-analyzer
+    canary_eligible: true
+    rationale: "Browser-runtime detection (mode=runtime per CA006); inherently somewhat variable"
+
+  - field_pattern: "audit evidence (HttpExchange, DomExcerpt, RuntimeProbe)"
+    tier: COMPLIANCE
+    authoritative_component: scorecard
+    canary_eligible: false
+    rationale: "Audit trails may contain implementation details; treat as internal until reviewed"
+
+  - field_pattern: "OWASP / API-surface findings"
+    tier: COMPLIANCE
+    authoritative_component: api-surface-analyzer
+    canary_eligible: false
+    rationale: "Security findings require careful review before external exposure"
+
+  - field_pattern: "general-security findings"
+    tier: COMPLIANCE
+    authoritative_component: security
+    canary_eligible: false
+    rationale: "Existing security analyzer findings, now reported via the unified CheckResult schema"
+
+  - field_pattern: "form submission data observed during exploration"
+    tier: PII
+    authoritative_component: mask
+    canary_eligible: false
+    rationale: "Webprobe uses synthetic data (CO002), but mask must redact any real PII that leaks into evidence"
+
+  - field_pattern: "authorization headers and cookies"
+    tier: AUTH
+    authoritative_component: mask
+    canary_eligible: false
+    rationale: "CO008: never in reports, never in evidence; mask redacts before write"
+
+# ─────────────────────────────────────────────────────────────────
+# Soak durations (canary policy for non-deterministic outputs)
+# ─────────────────────────────────────────────────────────────────
+
+soak:
+  base_durations:
+    PUBLIC: 1h
+    PII: 6h
+    AUTH: 48h
+    COMPLIANCE: 72h
+  target_requests: 1000
+
+# ─────────────────────────────────────────────────────────────────
+# Canary eligibility (originals + new)
+# ─────────────────────────────────────────────────────────────────
 
 canary_eligibility:
   - component: explorer
     reason: "LLM-driven, non-deterministic output — always canary in CI"
   - component: visual
     reason: "Vision model output varies — findings may differ between runs"
+  - component: public-facing-signals-analyzer
+    reason: "LLM sub-pass evaluates copy quality; CA024 mandates consensus-of-N for stability"
+  - component: api-surface-analyzer
+    reason: "LLM sub-pass evaluates resource hierarchy coherence; non-deterministic"
+
+# ─────────────────────────────────────────────────────────────────
+# Human-gate triggers
+# ─────────────────────────────────────────────────────────────────
+
+human_gate_triggers:
+  - "Agent count exceeds concurrency_warn_threshold (CO004)"
+  - "Schema version bump required (CO001)"
+  - "AUTH or COMPLIANCE tier data would be exported externally"
+  - "Unresolvable conflict in scorecard band assignment (CA023)"
+  - "LLM-judgment check disagreement above conflict_trust_delta_threshold across consensus runs (CA024)"
+
+human_gates:
+  always:
+    - tier: AUTH
+    - tier: COMPLIANCE
+  on_low_trust_authoritative: true
+  on_unresolvable_conflict: true

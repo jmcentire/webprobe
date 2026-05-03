@@ -10,6 +10,8 @@ from urllib.parse import quote
 
 from playwright.async_api import Page, Response, TimeoutError
 
+from webprobe.artifact_collector import collect_from_capture
+from webprobe.artifact_store import ArtifactStore
 from webprobe.auth import AuthManager
 from webprobe.browser import BrowserPool
 from webprobe.config import WebprobeConfig
@@ -82,6 +84,7 @@ async def _visit_node(
     config: WebprobeConfig,
     run_dir: Path,
     semaphore: asyncio.Semaphore,
+    artifact_store: "ArtifactStore | None" = None,
 ) -> NodeCapture:
     """Visit a single node with Playwright, capture everything."""
     async with semaphore:
@@ -287,7 +290,17 @@ async def _visit_node(
                 except Exception:
                     screenshot_rel = ""
 
-            return NodeCapture(
+            # Raw HTML for artifact collection (CA003). Best-effort; some
+            # navigation states (mid-redirect, error pages) may not yield
+            # content, in which case json_ld/meta_tags artifacts are skipped.
+            raw_html: str | None = None
+            if artifact_store is not None:
+                try:
+                    raw_html = await page.content()
+                except Exception:
+                    raw_html = None
+
+            capture = NodeCapture(
                 auth_context=auth_context,
                 http_status=http_status,
                 timing=TimingData(
@@ -307,6 +320,20 @@ async def _visit_node(
                 cookies=captured_cookies,
                 forms=captured_forms,
             )
+
+            if artifact_store is not None:
+                try:
+                    collect_from_capture(
+                        url=node.state.url,
+                        capture=capture,
+                        raw_html=raw_html,
+                        store=artifact_store,
+                    )
+                except Exception:
+                    # Artifact collection must never fail capture (CO005).
+                    pass
+
+            return capture
         finally:
             await context.close()
 
@@ -315,8 +342,14 @@ async def capture_site(
     config: WebprobeConfig,
     graph: SiteGraph,
     run_dir: Path,
+    artifact_store: ArtifactStore | None = None,
 ) -> tuple[SiteGraph, PhaseStatus]:
-    """Phase 2: Visit every node with Playwright, capture metrics."""
+    """Phase 2: Visit every node with Playwright, capture metrics.
+
+    When an ``artifact_store`` is supplied, per-page artifacts (http_response,
+    dom, meta_tags, json_ld) are written to it as captures complete (CA003).
+    AUTH-tier headers are redacted before write (CO008).
+    """
     phase = PhaseStatus(
         phase="capture",
         status="running",
@@ -334,7 +367,8 @@ async def capture_site(
         for node_id, node in graph.nodes.items():
             for auth_ctx in node.auth_contexts_available:
                 tasks.append(_visit_node(
-                    pool, node, auth_ctx, auth_manager, config, run_dir, semaphore
+                    pool, node, auth_ctx, auth_manager, config, run_dir, semaphore,
+                    artifact_store=artifact_store,
                 ))
                 task_keys.append((node_id, auth_ctx))
 

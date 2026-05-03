@@ -1,7 +1,17 @@
+version: "1.1"
+generated_by: "manual union — original schema hints + audit-system schema additions"
+session_id: webprobe-audit-expansion-001
+
+# Schema hints for storage backends and the new audit-pipeline data model.
+
+# ─────────────────────────────────────────────────────────────────
+# Storage backends (original)
+# ─────────────────────────────────────────────────────────────────
+
 storage_backends:
   - type: filesystem
-    purpose: "Run artifacts (JSON reports, screenshots, config snapshots)"
-    path: "./webprobe-runs/{run_id}/"
+    purpose: "Run artifacts (JSON reports, screenshots, config snapshots, audit scorecard)"
+    path: "./runs/{run_id}/"
     format: json
     fields:
       - name: run_id
@@ -15,7 +25,33 @@ storage_backends:
       - name: config_snapshot
         classification: PUBLIC
         annotations:
-          - "Must strip auth.cookie_value, auth.bearer_token, auth.header_value before writing"
+          - "Must strip auth.cookie_value, auth.bearer_token, auth.header_value before writing (CO008)"
+      - name: scorecard
+        classification: COMPLIANCE
+      - name: check_results
+        classification: COMPLIANCE
+        annotations:
+          - "Mask must redact AUTH-tier values from CheckResult.evidence before writing (CA005, CO008)"
+
+  - type: filesystem
+    purpose: "Per-run captured artifacts (canonical store)"
+    path: "./runs/{run_id}/artifacts/"
+    format: json
+    fields:
+      - name: artifact_id
+        classification: PUBLIC
+        annotations: [immutable]
+      - name: artifact_type
+        classification: PUBLIC
+        annotations: ["enum: robots_txt | sitemap | openapi | json_ld | http_response | dom | well_known"]
+      - name: source_url
+        classification: PUBLIC
+      - name: payload
+        classification: PUBLIC
+        annotations: ["Mask must redact AUTH-tier headers/cookies before writing"]
+      - name: capture_status
+        classification: PUBLIC
+        annotations: ["enum: ok | http_error | network_error | timeout | not_found"]
 
   - type: filesystem
     purpose: "Mask configuration"
@@ -26,7 +62,7 @@ storage_backends:
         classification: PUBLIC
 
   - type: memory
-    purpose: "In-process site graph during run"
+    purpose: "In-process site graph and Artifact store during a run"
     format: pydantic
     fields:
       - name: nodes
@@ -36,4 +72,243 @@ storage_backends:
       - name: captures
         classification: PUBLIC
         annotations:
-          - "response_headers may contain Set-Cookie — do not log raw in reports"
+          - "response_headers may contain Set-Cookie — do not log raw in reports (CO008)"
+      - name: artifact_store
+        classification: PUBLIC
+        annotations:
+          - "Single canonical instance per run (CA003); accessed read-only by all dimension analyzers"
+
+# ─────────────────────────────────────────────────────────────────
+# Core audit-pipeline data model (new)
+# ─────────────────────────────────────────────────────────────────
+
+models:
+
+  CheckResult:
+    description: "Single per-check finding emitted by a dimension analyzer. Unified schema across all dimensions (CA001)."
+    fields:
+      dimension:
+        type: "enum: discoverability | bot_access | agent_surface | api_surface | structured_data | agentic_commerce | public_facing_signals | accessibility | general_security"
+        classification: PUBLIC
+        required: true
+      check_id:
+        type: string
+        classification: PUBLIC
+        required: true
+        annotations: ["Stable across runs; format: <dimension>.<check_slug>"]
+      title:
+        type: string
+        classification: PUBLIC
+        required: true
+      goal:
+        type: string
+        classification: PUBLIC
+        required: true
+        annotations: ["One sentence: what this check is trying to detect"]
+      status:
+        type: "enum: PASS | FAIL | NOT_DETECTED | SKIPPED"
+        classification: PUBLIC
+        required: true
+        annotations: ["CA002: trinary plus skipped; never collapse"]
+      reason:
+        type: string
+        classification: PUBLIC
+        required: false
+        annotations: ["Required when status ∈ {NOT_DETECTED, SKIPPED}; format: 'precondition_failed:<which>' or 'artifact_unavailable:<id>:<why>' (CA004, CA014)"]
+      severity:
+        type: "enum: critical | warning | suggestion | info"
+        classification: PUBLIC
+        required: true
+        annotations: ["CA011: orthogonal to weight"]
+      mode:
+        type: "enum: mechanical | llm | hybrid | runtime"
+        classification: PUBLIC
+        required: true
+        annotations: ["CA006: drives scheduler and SKIPPED behavior"]
+      weight:
+        type: float
+        classification: PUBLIC
+        required: true
+        annotations: ["CA010: dimension-internal; sums to 1.0 within a dimension"]
+      evidence:
+        type: "Evidence (typed union)"
+        classification: COMPLIANCE
+        required: true
+        annotations: ["CA005: HttpExchange | DomExcerpt | RuntimeProbe | ArtifactRef; never free-form text"]
+      fix:
+        type: "Fix"
+        classification: PUBLIC
+        required: false
+        annotations: ["Required when status ∈ {FAIL, NOT_DETECTED} per CA008"]
+      references:
+        type: "list[Reference]"
+        classification: PUBLIC
+        required: false
+        annotations: ["RFC numbers, standards URLs, vendor docs"]
+      check_dependencies:
+        type: "list[check_id]"
+        classification: PUBLIC
+        required: false
+        annotations: ["CA013: only for LLM-dependent checks; resolved topologically by scheduler"]
+      elapsed_ms:
+        type: int
+        classification: PUBLIC
+        required: true
+        annotations: ["CO011: timing everywhere"]
+
+  Evidence:
+    description: "Typed union of evidence shapes (CA005)"
+    variants:
+      HttpExchange:
+        fields:
+          method: { type: string, classification: PUBLIC }
+          url: { type: string, classification: PUBLIC }
+          request_headers: { type: "dict[str, str]", classification: AUTH, annotations: ["Mask redacts before write"] }
+          request_body_excerpt: { type: string, classification: PUBLIC }
+          status: { type: int, classification: PUBLIC }
+          response_headers: { type: "dict[str, str]", classification: AUTH, annotations: ["Mask redacts before write"] }
+          response_body_excerpt: { type: string, classification: PUBLIC }
+          elapsed_ms: { type: int, classification: PUBLIC }
+      DomExcerpt:
+        fields:
+          url: { type: string, classification: PUBLIC }
+          selector: { type: string, classification: PUBLIC }
+          html_snippet: { type: string, classification: PUBLIC }
+          screenshot_ref: { type: "ArtifactRef | null", classification: PUBLIC }
+      RuntimeProbe:
+        fields:
+          url: { type: string, classification: PUBLIC }
+          action: { type: string, classification: PUBLIC, annotations: ["e.g. 'check navigator.modelContext.provideContext'"] }
+          observation: { type: "dict", classification: PUBLIC }
+      ArtifactRef:
+        fields:
+          artifact_id: { type: string, classification: PUBLIC }
+          excerpt: { type: string, classification: PUBLIC }
+
+  Fix:
+    description: "Structured remediation recommendation (CA008). Webprobe never applies fixes (CA009)."
+    fields:
+      action_type:
+        type: "enum: add_meta_tag | modify_robots_rule | add_jsonld_block | add_well_known_resource | add_response_header | fix_status_code | rename_field | add_pagination_field | add_id_prefix | other"
+        classification: PUBLIC
+        required: true
+      target:
+        type: string
+        classification: PUBLIC
+        required: true
+        annotations: ["File path, URL, or DOM selector"]
+      payload:
+        type: dict
+        classification: PUBLIC
+        required: true
+        annotations: ["Structured change content; shape depends on action_type"]
+      summary:
+        type: string
+        classification: PUBLIC
+        required: true
+        annotations: ["Human-readable one-liner"]
+      references:
+        type: "list[Reference]"
+        classification: PUBLIC
+        required: false
+
+  Artifact:
+    description: "Single canonical capture in the shared store (CA003)"
+    fields:
+      artifact_id:
+        type: string
+        classification: PUBLIC
+        required: true
+        annotations: [immutable]
+      artifact_type:
+        type: "enum: robots_txt | sitemap | openapi | json_ld | http_response | dom | well_known | screenshot"
+        classification: PUBLIC
+        required: true
+      source_url:
+        type: string
+        classification: PUBLIC
+        required: true
+      capture_status:
+        type: "enum: ok | http_error | network_error | timeout | not_found"
+        classification: PUBLIC
+        required: true
+      capture_error:
+        type: string
+        classification: PUBLIC
+        required: false
+        annotations: ["Populated when capture_status != ok; consumed by checks to produce NOT_DETECTED reasons (CA004)"]
+      payload:
+        type: any
+        classification: PUBLIC
+        required: false
+        annotations: ["Type depends on artifact_type; raw bytes for unknown types"]
+      captured_at:
+        type: int
+        classification: PUBLIC
+        required: true
+        annotations: ["Unix epoch seconds"]
+
+  Scorecard:
+    description: "Per-run aggregated scorecard (CA010, CA012, CA023)"
+    fields:
+      run_id:
+        type: string
+        classification: PUBLIC
+        required: true
+      schema_version:
+        type: string
+        classification: PUBLIC
+        required: true
+      target_url:
+        type: string
+        classification: PUBLIC
+        required: true
+      mode:
+        type: "enum: mechanical_only | full"
+        classification: PUBLIC
+        required: true
+        annotations: ["full implies LLM key configured (CA007)"]
+      dimensions:
+        type: "dict[str, DimensionScore]"
+        classification: PUBLIC
+        required: true
+      overall_band:
+        type: "enum: L1 | L2 | L3 | L4 | L5"
+        classification: PUBLIC
+        required: true
+        annotations: ["Computed from per-dimension subscores via CA023 mapping"]
+
+  DimensionScore:
+    description: "Per-dimension aggregate"
+    fields:
+      subscore:
+        type: float
+        classification: PUBLIC
+        required: true
+        annotations: ["0-100, weighted sum of CheckResults in this dimension where status=PASS counts full weight"]
+      band:
+        type: "enum: L1 | L2 | L3 | L4 | L5"
+        classification: PUBLIC
+        required: true
+      pass_count:
+        type: int
+        classification: PUBLIC
+        required: true
+      fail_count:
+        type: int
+        classification: PUBLIC
+        required: true
+      not_detected_count:
+        type: int
+        classification: PUBLIC
+        required: true
+      skipped_count:
+        type: int
+        classification: PUBLIC
+        required: true
+        annotations: ["High skipped_count in mechanical_only mode is expected for LLM-heavy dimensions"]
+      mode_partial:
+        type: bool
+        classification: PUBLIC
+        required: true
+        annotations: ["true when one or more sub-passes were SKIPPED (mechanical_only mode); influences band calculation"]

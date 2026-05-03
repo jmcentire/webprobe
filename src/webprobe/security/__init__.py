@@ -8,6 +8,11 @@ from webprobe.security.cors import check_cors
 from webprobe.security.info_disclosure import check_information_disclosure
 from webprobe.security.forms import check_forms
 from webprobe.security.xss import check_xss_signals
+from webprobe.security.check_results import (
+    findings_to_check_results,
+    scan_capture_with_check_results,
+    scan_graph_with_check_results,
+)
 
 __all__ = [
     "scan_capture",
@@ -19,4 +24,7 @@ __all__ = [
     "check_information_disclosure",
     "check_forms",
     "check_xss_signals",
+    "findings_to_check_results",
+    "scan_capture_with_check_results",
+    "scan_graph_with_check_results",
 ]

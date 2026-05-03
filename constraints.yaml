@@ -1,13 +1,27 @@
+version: "1.1"
+generated_by: "constrain (audit-expansion session) + manual union with original Pact constraints"
+session_id: webprobe-audit-expansion-001
+
+# Constraints are the union of:
+#   - Original webprobe operational constraints (C001-C014, prefix CO)
+#   - New audit-system constraints from the constrain session (prefix CA)
+# Both sets MUST hold; they cover orthogonal concerns.
+
 constraints:
-  - id: C001
+
+  # ───────────────────────────────────────────────────────────────
+  # OPERATIONAL CONSTRAINTS (preserved from original Pact scaffold)
+  # ───────────────────────────────────────────────────────────────
+
+  - id: CO001
     boundary: schema_stability
-    condition: "Run.schema_version must be bumped when any field is added, removed, or type-changed in Run, SiteGraph, Node, Edge, or AnalysisResult"
+    condition: "Run.schema_version must be bumped when any field is added, removed, or type-changed in Run, SiteGraph, Node, Edge, AnalysisResult, CheckResult, Artifact, or Scorecard"
     violation: "Cross-run diffs and aggregation pipelines break silently"
     severity: must
     rationale: "Stable schema is the foundation of the trending/aggregation use case"
     affected_components: [models, differ, reporter]
 
-  - id: C002
+  - id: CO002
     boundary: no_destructive_actions
     condition: "LLM exploration agents must never submit real data, click delete/remove/cancel buttons, or trigger irreversible state changes on the target site"
     violation: "Data loss or unintended side effects on the target site"
@@ -15,7 +29,7 @@ constraints:
     rationale: "webprobe is a read-only observer; destructive actions would make it unsafe to run against production"
     affected_components: [explorer]
 
-  - id: C003
+  - id: CO003
     boundary: cost_visibility
     condition: "Every LLM API call must be logged with provider, model, input_tokens, output_tokens, and estimated_cost_usd"
     violation: "Users cannot predict or audit exploration costs"
@@ -23,7 +37,7 @@ constraints:
     rationale: "LLM costs are unbounded without tracking; users must see what they're spending"
     affected_components: [llm_provider, explorer, reporter]
 
-  - id: C004
+  - id: CO004
     boundary: concurrency_safeguard
     condition: "When agent count exceeds concurrency_warn_threshold (default 20), user must confirm before proceeding"
     violation: "Accidental cost explosion from too many concurrent LLM agents"
@@ -31,15 +45,15 @@ constraints:
     rationale: "50 agents * 20 actions * vision calls = hundreds of API calls; user must opt in"
     affected_components: [cli, explorer]
 
-  - id: C005
+  - id: CO005
     boundary: graceful_degradation
-    condition: "Individual node capture failures must not abort the entire run; failed nodes are recorded with error details"
-    violation: "One slow page kills the whole run"
+    condition: "Individual node capture failures must not abort the entire run; failed nodes are recorded with error details, and dependent checks return NOT_DETECTED with reason='artifact_unavailable'"
+    violation: "One slow page kills the whole run, OR a single missing artifact cascades into FAILs across multiple dimensions"
     severity: must
-    rationale: "Real sites have flaky pages; the tool must be resilient"
-    affected_components: [capturer, explorer]
+    rationale: "Real sites have flaky pages; the tool must be resilient and not double-count root causes"
+    affected_components: [capturer, explorer, dimension-analyzers]
 
-  - id: C006
+  - id: CO006
     boundary: provider_isolation
     condition: "LLM provider implementations must be behind the LLMProvider abstraction; no provider-specific code outside llm_provider.py"
     violation: "Adding a new provider requires changes across multiple files"
@@ -47,7 +61,7 @@ constraints:
     rationale: "User configured provider; switching must be a one-line config change"
     affected_components: [llm_provider]
 
-  - id: C007
+  - id: CO007
     boundary: transmogrifier_optional
     condition: "transmogrifier must be an optional dependency; if unavailable, prompts pass through unmodified"
     violation: "Hard dependency on transmogrifier would break installs without it"
@@ -55,15 +69,15 @@ constraints:
     rationale: "Core pipeline must work without optional LLM deps"
     affected_components: [llm_provider]
 
-  - id: C008
+  - id: CO008
     boundary: auth_secret_hygiene
-    condition: "Auth credentials (cookies, tokens, headers) must never appear in report.json, report.html, or screenshots"
+    condition: "Auth credentials (cookies, tokens, headers) must never appear in report.json, report.html, screenshots, OR CheckResult.evidence payloads"
     violation: "Credential leakage in reports shared with team or CI logs"
     severity: must
     rationale: "Reports are shareable artifacts; secrets must not leak"
-    affected_components: [config, reporter, capturer]
+    affected_components: [config, reporter, capturer, mask, dimension-analyzers]
 
-  - id: C009
+  - id: CO009
     boundary: license_compatibility
     condition: "All dependencies must be MIT, Apache 2.0, or BSD licensed; webprobe itself is MIT"
     violation: "GPL or proprietary deps would prevent MIT licensing"
@@ -71,7 +85,7 @@ constraints:
     rationale: "User intends to release under MIT and use commercially"
     affected_components: [all]
 
-  - id: C010
+  - id: CO010
     boundary: mask_transparency
     condition: "Masked (suppressed) findings must be tracked and optionally visible in reports, not silently deleted"
     violation: "Users lose visibility into what was suppressed and why"
@@ -79,23 +93,23 @@ constraints:
     rationale: "Suppression without transparency leads to missed real issues"
     affected_components: [mask, reporter]
 
-  - id: C011
+  - id: CO011
     boundary: timing_everywhere
-    condition: "Every phase, every HTTP request, and every page load must record timing data"
+    condition: "Every phase, every HTTP request, every page load, AND every check execution must record timing data (elapsed_ms)"
     violation: "Performance regression detection becomes impossible"
     severity: should
     rationale: "Timing is a first-class metric for cross-run trending"
-    affected_components: [mapper, capturer, explorer, analyzer, reporter]
+    affected_components: [mapper, capturer, explorer, analyzer, reporter, dimension-analyzers]
 
-  - id: C012
+  - id: CO012
     boundary: visual_wcag_computational
     condition: "WCAG contrast ratio checks must use proper sRGB linearization, not naive RGB distance"
     violation: "Inaccurate contrast ratios lead to false positives/negatives"
     severity: should
     rationale: "WCAG 2.1 specifies the exact luminance formula; approximations are wrong"
-    affected_components: [visual]
+    affected_components: [visual, accessibility-analyzer]
 
-  - id: C013
+  - id: CO013
     boundary: generic_by_default
     condition: "The tool must work with any URL as input; framework detection is an optional enhancement, not a requirement"
     violation: "Tool becomes coupled to specific frameworks"
@@ -103,10 +117,206 @@ constraints:
     rationale: "User wants to point it at any site, not just Astro/Next/SvelteKit"
     affected_components: [mapper, frameworks, cli]
 
-  - id: C014
+  - id: CO014
     boundary: apprentice_future_integration
     condition: "Apprentice provider must route through OpenAI-compatible API at localhost:8741; no custom protocol"
     violation: "Apprentice integration requires special handling"
     severity: should
     rationale: "Apprentice exposes standard OpenAI API; staying compatible means zero custom code"
     affected_components: [llm_provider]
+
+  # ───────────────────────────────────────────────────────────────
+  # AUDIT-SYSTEM CONSTRAINTS (new, from constrain session)
+  # ───────────────────────────────────────────────────────────────
+
+  - id: CA001
+    boundary: unified_check_result_schema
+    condition: "All dimension analyzers return List[CheckResult] with required fields: dimension, check_id, status, severity, title, evidence, mode, weight"
+    violation: "Inconsistent result formats break unified scorecard, reporter, and PR-gating logic"
+    severity: must
+    rationale: "Unified scorecard requires a single CheckResult model across every dimension"
+    affected_components: [models, dimension-analyzers, reporter]
+
+  - id: CA002
+    boundary: trinary_status
+    condition: "Every CheckResult.status must be one of: PASS, FAIL, NOT_DETECTED, SKIPPED"
+    violation: "Boolean pass/fail collapses 'feature optional and absent' (NOT_DETECTED) and 'mechanical-only mode skipped this' (SKIPPED) into FAIL, producing false negatives"
+    severity: must
+    rationale: "Different audiences gate on different statuses; collapsing them breaks PR gating semantics"
+    affected_components: [models, dimension-analyzers, reporter]
+
+  - id: CA003
+    boundary: shared_artifacts_store
+    condition: "Capture phase produces a single canonical Artifacts store (one robots.txt, one OpenAPI doc, one DOM-per-URL, one headers-per-URL, etc.); dimensions read from the store and never copy artifacts into per-dimension storage. CheckResult.evidence references artifacts by id and excerpt, not by full payload."
+    violation: "Per-dimension artifact copies cause divergent interpretations of the same root data, n-fold storage cost, and cascade failures from a single missing artifact"
+    severity: must
+    rationale: "One root artifact, many lenses; the lens belongs in CheckResult, the artifact lives in the store"
+    affected_components: [capturer, models, dimension-analyzers]
+
+  - id: CA004
+    boundary: not_detected_on_missing_artifact
+    condition: "When a check's required artifact is unavailable (capture failure, 404, network error), the check returns status=NOT_DETECTED with reason='artifact_unavailable:<artifact_id>:<reason>', NEVER FAIL"
+    violation: "Inconsistent NOT_DETECTED vs FAIL across dimensions for the same root cause confuses users and corrupts dimension subscores"
+    severity: must
+    rationale: "Missing-artifact is a capture concern, not a per-dimension finding; centralize the semantics"
+    affected_components: [models, dimension-analyzers, capturer]
+
+  - id: CA005
+    boundary: structured_evidence_typed_union
+    condition: "CheckResult.evidence is a typed union of HttpExchange, DomExcerpt, RuntimeProbe, and ArtifactRef. Free-form text is forbidden."
+    violation: "Free-form evidence is un-diffable across runs and unfit for machine-readable fix prompts"
+    severity: must
+    rationale: "Diff/aggregate/automate all require structured evidence"
+    affected_components: [models, dimension-analyzers]
+
+  - id: CA006
+    boundary: mode_enum
+    condition: "Each check declares mode ∈ {mechanical, llm, hybrid, runtime}. Hybrid checks have a deterministic precondition that gates LLM judgment; runtime checks require Playwright. The runner uses mode to schedule and to decide SKIPPED behavior in mechanical-only runs."
+    violation: "Without explicit mode, runner cannot honor 'no API keys needed' for mechanical-only runs"
+    severity: must
+    rationale: "Mechanical-only operation is a first-class mode; the dichotomy must be encoded, not implied"
+    affected_components: [models, dimension-analyzers, scheduler]
+
+  - id: CA007
+    boundary: mechanical_only_viable
+    condition: "Pipeline must produce a useful scorecard with no LLM API key; LLM-only checks return SKIPPED, hybrid checks fall back to their mechanical precondition only, mechanical checks run normally"
+    violation: "Hard LLM dependency breaks PR gating in airgap/cost-constrained environments"
+    severity: must
+    rationale: "PR gating in CI must work without budget; LLM is opt-in enrichment"
+    affected_components: [scheduler, dimension-analyzers]
+
+  - id: CA008
+    boundary: machine_readable_fix
+    condition: "Every CheckResult with status=FAIL or NOT_DETECTED includes a structured Fix(action_type, target, payload, summary, references). Free-form fix text supplements but does not replace the structured form."
+    violation: "Downstream remediation agents cannot act on free-form prose; humans get inconsistent advice"
+    severity: should
+    rationale: "Audit→fix loop is a major value driver; structure makes it composable"
+    affected_components: [models, dimension-analyzers, reporter]
+
+  - id: CA009
+    boundary: webprobe_never_applies_fixes
+    condition: "Webprobe emits Fix recommendations and never applies them. No write to robots.txt, no PR opens, no header injection. Fix application is a downstream consumer's responsibility."
+    violation: "Auto-applying fixes silently changes target sites without operator approval; conflicts between dimensions become webprobe's problem"
+    severity: must
+    rationale: "Read-only observer (CO002) extends to fixes: webprobe identifies, the operator decides"
+    affected_components: [reporter, cli, dimension-analyzers]
+
+  - id: CA010
+    boundary: dimension_internal_weight_only
+    condition: "CheckResult.weight is dimension-internal — sums to 1.0 within a dimension. Cross-dimension weighting is a presentation/policy concern in the operator's gating config, NOT in the framework."
+    violation: "Mixing internal weight and cross-dimension policy makes scoring opaque and unportable"
+    severity: must
+    rationale: "Each dimension's subscore is independently meaningful; the overall band is a policy choice on top"
+    affected_components: [models, scorecard]
+
+  - id: CA011
+    boundary: severity_orthogonal_to_weight
+    condition: "CheckResult.severity drives prioritization in the report and fix-prompt copy; it does NOT multiply weight"
+    violation: "Conflating severity and weight loses the 'low-severity, high-weight' (e.g. missing sitemap) and 'high-severity, low-weight' (e.g. one nasty header on one page) cases"
+    severity: should
+    rationale: "Severity and weight encode different signals; keep them orthogonal"
+    affected_components: [models, scorecard, reporter]
+
+  - id: CA012
+    boundary: per_dimension_subscore_no_rolled_overall_score
+    condition: "Scorecard reports per-dimension subscore (0-100), per-dimension band, and one overall band (e.g. Level 1-5). It does NOT report a single rolled-up overall numeric score."
+    violation: "A single overall score is false precision; users gate on per-dimension thresholds, not means"
+    severity: must
+    rationale: "Different audiences care about different dimensions; collapsing to one number erases that"
+    affected_components: [scorecard, reporter]
+
+  - id: CA013
+    boundary: dag_scheduler
+    condition: "Mechanical and runtime checks run from Artifacts in any order, parallel up to a concurrency cap. LLM checks may declare upstream check_dependencies; the runner resolves topologically and forbids cycles. Most LLM checks have no dependencies; cross-check deps are explicit and rare."
+    violation: "Implicit ordering breaks dependent LLM checks (e.g. value-prop extraction → CTA alignment) and prevents parallelism"
+    severity: must
+    rationale: "Explicit dependencies ensure correct execution and enable parallelism elsewhere"
+    affected_components: [scheduler]
+
+  - id: CA014
+    boundary: hybrid_precondition_failure_semantics
+    condition: "When a hybrid check's deterministic precondition fails, the check returns NOT_DETECTED with reason='precondition_failed:<precondition>'. NEVER fall back to a different analysis."
+    violation: "Silent fallback produces results that look like the originally-requested check but mean something else"
+    severity: must
+    rationale: "A check is what it is; if its preconditions fail, that's not-detected, not a different check"
+    affected_components: [scheduler, dimension-analyzers]
+
+  - id: CA015
+    boundary: local_first_storage
+    condition: "Webprobe writes runs to a local directory (runs/<timestamp>/) containing artifacts/, captures/, checks/, report.html, report.json. No server, no DB, no transmission. PII/retention is the operator's responsibility (rm the run dir to delete)."
+    violation: "Hidden network IO or hidden DB state turns a local tool into a data-protection concern without operator knowledge"
+    severity: must
+    rationale: "Hosted/multi-tenant operation is explicitly out of scope for v1; it requires real DPA design"
+    affected_components: [cli, reporter, all]
+
+  - id: CA016
+    boundary: ai_user_agent_matrix
+    condition: "Bot-access analyzer evaluates robots.txt against a configurable matrix of AI/search user-agents. Default v1 matrix: GPTBot, ChatGPT-User, ClaudeBot, anthropic-ai, PerplexityBot, Google-Extended, Googlebot, Bingbot, Applebot-Extended, Meta-ExternalAgent, CCBot, claude-web, bytespider, cohere-ai. Operators can extend via config."
+    violation: "Hardcoded list goes stale fast; a new bot appearing tomorrow shouldn't require a code change"
+    severity: must
+    rationale: "AI-bot landscape moves quickly; matrix lives in config"
+    affected_components: [bot-access-analyzer, config]
+
+  - id: CA017
+    boundary: shared_artifact_parsers
+    condition: "robots.txt parser, OpenAPI loader, JSON-LD extractor, and meta-tag extractor are shared infrastructure consumed by multiple dimensions. No dimension reimplements parsing of an artifact another dimension already needs."
+    violation: "Duplicate parsers diverge in subtle ways; bug fixes must be applied N times"
+    severity: must
+    rationale: "Shared artifacts (CA003) imply shared parsers; same data, same code path"
+    affected_components: [capturer, dimension-analyzers]
+
+  - id: CA018
+    boundary: approved_http_status_set
+    condition: "API-surface analyzer flags any HTTP status code outside the approved set: 200, 201, 202, 204 (with caveat — see CA019), 301, 302, 304, 307, 308, 400, 401, 402, 403, 404, 409, 410, 422, 424, 429, 500, 502, 503, 504. Codes outside this set produce a CheckResult with severity=warning."
+    violation: "Non-standard codes (e.g. 507 for queue-full) break typed clients, proxies, and monitoring"
+    severity: should
+    rationale: "Stripe-style API design pattern; predictable error handling"
+    affected_components: [api-surface-analyzer]
+
+  - id: CA019
+    boundary: list_endpoint_empty_shape
+    condition: "API-surface analyzer flags list endpoints that return 204 on empty results; recommended shape is 200 + {data: [], has_more: false}"
+    violation: "Two-branch client handling forced (204 + no body vs 200 + body) — particularly painful in typed SDKs and polling loops"
+    severity: should
+    rationale: "Stripe-style API design pattern; consistent list semantics"
+    affected_components: [api-surface-analyzer]
+
+  - id: CA020
+    boundary: identifier_prefix_pattern
+    condition: "API-surface analyzer flags *_id fields whose values are raw hex/UUIDs/numeric without a typed prefix (e.g. msg_a3f9..., cus_abc...)"
+    violation: "Opaque IDs in logs and support tickets prevent at-a-glance resource identification"
+    severity: suggestion
+    rationale: "Stripe-style API design pattern; debuggable identifiers"
+    affected_components: [api-surface-analyzer]
+
+  - id: CA021
+    boundary: schema_org_canonical_extraction
+    condition: "Structured-data analyzer extracts JSON-LD from rendered DOM using a single parser; supports schema.org Product, Offer, Organization, AggregateRating, ProductGroup, Article, FAQPage, Recipe at minimum. Microdata and RDFa parsers are deferred to v2."
+    violation: "Multiple parsers on the same DOM disagree; inconsistent coverage across schema types"
+    severity: must
+    rationale: "JSON-LD is the dominant format; one parser, one truth, one extension path"
+    affected_components: [structured-data-analyzer, capturer]
+
+  - id: CA022
+    boundary: pact_contract_per_module
+    condition: "Each new dimension analyzer ships with a paired contract under contracts/<dimension>/ pinning inputs (artifact types consumed), outputs (CheckResult shape), invariants, and tests"
+    violation: "Skipping the contract step lets dimensions diverge in subtle ways; the whole point of contract-first development is lost"
+    severity: must
+    rationale: "Architectural discipline that keeps the system coherent under expansion"
+    affected_components: [dimension-analyzers, contracts]
+
+  - id: CA023
+    boundary: scorecard_levels_explicit_mapping
+    condition: "Overall band is computed from per-dimension subscores via an explicit, configurable mapping documented in docs/AUDIT_DIMENSIONS.md. Default v1 mapping: Level 5 = all dimensions ≥ 80; Level 4 = no dimension < 60 AND majority ≥ 80; Level 3 = no dimension < 40; Level 2 = no critical dimension < 20; Level 1 = baseline (any check ran)."
+    violation: "Implicit band logic gives inconsistent results across runs and is not auditable"
+    severity: should
+    rationale: "Bands drive PR-gating; the rule must be inspectable and overridable"
+    affected_components: [scorecard]
+
+  - id: CA024
+    boundary: llm_judgment_stability
+    condition: "LLM-judgment checks must use temperature=0 and a documented prompt template; checks gating PR builds run with consensus-of-N (default N=3, majority) to dampen flip-flops on borderline cases"
+    violation: "Non-deterministic CI failures from flapping LLM judgments erode trust in the pipeline"
+    severity: should
+    rationale: "Stability for gating is more important than throughput; consensus is the cheap, reliable mechanism"
+    affected_components: [llm_provider, dimension-analyzers, scheduler]
