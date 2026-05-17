@@ -416,12 +416,14 @@ def analyze_cmd(run_dir: str) -> None:
         click.echo(f"  Security findings: {len(result.security_findings)} ({', '.join(parts)})")
 
     # Generate report
-    from webprobe.models import Run
-    site_url = graph.root_url or next(iter(graph.nodes), "")
-    run_obj = Run(url=site_url, graph=graph, analysis=result, phases=[phase])
-    (rd / "report.json").write_text(run_obj.model_dump_json(indent=2))
-    generate_report(run_obj, rd)
-    click.echo(f"  Report: {rd / 'report.html'}")
+    from webprobe.models import AnalysisResult, PhaseStatus, Run, SiteGraph
+    if isinstance(graph, SiteGraph) and isinstance(result, AnalysisResult):
+        site_url = graph.root_url or next(iter(graph.nodes), "")
+        phases = [phase] if isinstance(phase, PhaseStatus) else []
+        run_obj = Run(url=site_url, graph=graph, analysis=result, phases=phases)
+        (rd / "report.json").write_text(run_obj.model_dump_json(indent=2))
+        generate_report(run_obj, rd)
+        click.echo(f"  Report: {rd / 'report.html'}")
 
 
 @main.command()

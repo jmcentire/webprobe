@@ -134,26 +134,32 @@ contract under `contracts/<dimension>/` (`CA022`).
 
 Goal: can search engines and AI agents find your stuff at all?
 
+Google Search generative AI features are treated as an extension of normal
+Search visibility: crawlability, indexability, snippet eligibility, helpful
+page structure, images/video, and page experience matter. Special AI files and
+markup are optional agent affordances, not Google Search requirements.
+
 **v1 checks** (mode in parens):
 
 - `discoverability.robots_txt_present` (mechanical) — 200 + valid format
 - `discoverability.robots_txt_user_agent_directive` (mechanical) — has at least one User-agent rule
 - `discoverability.sitemap_referenced` (mechanical) — Sitemap directive in robots.txt
 - `discoverability.sitemap_valid` (mechanical) — fetch + valid XML
-- `discoverability.link_headers_present` (mechanical) — RFC 8288 Link headers on homepage
-- `discoverability.llms_txt_present` (mechanical) — `/llms.txt` reachable
-- `discoverability.llms_txt_structured` (mechanical) — markdown headings + sections
-- `discoverability.content_signals_directives` (mechanical) — `Content-Signal:` in robots.txt
-- `discoverability.markdown_negotiation` (runtime) — `Accept: text/markdown` returns `text/markdown`
+- `discoverability.google_search_snippet_eligible` (mechanical) — homepage does not opt out with `noindex`, `nosnippet`, `none`, or `max-snippet:0`
+- `discoverability.content_structure_signals` (mechanical) — rendered page has a title and primary H1
+- `discoverability.image_alt_text_signals` (mechanical) — meaningful alt-text coverage when images are present
+- `discoverability.llms_txt_present` (mechanical) — optional `/llms.txt` for non-Google agents; skipped when absent
+- `discoverability.markdown_negotiation` (runtime) — optional `Accept: text/markdown`; skipped when absent
 
 **v2 backlog**: RSS/Atom, JSON Feed, well-known/security.txt, manifest.json
-links, hreflang sitemap variants.
+links, hreflang sitemap variants, duplicate-content detection, page-experience
+signals, Google Business Profile / Merchant Center evidence where applicable.
 
 **Required artifacts**: `robots_txt`, `sitemap`, homepage HTTP exchange,
-`/llms.txt` HTTP exchange.
+homepage `meta_tags`, optional `/llms.txt` HTTP exchange.
 
-**References**: RFC 9309 (robots), sitemaps.org, RFC 8288 (Link), llms.txt
-spec, contentsignals.org.
+**References**: RFC 9309 (robots), sitemaps.org, Google Search Central
+generative AI optimization guide, llms.txt spec.
 
 ### Dimension 2 — Bot Access & Identity
 

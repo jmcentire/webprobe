@@ -1,14 +1,18 @@
 """Discoverability dimension analyzer (Dimension 1).
 
+Google Search generative AI features are grounded in normal Search indexing and
+quality systems, not special AI-only files. This dimension therefore scores
+Search fundamentals first and treats direct agent affordances as optional.
+
 v1 checks (all mechanical except markdown_negotiation which is runtime):
   1. discoverability.robots_txt_present
   2. discoverability.robots_txt_user_agent_directive
   3. discoverability.sitemap_referenced
   4. discoverability.sitemap_valid
-  5. discoverability.link_headers_present
-  6. discoverability.llms_txt_present
-  7. discoverability.llms_txt_structured
-  8. discoverability.content_signals_directives
+  5. discoverability.google_search_snippet_eligible
+  6. discoverability.content_structure_signals
+  7. discoverability.image_alt_text_signals
+  8. discoverability.llms_txt_present
   9. discoverability.markdown_negotiation
 
 Reads artifacts from the canonical ArtifactStore (CA003); writes none.
@@ -34,6 +38,7 @@ from webprobe.models import (
     DimensionId,
     Fix,
     FixActionType,
+    HttpExchange,
     Reference,
 )
 
@@ -43,6 +48,11 @@ DIMENSION = DimensionId.discoverability
 
 # Equal-weight v1 distribution: 9 checks → weight 1/9 each.
 _V1_WEIGHT = 1.0 / 9
+
+_GOOGLE_AI_SEARCH_REF = Reference(
+    label="Google Search Central: Optimizing for generative AI search",
+    url="https://developers.google.com/search/docs/fundamentals/ai-optimization-guide",
+)
 
 
 def _origin(url: str) -> str:
@@ -313,92 +323,240 @@ def check_sitemap_valid(store: ArtifactStore, base_url: str) -> CheckResult:
     )
 
 
-def check_link_headers_present(store: ArtifactStore, base_url: str) -> CheckResult:
-    """5. Homepage exposes RFC 8288 Link headers (or via meta_tags artifact)."""
+def _homepage_meta_artifact(store: ArtifactStore, base_url: str) -> Artifact | None:
+    return store.find(ArtifactType.meta_tags, base_url)
+
+
+def _robots_meta_tokens(value: str) -> set[str]:
+    tokens: set[str] = set()
+    for part in value.lower().replace(";", ",").split(","):
+        token = part.strip().replace(" ", "")
+        if token:
+            tokens.add(token)
+    return tokens
+
+
+def check_google_search_snippet_eligible(store: ArtifactStore, base_url: str) -> CheckResult:
+    """5. Homepage does not opt out of Google indexing/snippets."""
     home = base_url
-    art = store.find(ArtifactType.meta_tags, home)
+    art = _homepage_meta_artifact(store, home)
     if art is None or art.capture_status != CaptureStatus.ok:
         return _not_detected(
-            check_id="discoverability.link_headers_present",
-            title="Link headers on homepage",
-            goal="Homepage advertises agent resources via Link response headers (RFC 8288)",
-            severity=CheckSeverity.suggestion,
+            check_id="discoverability.google_search_snippet_eligible",
+            title="Google Search snippet eligible",
+            goal="Homepage is indexable and eligible to show a snippet in Google Search",
+            severity=CheckSeverity.warning,
             weight=_V1_WEIGHT,
             reason="artifact_unavailable:meta_tags:homepage_not_captured",
             artifact=art,
         )
-    link_headers = (art.payload or {}).get("link_headers", [])
-    if link_headers:
+    robots_meta = ((art.payload or {}).get("robots_meta") or "").strip()
+    tokens = _robots_meta_tokens(robots_meta)
+    blocking = sorted(
+        t for t in tokens
+        if t in {"none", "noindex", "nosnippet"} or t.startswith("max-snippet:0")
+    )
+    if not blocking:
         return CheckResult(
             dimension=DIMENSION,
-            check_id="discoverability.link_headers_present",
-            title="Link headers on homepage",
-            goal="Homepage advertises agent resources via Link response headers (RFC 8288)",
+            check_id="discoverability.google_search_snippet_eligible",
+            title="Google Search snippet eligible",
+            goal="Homepage is indexable and eligible to show a snippet in Google Search",
             status=CheckStatus.pass_,
             severity=CheckSeverity.info,
             mode=CheckMode.mechanical,
             weight=_V1_WEIGHT,
-            evidence=_evidence_from_artifact(art, f"{len(link_headers)} Link header value(s)"),
+            evidence=_evidence_from_artifact(art, robots_meta or "no restrictive robots meta"),
+            references=[_GOOGLE_AI_SEARCH_REF],
         )
     return CheckResult(
         dimension=DIMENSION,
-        check_id="discoverability.link_headers_present",
-        title="Link headers on homepage",
-        goal="Homepage advertises agent resources via Link response headers (RFC 8288)",
+        check_id="discoverability.google_search_snippet_eligible",
+        title="Google Search snippet eligible",
+        goal="Homepage is indexable and eligible to show a snippet in Google Search",
         status=CheckStatus.fail,
-        severity=CheckSeverity.suggestion,
+        severity=CheckSeverity.warning,
         mode=CheckMode.mechanical,
         weight=_V1_WEIGHT,
-        evidence=_evidence_from_artifact(art, "no Link headers found"),
+        evidence=_evidence_from_artifact(art, f"restrictive robots meta: {blocking}"),
         fix=Fix(
-            action_type=FixActionType.add_link_header,
+            action_type=FixActionType.other,
             target=home,
-            payload={
-                "examples": [
-                    '</.well-known/api-catalog>; rel="api-catalog"',
-                    '</docs/api>; rel="service-doc"',
-                ],
-            },
-            summary="Add Link response headers advertising agent resources",
-            references=[Reference(label="RFC 8288", rfc="8288")],
+            payload={"remove_robots_meta_tokens": blocking},
+            summary="Remove robots meta directives that prevent Google indexing or snippets",
+            references=[
+                _GOOGLE_AI_SEARCH_REF,
+                Reference(
+                    label="Google robots meta tag",
+                    url="https://developers.google.com/search/docs/crawling-indexing/robots-meta-tag",
+                ),
+            ],
+        ),
+    )
+
+
+def check_content_structure_signals(store: ArtifactStore, base_url: str) -> CheckResult:
+    """6. Homepage has basic human-readable title and heading structure."""
+    home = base_url
+    art = _homepage_meta_artifact(store, home)
+    if art is None or art.capture_status != CaptureStatus.ok:
+        return _not_detected(
+            check_id="discoverability.content_structure_signals",
+            title="Content structure signals",
+            goal="Homepage has a title and heading structure that helps people navigate the content",
+            severity=CheckSeverity.warning,
+            weight=_V1_WEIGHT,
+            reason="artifact_unavailable:meta_tags:homepage_not_captured",
+            artifact=art,
+        )
+    payload = art.payload or {}
+    title = (payload.get("title") or "").strip()
+    headings = payload.get("headings") or {}
+    h1s = headings.get("h1") or []
+    if title and h1s:
+        return CheckResult(
+            dimension=DIMENSION,
+            check_id="discoverability.content_structure_signals",
+            title="Content structure signals",
+            goal="Homepage has a title and heading structure that helps people navigate the content",
+            status=CheckStatus.pass_,
+            severity=CheckSeverity.info,
+            mode=CheckMode.mechanical,
+            weight=_V1_WEIGHT,
+            evidence=_evidence_from_artifact(art, f"title={len(title)} chars; h1={len(h1s)}"),
+            references=[_GOOGLE_AI_SEARCH_REF],
+        )
+    missing = []
+    if not title:
+        missing.append("title")
+    if not h1s:
+        missing.append("h1")
+    return CheckResult(
+        dimension=DIMENSION,
+        check_id="discoverability.content_structure_signals",
+        title="Content structure signals",
+        goal="Homepage has a title and heading structure that helps people navigate the content",
+        status=CheckStatus.fail,
+        severity=CheckSeverity.warning,
+        mode=CheckMode.mechanical,
+        weight=_V1_WEIGHT,
+        evidence=_evidence_from_artifact(art, f"missing={missing}"),
+        fix=Fix(
+            action_type=FixActionType.other,
+            target=home,
+            payload={"missing": missing},
+            summary="Add a clear page title and one primary H1 heading",
+            references=[_GOOGLE_AI_SEARCH_REF],
+        ),
+    )
+
+
+def check_image_alt_text_signals(store: ArtifactStore, base_url: str) -> CheckResult:
+    """7. Images have meaningful alt text when images are present."""
+    home = base_url
+    art = _homepage_meta_artifact(store, home)
+    if art is None or art.capture_status != CaptureStatus.ok:
+        return _not_detected(
+            check_id="discoverability.image_alt_text_signals",
+            title="Image alt text signals",
+            goal="Homepage images include meaningful alt text where images are present",
+            severity=CheckSeverity.warning,
+            weight=_V1_WEIGHT,
+            reason="artifact_unavailable:meta_tags:homepage_not_captured",
+            artifact=art,
+        )
+    payload = art.payload or {}
+    total = int(payload.get("images_total") or 0)
+    coverage = payload.get("alt_text_coverage")
+    if total == 0:
+        return CheckResult(
+            dimension=DIMENSION,
+            check_id="discoverability.image_alt_text_signals",
+            title="Image alt text signals",
+            goal="Homepage images include meaningful alt text where images are present",
+            status=CheckStatus.skipped,
+            severity=CheckSeverity.info,
+            mode=CheckMode.mechanical,
+            weight=_V1_WEIGHT,
+            evidence=_evidence_from_artifact(art, "no images present"),
+            reason="not_applicable:no_images",
+            references=[_GOOGLE_AI_SEARCH_REF],
+        )
+    if coverage is not None and float(coverage) >= 0.8:
+        return CheckResult(
+            dimension=DIMENSION,
+            check_id="discoverability.image_alt_text_signals",
+            title="Image alt text signals",
+            goal="Homepage images include meaningful alt text where images are present",
+            status=CheckStatus.pass_,
+            severity=CheckSeverity.info,
+            mode=CheckMode.mechanical,
+            weight=_V1_WEIGHT,
+            evidence=_evidence_from_artifact(art, f"{coverage:.0%} alt text coverage across {total} image(s)"),
+            references=[_GOOGLE_AI_SEARCH_REF],
+        )
+    return CheckResult(
+        dimension=DIMENSION,
+        check_id="discoverability.image_alt_text_signals",
+        title="Image alt text signals",
+        goal="Homepage images include meaningful alt text where images are present",
+        status=CheckStatus.fail,
+        severity=CheckSeverity.warning,
+        mode=CheckMode.mechanical,
+        weight=_V1_WEIGHT,
+        evidence=_evidence_from_artifact(art, f"{coverage or 0:.0%} alt text coverage across {total} image(s)"),
+        fix=Fix(
+            action_type=FixActionType.other,
+            target=home,
+            payload={"minimum_alt_text_coverage": 0.8},
+            summary="Add meaningful alt text to important images",
+            references=[_GOOGLE_AI_SEARCH_REF],
         ),
     )
 
 
 def check_llms_txt_present(store: ArtifactStore, base_url: str) -> CheckResult:
-    """6. /llms.txt is reachable."""
+    """8. /llms.txt is reachable as an optional non-Google agent affordance."""
     llms_url = urljoin(_origin(base_url) + "/", "llms.txt")
     art = store.find(ArtifactType.well_known, llms_url)
     if art is None:
         # Fallback: an http_response artifact for the URL is also acceptable signal.
         art = store.find(ArtifactType.http_response, llms_url)
     if art is None:
-        return _not_detected(
+        return CheckResult(
+            dimension=DIMENSION,
             check_id="discoverability.llms_txt_present",
-            title="llms.txt present",
-            goal="/llms.txt provides a structured AI-agent summary of the site",
-            severity=CheckSeverity.suggestion,
+            title="llms.txt present (optional)",
+            goal="/llms.txt may provide a structured summary for non-Google AI agents",
+            status=CheckStatus.skipped,
+            severity=CheckSeverity.info,
+            mode=CheckMode.mechanical,
             weight=_V1_WEIGHT,
-            reason="artifact_unavailable:llms_txt:not_captured",
-            artifact=None,
+            evidence=HttpExchange(method="GET", url=llms_url, status=None),
+            reason="optional_agent_affordance_not_present:llms_txt",
+            references=[_GOOGLE_AI_SEARCH_REF],
         )
     if art.capture_status == CaptureStatus.ok:
         return CheckResult(
             dimension=DIMENSION,
             check_id="discoverability.llms_txt_present",
-            title="llms.txt present",
-            goal="/llms.txt provides a structured AI-agent summary of the site",
+            title="llms.txt present (optional)",
+            goal="/llms.txt may provide a structured summary for non-Google AI agents",
             status=CheckStatus.pass_,
             severity=CheckSeverity.info,
             mode=CheckMode.mechanical,
             weight=_V1_WEIGHT,
             evidence=_evidence_from_artifact(art, "200 OK"),
+            references=[
+                _GOOGLE_AI_SEARCH_REF,
+                Reference(label="llms.txt spec", url="https://llmstxt.org/"),
+            ],
         )
     return CheckResult(
         dimension=DIMENSION,
         check_id="discoverability.llms_txt_present",
-        title="llms.txt present",
-        goal="/llms.txt provides a structured AI-agent summary of the site",
+        title="llms.txt present (optional)",
+        goal="/llms.txt may provide a structured summary for non-Google AI agents",
         status=CheckStatus.fail,
         severity=CheckSeverity.suggestion,
         mode=CheckMode.mechanical,
@@ -407,133 +565,33 @@ def check_llms_txt_present(store: ArtifactStore, base_url: str) -> CheckResult:
         fix=Fix(
             action_type=FixActionType.add_well_known_resource,
             target=llms_url,
-            payload={"format": "markdown", "purpose": "AI-agent summary of the site"},
-            summary="Publish /llms.txt with a structured markdown summary of the site",
-            references=[Reference(label="llms.txt spec", url="https://llmstxt.org/")],
-        ),
-    )
-
-
-def check_llms_txt_structured(store: ArtifactStore, base_url: str) -> CheckResult:
-    """7. /llms.txt has markdown structure (headings + sections)."""
-    llms_url = urljoin(_origin(base_url) + "/", "llms.txt")
-    art = store.find(ArtifactType.well_known, llms_url)
-    if art is None or art.capture_status != CaptureStatus.ok:
-        return _not_detected(
-            check_id="discoverability.llms_txt_structured",
-            title="llms.txt is structured markdown",
-            goal="/llms.txt has at least one heading and at least one section body",
-            severity=CheckSeverity.suggestion,
-            weight=_V1_WEIGHT,
-            reason="artifact_unavailable:llms_txt:not_captured",
-            artifact=art,
-        )
-
-    body = ""
-    if art.raw_bytes is not None:
-        try:
-            body = art.raw_bytes.decode("utf-8", errors="replace")
-        except Exception:
-            body = ""
-    body = body or (art.payload or {}).get("body", "")
-
-    has_heading = any(line.lstrip().startswith("#") for line in body.splitlines())
-    has_section = sum(1 for line in body.splitlines() if line.strip()) >= 3
-
-    if has_heading and has_section:
-        return CheckResult(
-            dimension=DIMENSION,
-            check_id="discoverability.llms_txt_structured",
-            title="llms.txt is structured markdown",
-            goal="/llms.txt has at least one heading and section body",
-            status=CheckStatus.pass_,
-            severity=CheckSeverity.info,
-            mode=CheckMode.mechanical,
-            weight=_V1_WEIGHT,
-            evidence=_evidence_from_artifact(art, "structured markdown"),
-        )
-
-    return CheckResult(
-        dimension=DIMENSION,
-        check_id="discoverability.llms_txt_structured",
-        title="llms.txt is structured markdown",
-        goal="/llms.txt has at least one heading and section body",
-        status=CheckStatus.fail,
-        severity=CheckSeverity.suggestion,
-        mode=CheckMode.mechanical,
-        weight=_V1_WEIGHT,
-        evidence=_evidence_from_artifact(art, "no headings or empty body"),
-        fix=Fix(
-            action_type=FixActionType.add_well_known_resource,
-            target=llms_url,
-            payload={"format": "markdown_with_headings"},
-            summary="Add markdown headings (# Title, ## Section) and section bodies to /llms.txt",
-            references=[Reference(label="llms.txt spec", url="https://llmstxt.org/")],
-        ),
-    )
-
-
-def check_content_signals_directives(store: ArtifactStore, base_url: str) -> CheckResult:
-    """8. robots.txt declares Content-Signal directives."""
-    robots_url = urljoin(_origin(base_url) + "/", "robots.txt")
-    art = store.find(ArtifactType.robots_txt, robots_url)
-    if art is None or art.capture_status != CaptureStatus.ok:
-        return _not_detected(
-            check_id="discoverability.content_signals_directives",
-            title="Content-Signal directives in robots.txt",
-            goal="robots.txt declares ai-train / search / ai-input preferences",
-            severity=CheckSeverity.suggestion,
-            weight=_V1_WEIGHT,
-            reason="artifact_unavailable:robots_txt:not_captured",
-            artifact=art,
-        )
-    signals = (art.payload or {}).get("content_signals", [])
-    if signals:
-        return CheckResult(
-            dimension=DIMENSION,
-            check_id="discoverability.content_signals_directives",
-            title="Content-Signal directives in robots.txt",
-            goal="robots.txt declares ai-train / search / ai-input preferences",
-            status=CheckStatus.pass_,
-            severity=CheckSeverity.info,
-            mode=CheckMode.mechanical,
-            weight=_V1_WEIGHT,
-            evidence=_evidence_from_artifact(art, f"{len(signals)} Content-Signal directive(s)"),
-        )
-    return CheckResult(
-        dimension=DIMENSION,
-        check_id="discoverability.content_signals_directives",
-        title="Content-Signal directives in robots.txt",
-        goal="robots.txt declares ai-train / search / ai-input preferences",
-        status=CheckStatus.fail,
-        severity=CheckSeverity.suggestion,
-        mode=CheckMode.mechanical,
-        weight=_V1_WEIGHT,
-        evidence=_evidence_from_artifact(art, "no Content-Signal directives"),
-        fix=Fix(
-            action_type=FixActionType.add_robots_directive,
-            target=robots_url,
-            payload={"directive": "Content-Signal", "value": "ai-train=yes, search=yes, ai-input=yes"},
-            summary="Add 'Content-Signal: ai-train=..., search=..., ai-input=...' to /robots.txt",
-            references=[Reference(label="contentsignals.org", url="https://contentsignals.org/")],
+            payload={"format": "markdown", "purpose": "optional non-Google AI-agent summary"},
+            summary="Publish /llms.txt only if direct AI-agent summaries are part of the site's agent strategy",
+            references=[
+                _GOOGLE_AI_SEARCH_REF,
+                Reference(label="llms.txt spec", url="https://llmstxt.org/"),
+            ],
         ),
     )
 
 
 def check_markdown_negotiation(store: ArtifactStore, base_url: str) -> CheckResult:
-    """9. Homepage supports Accept: text/markdown content negotiation (runtime)."""
+    """9. Homepage optionally supports Accept: text/markdown content negotiation."""
     # Look for an http_response artifact with content-type=text/markdown for the base URL.
     art = store.find(ArtifactType.http_response, base_url)
     if art is None:
-        return _not_detected(
+        return CheckResult(
+            dimension=DIMENSION,
             check_id="discoverability.markdown_negotiation",
-            title="Markdown content negotiation",
-            goal="GET / with Accept: text/markdown returns Content-Type: text/markdown",
-            severity=CheckSeverity.suggestion,
-            weight=_V1_WEIGHT,
-            reason="artifact_unavailable:http_response:homepage_not_captured",
-            artifact=None,
+            title="Markdown content negotiation (optional)",
+            goal="GET / with Accept: text/markdown may return text/markdown for non-Google agents",
+            status=CheckStatus.skipped,
+            severity=CheckSeverity.info,
             mode=CheckMode.runtime,
+            weight=_V1_WEIGHT,
+            evidence=HttpExchange(method="GET", url=base_url, status=None),
+            reason="optional_agent_affordance_not_probed:markdown_negotiation",
+            references=[_GOOGLE_AI_SEARCH_REF],
         )
     headers = (art.payload or {}).get("headers", {}) or {}
     content_type = headers.get("content-type", "") or headers.get("Content-Type", "")
@@ -542,31 +600,27 @@ def check_markdown_negotiation(store: ArtifactStore, base_url: str) -> CheckResu
         return CheckResult(
             dimension=DIMENSION,
             check_id="discoverability.markdown_negotiation",
-            title="Markdown content negotiation",
-            goal="GET / with Accept: text/markdown returns Content-Type: text/markdown",
+            title="Markdown content negotiation (optional)",
+            goal="GET / with Accept: text/markdown may return text/markdown for non-Google agents",
             status=CheckStatus.pass_,
             severity=CheckSeverity.info,
             mode=CheckMode.runtime,
             weight=_V1_WEIGHT,
             evidence=_evidence_from_artifact(art, content_type),
+            references=[_GOOGLE_AI_SEARCH_REF],
         )
     return CheckResult(
         dimension=DIMENSION,
         check_id="discoverability.markdown_negotiation",
-        title="Markdown content negotiation",
-        goal="GET / with Accept: text/markdown returns Content-Type: text/markdown",
-        status=CheckStatus.fail,
-        severity=CheckSeverity.suggestion,
+        title="Markdown content negotiation (optional)",
+        goal="GET / with Accept: text/markdown may return text/markdown for non-Google agents",
+        status=CheckStatus.skipped,
+        severity=CheckSeverity.info,
         mode=CheckMode.runtime,
         weight=_V1_WEIGHT,
         evidence=_evidence_from_artifact(art, content_type or "no content-type"),
-        fix=Fix(
-            action_type=FixActionType.add_response_header,
-            target=base_url,
-            payload={"accept": "text/markdown", "expected_content_type": "text/markdown"},
-            summary="Negotiate text/markdown when Accept: text/markdown is requested",
-            references=[Reference(label="Cloudflare Markdown for Agents", url="https://blog.cloudflare.com/")],
-        ),
+        reason="optional_agent_affordance_not_present:markdown_negotiation",
+        references=[_GOOGLE_AI_SEARCH_REF],
     )
 
 
@@ -598,10 +652,10 @@ class DiscoverabilityAnalyzer:
             check_robots_user_agent_directive(store, base_url),
             check_sitemap_referenced(store, base_url),
             check_sitemap_valid(store, base_url),
-            check_link_headers_present(store, base_url),
+            check_google_search_snippet_eligible(store, base_url),
+            check_content_structure_signals(store, base_url),
+            check_image_alt_text_signals(store, base_url),
             check_llms_txt_present(store, base_url),
-            check_llms_txt_structured(store, base_url),
-            check_content_signals_directives(store, base_url),
             check_markdown_negotiation(store, base_url),
         ]
         elapsed = (time.perf_counter() - t0) * 1000.0
@@ -617,9 +671,9 @@ __all__ = [
     "check_robots_user_agent_directive",
     "check_sitemap_referenced",
     "check_sitemap_valid",
-    "check_link_headers_present",
+    "check_google_search_snippet_eligible",
+    "check_content_structure_signals",
+    "check_image_alt_text_signals",
     "check_llms_txt_present",
-    "check_llms_txt_structured",
-    "check_content_signals_directives",
     "check_markdown_negotiation",
 ]

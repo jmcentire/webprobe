@@ -65,9 +65,10 @@ def _populate_full(store: ArtifactStore) -> None:
         capture_status=CaptureStatus.ok,
         payload={
             "title": "Home",
-            "link_headers": [
-                {"url": "/.well-known/api-catalog", "rel": "api-catalog", "params": {}},
-            ],
+            "robots_meta": "",
+            "headings": {"h1": ["Reeve"], "h2": [], "h3": [], "h4": [], "h5": [], "h6": []},
+            "images_total": 1,
+            "alt_text_coverage": 1.0,
         },
     ))
 
@@ -146,7 +147,6 @@ def test_no_robots_artifact_cascades_to_not_detected() -> None:
         "discoverability.robots_txt_present",
         "discoverability.robots_txt_user_agent_directive",
         "discoverability.sitemap_referenced",
-        "discoverability.content_signals_directives",
     ]:
         r = by_id[cid]
         assert r.status == CheckStatus.not_detected, f"{cid}: {r.status}"
@@ -187,37 +187,76 @@ def test_sitemap_invalid_when_present_but_unparseable() -> None:
     assert by_id["discoverability.sitemap_valid"].fix is not None
 
 
-def test_link_headers_absent() -> None:
+def test_google_search_snippet_restricted() -> None:
     store = ArtifactStore()
     _populate_full(store)
     store.put(Artifact(
         artifact_type=ArtifactType.meta_tags,
         source_url=BASE,
         capture_status=CaptureStatus.ok,
-        payload={"link_headers": []},  # Empty
+        payload={
+            "title": "Home",
+            "robots_meta": "noindex, nosnippet",
+            "headings": {"h1": ["Reeve"]},
+            "images_total": 0,
+        },
     ), replace=True)
     results = _run(store)
     by_id = {r.check_id: r for r in results}
-    assert by_id["discoverability.link_headers_present"].status == CheckStatus.fail
+    assert by_id["discoverability.google_search_snippet_eligible"].status == CheckStatus.fail
 
 
-def test_llms_txt_unstructured() -> None:
+def test_content_structure_missing_h1() -> None:
     store = ArtifactStore()
     _populate_full(store)
-    # Replace llms.txt with unstructured plain text
     store.put(Artifact(
-        artifact_type=ArtifactType.well_known,
-        source_url=BASE + "llms.txt",
+        artifact_type=ArtifactType.meta_tags,
+        source_url=BASE,
         capture_status=CaptureStatus.ok,
-        raw_bytes=b"just one line",
+        payload={
+            "title": "Home",
+            "robots_meta": "",
+            "headings": {"h1": []},
+            "images_total": 0,
+        },
     ), replace=True)
     results = _run(store)
     by_id = {r.check_id: r for r in results}
-    assert by_id["discoverability.llms_txt_present"].status == CheckStatus.pass_
-    assert by_id["discoverability.llms_txt_structured"].status == CheckStatus.fail
+    assert by_id["discoverability.content_structure_signals"].status == CheckStatus.fail
 
 
-def test_markdown_negotiation_fails_when_html() -> None:
+def test_image_alt_text_low_coverage() -> None:
+    store = ArtifactStore()
+    _populate_full(store)
+    store.put(Artifact(
+        artifact_type=ArtifactType.meta_tags,
+        source_url=BASE,
+        capture_status=CaptureStatus.ok,
+        payload={
+            "title": "Home",
+            "robots_meta": "",
+            "headings": {"h1": ["Reeve"]},
+            "images_total": 3,
+            "alt_text_coverage": 0.33,
+        },
+    ), replace=True)
+    results = _run(store)
+    by_id = {r.check_id: r for r in results}
+    assert by_id["discoverability.image_alt_text_signals"].status == CheckStatus.fail
+
+
+def test_llms_txt_absent_is_optional() -> None:
+    store = ArtifactStore()
+    _populate_full(store)
+    aid = store._by_key.pop((ArtifactType.well_known, BASE + "llms.txt"))
+    store._by_id.pop(aid)
+    results = _run(store)
+    by_id = {r.check_id: r for r in results}
+    assert by_id["discoverability.llms_txt_present"].status == CheckStatus.skipped
+    assert by_id["discoverability.llms_txt_present"].reason == "optional_agent_affordance_not_present:llms_txt"
+
+
+def test_markdown_negotiation_skips_when_html() -> None:
     store = ArtifactStore()
     _populate_full(store)
     # Override homepage http_response to return text/html instead
@@ -230,5 +269,5 @@ def test_markdown_negotiation_fails_when_html() -> None:
     results = _run(store)
     by_id = {r.check_id: r for r in results}
     r = by_id["discoverability.markdown_negotiation"]
-    assert r.status == CheckStatus.fail
+    assert r.status == CheckStatus.skipped
     assert r.mode == CheckMode.runtime  # CA006: runtime check

@@ -200,6 +200,7 @@ def _enumerate_prime_paths(G: nx.DiGraph, max_loop: int = 2, max_paths: int = 10
         return []
 
     deadline = time.monotonic() + max_seconds
+    max_nodes = min(G.number_of_nodes(), 15) + 1
 
     # Start with all edges as seed paths of length 2
     active: list[list[str]] = []
@@ -220,10 +221,11 @@ def _enumerate_prime_paths(G: nx.DiGraph, max_loop: int = 2, max_paths: int = 10
 
             extended = False
             last = path[-1]
-            for succ in G.successors(last):
-                if succ not in path:  # Keep it simple (no repeated nodes)
-                    next_active.append(path + [succ])
-                    extended = True
+            if len(path) < max_nodes:
+                for succ in G.successors(last):
+                    if succ not in path:  # Keep it simple (no repeated nodes)
+                        next_active.append(path + [succ])
+                        extended = True
 
             if not extended:
                 # Can't extend forward -- this is a candidate prime path

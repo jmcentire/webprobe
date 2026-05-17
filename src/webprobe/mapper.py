@@ -54,22 +54,22 @@ def normalize_url(url: str, base: str | None = None) -> str:
     return urlunparse((scheme, netloc, path, parsed.params, parsed.query, ""))
 
 
-def _strip_port(netloc: str, scheme: str) -> str:
-    """Remove default ports from netloc."""
-    if scheme == "http" and netloc.endswith(":80"):
-        return netloc[:-3]
-    if scheme == "https" and netloc.endswith(":443"):
-        return netloc[:-4]
-    return netloc
+def _origin_parts(url: str) -> tuple[str, str, int | None]:
+    parsed = urlparse(url)
+    scheme = parsed.scheme.lower()
+    host = (parsed.hostname or "").lower()
+    port = parsed.port
+    if port is None:
+        if scheme == "http":
+            port = 80
+        elif scheme == "https":
+            port = 443
+    return scheme, host, port
 
 
 def is_same_origin(url: str, base_url: str) -> bool:
-    """Check if url has same host as base_url. Treats http/https as same origin for site auditing."""
-    a = urlparse(url)
-    b = urlparse(base_url)
-    a_netloc = _strip_port(a.netloc.lower(), a.scheme.lower())
-    b_netloc = _strip_port(b.netloc.lower(), b.scheme.lower())
-    return a_netloc == b_netloc
+    """Check if url has the same scheme, host, and effective port as base_url."""
+    return _origin_parts(url) == _origin_parts(base_url)
 
 
 class _LinkExtractor(HTMLParser):
