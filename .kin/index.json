@@ -1,0 +1,2300 @@
+{
+  "domains": [
+    "code",
+    "python"
+  ],
+  "node_count": 208,
+  "nodes": [
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-08dfab3505c0",
+      "title": "src/webprobe/security/supply_chain.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-0c643610f95a",
+      "title": "src/webprobe/advocate.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-0e1a2b70a7df",
+      "title": "src/webprobe/mask.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-10c08a7fdce0",
+      "title": "contracts/src_webprobe_capturer/interface.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-1543f820f36e",
+      "title": "contracts/src_webprobe_differ/interface.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-18af98a21b50",
+      "title": "contracts/src_webprobe_llm_provider/interface.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-1a3089bda4e8",
+      "title": "src/webprobe/differ.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-1a9dfb0742f9",
+      "title": "src/webprobe/accessibility/__init__.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-248687b913b3",
+      "title": "src/webprobe/security/check_results.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-2f3889a408bc",
+      "title": "src/webprobe/structured_data/__init__.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-398ddc7f86ea",
+      "title": "src/webprobe/compliance.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-3b093467a356",
+      "title": "src/webprobe/analyzer.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-3b15aaddcf73",
+      "title": "src/webprobe/agentic_commerce/__init__.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-432dfd323959",
+      "title": "src/webprobe/explorer.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-43d9a209e670",
+      "title": "src/webprobe/parsers/sitemap.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-44c214897992",
+      "title": "src/webprobe/visual.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-4829a3b38ec1",
+      "title": "src/webprobe/cli.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-4d48a547af7d",
+      "title": "src/webprobe/llm_provider.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-4dd1cbe8a09b",
+      "title": "contracts/src_webprobe_mask/interface.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-5bc6bcfa5c89",
+      "title": "src/webprobe/agent_surface/__init__.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-625e8a491309",
+      "title": "contracts/src_webprobe_config/interface.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-660fb5fc3b57",
+      "title": "src/webprobe/scorecard.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-66423de8400a",
+      "title": "src/webprobe/auth.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-68b54badc5c8",
+      "title": "src/webprobe/__init__.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-6913e7a8c0f4",
+      "title": "src/webprobe/discoverability/__init__.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-6bbdaced5454",
+      "title": "src/webprobe/parsers/meta_tags.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-6bee738a6785",
+      "title": "src/webprobe/security/cookies.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-6d2be81baad6",
+      "title": "src/webprobe/prober.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-6d87bdbaf13d",
+      "title": "contracts/src_webprobe_frameworks/interface.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-6e2a2a91c778",
+      "title": "src/webprobe/parsers/openapi.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-710066548331",
+      "title": "src/webprobe/reporter.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-7a72e6c82669",
+      "title": "src/webprobe/parsers/__init__.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-7deb59775d28",
+      "title": "src/webprobe/browser.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-7e70dc5412b7",
+      "title": "src/webprobe/config.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-829768923a50",
+      "title": "src/webprobe/security/xss.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-847a8ea33795",
+      "title": "src/webprobe/security/sensitive_files.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-872d50d71760",
+      "title": "src/webprobe/security/headers.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-8ac5e7085816",
+      "title": "contracts/src_webprobe_cli/interface.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-92e0fd58fbbf",
+      "title": "src/webprobe/artifact_store.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-9eb96a6ba6b5",
+      "title": "contracts/src_webprobe_explorer/interface.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-9f8fb4b18003",
+      "title": "src/webprobe/mapper.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-a4e31f8a753d",
+      "title": "src/webprobe/security/cors.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-ab2e606338bb",
+      "title": "src/webprobe/security/scanner.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-ac6fba2e2122",
+      "title": "src/webprobe/models.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-ae1379f744eb",
+      "title": "src/webprobe/scheduler.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-aef4dee00a06",
+      "title": "contracts/src_webprobe_analyzer/interface.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-af1a91eb9cce",
+      "title": "src/webprobe/api_surface/__init__.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-b08b7930a82e",
+      "title": "src/webprobe/security/info_disclosure.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-b13d93243b79",
+      "title": "src/webprobe/artifact_collector.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-b232b3b8fe08",
+      "title": "contracts/src_webprobe_reporter/interface.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-b640b810ec8e",
+      "title": "src/webprobe/security/privacy.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-b76fe30805b9",
+      "title": "src/webprobe/security/__init__.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-bc7667479494",
+      "title": "src/webprobe/bot_access/__init__.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-c79cbc04292f",
+      "title": "src/webprobe/capturer.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-c808e76d976c",
+      "title": "contracts/src_webprobe_browser/interface.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-cf4c76a20261",
+      "title": "src/webprobe/security/tls.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-d2c9d89e4258",
+      "title": "src/webprobe/parsers/robots_txt.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-d34861b7d8f7",
+      "title": "src/webprobe/parsers/json_ld.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-d4a588870474",
+      "title": "contracts/src_webprobe_security/interface.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-d91a1ab8f858",
+      "title": "src/webprobe/security/forms.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-d9e90d24d1fd",
+      "title": "src/webprobe/security/mixed_content.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-ddbf098f79fb",
+      "title": "contracts/src_webprobe_mapper/interface.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-e25628c18f95",
+      "title": "contracts/src_webprobe_models/interface.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-e66b20f44589",
+      "title": "src/webprobe/security/auth_session.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-e82dd26147fe",
+      "title": "contracts/src_webprobe_auth/interface.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-f6c8217c738b",
+      "title": "src/webprobe/public_facing_signals/__init__.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-mod-webprobe-ff038e5b5d31",
+      "title": "src/webprobe/frameworks.py",
+      "type": "artifact",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-0210d97f1784",
+      "title": "Artifact",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-029776b0d979",
+      "title": "DomExcerpt",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-02dc1b404484",
+      "title": "Node",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-03871d33f5a5",
+      "title": "CostSummary",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-03b654cced62",
+      "title": "ParseResult",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-086d25f9b2af",
+      "title": "ComplianceConfig",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-0a9d281ab416",
+      "title": "ApprenticeProvider",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-0ffbe3a7b846",
+      "title": "AnthropicProvider",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-1205b4feb5e1",
+      "title": "CostSummary",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-137374be9709",
+      "title": "LLMCallRecord",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-14329d1495bc",
+      "title": "SecuritySeverity",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-180f731855a2",
+      "title": "Node",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-187b1c7c2feb",
+      "title": "CaptureConfig",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-19380c301ba7",
+      "title": "StructuredDataAnalyzer",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-195e3bbe132f",
+      "title": "AuthCredential",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-196646869cb1",
+      "title": "AuthManager",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-19fa4fa0d5b2",
+      "title": "Edge",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-1b268394e036",
+      "title": "AuthConfig",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-1e04003635e8",
+      "title": "AgenticCommerceAnalyzer",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-1e40de3d8d0a",
+      "title": "SiteGraph",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-1fe17d4de64c",
+      "title": "SyncAnalyzer",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-2098be5c6118",
+      "title": "WebprobeConfig",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-20f1733db0a0",
+      "title": "RunDiff",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-218759c56ddf",
+      "title": "ConsoleMessageLevel",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-219b4a06b94d",
+      "title": "SecurityFinding",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-26992066e7f6",
+      "title": "BrowserPool",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-26cfcb705e93",
+      "title": "ExploreConfig",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-2bb2467fe1e2",
+      "title": "GraphMetrics",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-2fb175745cff",
+      "title": "ApprenticeProvider",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-2fc9a29bbc8b",
+      "title": "ProberConfig",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-306bc65bcb89",
+      "title": "Scorecard",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-307b9794d83c",
+      "title": "ArtifactType",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-30ec418aabe4",
+      "title": "ExploreConfig",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-329278a9c8c3",
+      "title": "MaskConfig",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-33582944c332",
+      "title": "MaskRule",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-3691e482e5bb",
+      "title": "SecurityFinding",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-36c102d1e15e",
+      "title": "PrimePath",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-3dd7731a8efd",
+      "title": "CookieInfo",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-3e90f3ac5c33",
+      "title": "AuthContext",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-3f2ed4ff160b",
+      "title": "AdvocateRole",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-3f6bd9345a0f",
+      "title": "SchedulerConfig",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-3f864ab9aea5",
+      "title": "AuthManager",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-40a7b3404394",
+      "title": "DiscoveryMethod",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-42d0611d9b2e",
+      "title": "CaptureConfig",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-43238fc85e56",
+      "title": "ResourceType",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-47701210481f",
+      "title": "ScanMode",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-47e1055e8e8a",
+      "title": "AnthropicProvider",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-49f5b20632af",
+      "title": "CrawlConfig",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-4bce24b9a733",
+      "title": "CheckMode",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-4c56f9694c61",
+      "title": "SecurityConfig",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-4d5f2d97338c",
+      "title": "SecurityCategory",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-4e993fe19c23",
+      "title": "Fix",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-4ea7c40c93c9",
+      "title": "TlsInfo",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-50c1029caf55",
+      "title": "HttpExchange",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-5421fe00d854",
+      "title": "ConsoleMessage",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-576a4b537f90",
+      "title": "MaskConfig",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-5b317e2d9ca0",
+      "title": "AgentSurfaceAnalyzer",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-5bcf87cde574",
+      "title": "ConsoleMessageLevel",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-5d6bafafa31e",
+      "title": "CheckResult",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-5e1d94534eee",
+      "title": "CostTracker",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-603f789196fb",
+      "title": "ResourceType",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-6044833bd209",
+      "title": "SecuritySeverity",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-609337fbb969",
+      "title": "ConsoleMessageLevel",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-60abe53a5511",
+      "title": "OpenAIProvider",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-60cad122f580",
+      "title": "BotAccessAnalyzer",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-61c45b136b47",
+      "title": "APISurfaceAnalyzer",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-622c871ab7a3",
+      "title": "LLMProvider",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-65cc4c134d47",
+      "title": "PublicFacingSignalsAnalyzer",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-687c058f7c60",
+      "title": "TimingData",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-696d25dbc31b",
+      "title": "ComplianceSummary",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-6b7a824fe4cb",
+      "title": "LLMCallRecord",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-6c343c611288",
+      "title": "Resource",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-6d85dedd3785",
+      "title": "FormInfo",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-6e721921ed1b",
+      "title": "CheckStatus",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-6e86a74f6c2b",
+      "title": "SchedulerResult",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-7188b23334c1",
+      "title": "GeminiProvider",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-794ca5b72a05",
+      "title": "AuditResult",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-7af3e6f94875",
+      "title": "AuthConfig",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-7bc0f38bdb9f",
+      "title": "DiscoverabilityAnalyzer",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-7bfd6d8ec66f",
+      "title": "GraphMetrics",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-87075b6696e2",
+      "title": "BrowserPool",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-897c20afa13d",
+      "title": "CostTracker",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-8b022f63c985",
+      "title": "FormInfo",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-8d0c6640f877",
+      "title": "WebprobeConfig",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-8f3956ad8563",
+      "title": "ScorecardBand",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-92f416e75a1e",
+      "title": "AccessibilityAnalyzer",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-9369f733fbbc",
+      "title": "ResourceType",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-95ce068310c1",
+      "title": "Reference",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-9a501c94cd99",
+      "title": "SecurityCategory",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-9be7f78f7364",
+      "title": "RunDiff",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-9d8afe121024",
+      "title": "CrawlConfig",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-9dbb59710081",
+      "title": "CookieInfo",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-9f2f23c9701c",
+      "title": "DimensionId",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-a09bd4b3dad3",
+      "title": "NodeDiff",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-a0b4f5bec49d",
+      "title": "DuplicateArtifactError",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-a1e8fc810d01",
+      "title": "Resource",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-a3c07ffe010d",
+      "title": "AdvocateConfig",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-a65381eba9a6",
+      "title": "AnalysisResult",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-ab11089a9219",
+      "title": "OpenAIProvider",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-abb76a4ea394",
+      "title": "Edge",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-abd7495fa8e1",
+      "title": "ResponseHeaders",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-afad330cd875",
+      "title": "Analyzer",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-afaf24116d67",
+      "title": "ScorecardConfig",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-b09cb8008af1",
+      "title": "ComplianceViolation",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-ba3ecc280dba",
+      "title": "NodeCapture",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-ba779b22d14d",
+      "title": "ResponseHeaders",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-bc098f3d30ce",
+      "title": "ArtifactRef",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-bc95294c651d",
+      "title": "ComplianceControlSummary",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-be8b18e49092",
+      "title": "MaskRule",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-c1550ec6543b",
+      "title": "DiscoveryMethod",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-c5100c8bf494",
+      "title": "AuthContext",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-c72033fb1807",
+      "title": "RuntimeProbe",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-c81a2812d097",
+      "title": "TimingOutlier",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-c87cc6ee3057",
+      "title": "FetchResult",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-cd6acebe122f",
+      "title": "NodeState",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-cee6f75c0c96",
+      "title": "DimensionScore",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-d18a5b3a8ca4",
+      "title": "SiteGraph",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-d488b0dde897",
+      "title": "TimingOutlier",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-d4b23ddcf38a",
+      "title": "NodeDiff",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-d58d85304910",
+      "title": "PrimePath",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-d6a4b99dd5ab",
+      "title": "AuthBoundaryViolation",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-ddb1a911148b",
+      "title": "AuthCredential",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-e39793b0e823",
+      "title": "PhaseStatus",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-e4f772ca0f50",
+      "title": "ConsoleMessage",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-e76801494ade",
+      "title": "NodeState",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-e9853b701f8c",
+      "title": "TimingData",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-ea6965c08a9c",
+      "title": "LLMProvider",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-eb1e59a03959",
+      "title": "Run",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-eb60ce0a615b",
+      "title": "ArtifactStore",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-ee391535fec9",
+      "title": "CycleError",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-f104e34d7821",
+      "title": "GeminiProvider",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-f27be9faa95e",
+      "title": "FixActionType",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-f2c49bae5255",
+      "title": "BrokenLink",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-f5c8eef48cb5",
+      "title": "AnalysisResult",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-f905020ed2ed",
+      "title": "BrokenLink",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-fa4f2cab68b7",
+      "title": "CaptureStatus",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-fa6fe89682e8",
+      "title": "AuthBoundaryViolation",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-fb79c0675270",
+      "title": "CheckSeverity",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-fcc221956f14",
+      "title": "Run",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-fd19e4d22128",
+      "title": "NodeCapture",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    },
+    {
+      "domains": [
+        "code",
+        "python"
+      ],
+      "id": "code-sym-webprobe-fd5ad07b8a7f",
+      "title": "PhaseStatus",
+      "type": "concept",
+      "updated_at": "2026-05-30T14:51:05",
+      "weight": 0.5
+    }
+  ],
+  "repo": "webprobe",
+  "source_updated_at": "2026-05-30T14:51:05",
+  "version": 1
+}
